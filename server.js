@@ -22,21 +22,27 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --- INITIALIZE DATABASE AND FOLDERS ---
 // This ensures the necessary files and folders exist before the server starts
 const initializeServer = () => {
-    // Ensure uploads directories exist
-    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-    if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
-    if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
+    try {
+        // Ensure uploads directories exist
+        if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+        if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
+        if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
 
-    // Ensure db.json exists
-    if (!fs.existsSync(DB_PATH)) {
-        console.log("db.json not found, creating a new default database.");
-        const defaultDB = {
-            users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
-            announcements: [], attendanceRecords: [], assignments: [], submissions: [],
-            marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
-            facultyTimetables: {}, curriculum: {}, departmentPrograms: {}
-        };
-        fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
+        // Ensure db.json exists
+        if (!fs.existsSync(DB_PATH)) {
+            console.log("db.json not found, creating a new default database.");
+            const defaultDB = {
+                users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
+                announcements: [], attendanceRecords: [], assignments: [], submissions: [],
+                marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
+                facultyTimetables: {}, curriculum: {}, departmentPrograms: {}
+            };
+            fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
+        }
+    } catch (error) {
+        console.error("Error during server initialization:", error);
+        // If initialization fails, we should exit to prevent a crash loop
+        process.exit(1);
     }
 };
 
@@ -597,8 +603,5 @@ Now that the file is corrected, you need to save and upload this final version t
 
     ```bash
     git add .
-    ```
-    ```bash
-    git commit -m "Final fix for serving static files"
     
 
