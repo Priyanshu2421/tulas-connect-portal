@@ -16,24 +16,38 @@ app.use(cors());
 app.use(express.json());
 
 // --- SERVE STATIC FILES ---
-// This serves all files from the 'public' folder (index.html, script.js, style.css)
-// It also serves the 'uploads' folder so images can be displayed.
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// --- INITIALIZE DATABASE AND FOLDERS ---
+// This ensures the necessary files and folders exist before the server starts
+const initializeServer = () => {
+    // Ensure uploads directories exist
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
+    if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
 
-// Ensure uploads directories exist
-// Note: This might not work reliably on Render's ephemeral filesystem, but is fine for local.
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
-if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
+    // Ensure db.json exists
+    if (!fs.existsSync(DB_PATH)) {
+        console.log("db.json not found, creating a new default database.");
+        const defaultDB = {
+            users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
+            announcements: [], attendanceRecords: [], assignments: [], submissions: [],
+            marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
+            facultyTimetables: {}, curriculum: {}, departmentPrograms: {}
+        };
+        fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
+    }
+};
+
+initializeServer(); // Run the initialization on startup
 
 
 // --- DATABASE HELPER FUNCTIONS ---
 const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
-// --- MULTER SETUP (No changes needed here) ---
+// --- MULTER SETUP ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         let destDir = UPLOADS_DIR;
@@ -48,11 +62,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 12 * 1024 * 1024 } // 12 MB limit
+    limits: { fileSize: 12 * 1024 * 1024 }
 });
 
 
 // --- ALL API ROUTES GO HERE ---
+// ... (Your existing API routes for /login, /profile, etc. are all correct and go here) ...
 // Login
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
@@ -68,7 +83,6 @@ app.post('/login', (req, res) => {
     res.json({ success: true, user: { ...userResponse, id: userId } });
 });
 
-// ... (all your other API routes like /profile, /users, etc. go here)
 // --- USER & PROFILE MANAGEMENT ---
 app.get('/profile/:userId', (req, res) => {
     const { userId } = req.params;
@@ -576,7 +590,7 @@ app.listen(LIVE_PORT, () => {
 
 ### Step 3: Push Your Final Changes to GitHub
 
-You know the drill! Let's get this final, corrected version up to GitHub.
+Now that the file is corrected, you need to save and upload this final version to GitHub.
 
 1.  Open the terminal in VS Code.
 2.  Run these three commands:
@@ -586,8 +600,5 @@ You know the drill! Let's get this final, corrected version up to GitHub.
     ```
     ```bash
     git commit -m "Final fix for serving static files"
-    ```
-    ```bash
-    git push
-    // Final check for deployment
+    
 
