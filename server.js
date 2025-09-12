@@ -587,5 +587,5 @@ Now that you've made the necessary changes, you need to save them to GitHub so R
     ```
     ```bash
     git push
-    
+  // Final check for deployment  
 
