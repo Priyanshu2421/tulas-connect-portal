@@ -593,16 +593,3 @@ app.listen(LIVE_PORT, () => {
     console.log(`TULA'S CONNECT server is running on port ${LIVE_PORT}`);
 });
 ```
-
-### Step 3: Push Your Final Changes to GitHub
-
-Now that the file is corrected, you need to save and upload this final version to GitHub.
-
-1.  Open the terminal in VS Code.
-2.  Run these three commands:
-
-    ```bash
-    git add .
-  });  
-
- 
