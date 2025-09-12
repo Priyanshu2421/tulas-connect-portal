@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Style for the active navigation link */
+.nav-link.active {
+    background-color: #15803d; /* A darker green */
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Ensure smooth transitions */
+.nav-link {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+     background-color: #16a34a;
+}
+
+/* Custom styles for notification toast */
+#notification-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+ 
