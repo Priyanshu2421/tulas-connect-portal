@@ -14,24 +14,26 @@ const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(UPLOADS_DIR));
 
-// --- NEW CODE: SERVE FRONTEND FILES ---
-// This tells Express to serve all files from the 'public' folder
+// --- SERVE STATIC FILES ---
+// This serves all files from the 'public' folder (index.html, script.js, style.css)
+// It also serves the 'uploads' folder so images can be displayed.
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 // Ensure uploads directories exist
-[UPLOADS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR].forEach(dir => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+// Note: This might not work reliably on Render's ephemeral filesystem, but is fine for local.
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
+if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
+
 
 // --- DATABASE HELPER FUNCTIONS ---
 const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
-// --- MULTER SETUP FOR FILE UPLOADS ---
-// ... (the rest of your multer setup code is here, no changes needed)
+// --- MULTER SETUP (No changes needed here) ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         let destDir = UPLOADS_DIR;
@@ -50,8 +52,7 @@ const upload = multer({
 });
 
 
-// --- API ROUTES ---
-// ... (all your API routes like /login, /users, etc. are here, no changes needed)
+// --- ALL API ROUTES GO HERE ---
 // Login
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
@@ -67,6 +68,7 @@ app.post('/login', (req, res) => {
     res.json({ success: true, user: { ...userResponse, id: userId } });
 });
 
+// ... (all your other API routes like /profile, /users, etc. go here)
 // --- USER & PROFILE MANAGEMENT ---
 app.get('/profile/:userId', (req, res) => {
     const { userId } = req.params;
@@ -558,8 +560,8 @@ app.get('/hod/dashboard/:department', (req, res) => {
 app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
 
 
-// --- NEW CODE: CATCH-ALL TO SERVE THE FRONTEND ---
-// This must be AFTER all your API routes
+// --- CATCH-ALL ROUTE FOR SERVING THE FRONTEND ---
+// This must be the last route in the file
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -572,20 +574,20 @@ app.listen(LIVE_PORT, () => {
 });
 ```
 
-### Step 3: Push Your Changes to GitHub
+### Step 3: Push Your Final Changes to GitHub
 
-Now that you've made the necessary changes, you need to save them to GitHub so Render can see them.
+You know the drill! Let's get this final, corrected version up to GitHub.
 
 1.  Open the terminal in VS Code.
-2.  Run the following commands one by one:
+2.  Run these three commands:
 
     ```bash
     git add .
     ```
     ```bash
-    git commit -m "Fix for live server and file structure"
+    git commit -m "Final fix for serving static files"
     ```
     ```bash
     git push
-  // Final check for deployment  
+    // Final check for deployment
 
