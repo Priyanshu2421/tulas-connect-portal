@@ -16,6 +16,11 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(UPLOADS_DIR));
 
+// --- NEW CODE: SERVE FRONTEND FILES ---
+// This tells Express to serve all files from the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+
 // Ensure uploads directories exist
 [UPLOADS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR].forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -26,6 +31,7 @@ const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
 // --- MULTER SETUP FOR FILE UPLOADS ---
+// ... (the rest of your multer setup code is here, no changes needed)
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         let destDir = UPLOADS_DIR;
@@ -38,14 +44,14 @@ const storage = multer.diskStorage({
         cb(null, `${Date.now()}-${file.originalname}`);
     }
 });
-// --- MODIFICATION: Added file size limit to Multer ---
 const upload = multer({
     storage: storage,
     limits: { fileSize: 12 * 1024 * 1024 } // 12 MB limit
 });
 
-// --- API ROUTES ---
 
+// --- API ROUTES ---
+// ... (all your API routes like /login, /users, etc. are here, no changes needed)
 // Login
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
@@ -552,9 +558,34 @@ app.get('/hod/dashboard/:department', (req, res) => {
 app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
 
 
-// --- SERVER START ---
-const PORT_RENDER = process.env.PORT || PORT;
-app.listen(PORT_RENDER, () => {
-    console.log(`TULA'S CONNECT server is running on port ${PORT_RENDER}`);
+// --- NEW CODE: CATCH-ALL TO SERVE THE FRONTEND ---
+// This must be AFTER all your API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+
+// --- SERVER START ---
+const LIVE_PORT = process.env.PORT || PORT;
+app.listen(LIVE_PORT, () => {
+    console.log(`TULA'S CONNECT server is running on port ${LIVE_PORT}`);
+});
+```
+
+### Step 3: Push Your Changes to GitHub
+
+Now that you've made the necessary changes, you need to save them to GitHub so Render can see them.
+
+1.  Open the terminal in VS Code.
+2.  Run the following commands one by one:
+
+    ```bash
+    git add .
+    ```
+    ```bash
+    git commit -m "Fix for live server and file structure"
+    ```
+    ```bash
+    git push
+    
 
