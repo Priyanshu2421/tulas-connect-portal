@@ -51,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const showForgotPasswordLink = document.getElementById('show-forgot-password-link');
     const showLoginLinkFromForgot = document.getElementById('show-login-link-from-forgot');
 
+    // NEW SELECTORS for the link containers
+    const forgotPasswordLinkWrapper = showForgotPasswordLink.parentElement;
+    const signupLinkWrapper = showSignupLink.parentElement;
+
     const loginContainer = document.getElementById('login-container');
     const signupContainer = document.getElementById('signup-container');
     const forgotPasswordContainer = document.getElementById('forgot-password-container');
@@ -63,6 +67,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     roleSelect.addEventListener('change', (e) => {
         departmentSelectContainer.classList.toggle('hidden', e.target.value !== 'Department Login');
+
+        // NEW: Hide/show links based on Admin role selection
+        const isAdminSelected = e.target.value === 'Admin';
+        forgotPasswordLinkWrapper.classList.toggle('hidden', isAdminSelected);
+        signupLinkWrapper.classList.toggle('hidden', isAdminSelected);
     });
 
     loginForm.addEventListener('submit', async (e) => {
@@ -188,6 +197,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    
+    // NEW: Remove "Admin" option from the public sign-up form for security
+    if (signupRoleSelect) {
+        const adminOption = Array.from(signupRoleSelect.options).find(option => option.text === 'Admin');
+        if (adminOption) {
+            adminOption.remove();
+        }
+    }
+
 
     function showDashboard(user) {
         document.getElementById('login-signup-wrapper').classList.add('hidden');
@@ -258,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'student-timetable': showStudentTimetable,
             'student-id-card': showStudentIdCard,
             'student-announcements': showStudentAnnouncements,
-            'student-leave': showStudentLeave, // New link
+            'student-leave': showStudentLeave, 
             'faculty-assignments': showFacultyAssignments,
             'faculty-timetable': showFacultyTimetable,
             'faculty-attendance': showFacultyAttendance,
@@ -266,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'faculty-search': showFacultySearch,
             'faculty-ml-insights': showFacultyMLInsights,
             'faculty-announcements': showFacultyAnnouncements,
-            'faculty-leave': showFacultyLeave, // New link
+            'faculty-leave': showFacultyLeave, 
             'hod-dashboard': showHODDashboard,
             'hod-faculty': showHODFaculty,
             'hod-announcements': showHODAnnouncements,
@@ -297,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'My Analytics', target: 'student-analytics'},
             { name: 'Assignments', target: 'student-assignments'},
             { name: 'Attendance', target: 'student-attendance'},
-            { name: 'Apply for Leave', target: 'student-leave'}, // New nav link
+            { name: 'Apply for Leave', target: 'student-leave'},
             { name: 'Fee Details', target: 'student-fees'},
             { name: 'Timetable', target: 'student-timetable'},
             { name: 'ID Card', target: 'student-id-card'},
@@ -310,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'My Profile', target: 'user-profile' },
             { name: 'Announcements', target: 'faculty-announcements' },
             { name: 'Assignments', target: 'faculty-assignments' },
-            { name: 'Leave Requests', target: 'faculty-leave' }, // New nav link
+            { name: 'Leave Requests', target: 'faculty-leave' },
             { name: 'ML Insights', target: 'faculty-ml-insights' },
             { name: 'Attendance', target: 'faculty-attendance' },
             { name: 'Marks', target: 'faculty-marks' },
@@ -1351,3 +1369,4 @@ document.addEventListener('DOMContentLoaded', () => {
         showDashboard(JSON.parse(loggedInUser));
     }
 });
+
