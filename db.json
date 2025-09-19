@@ -8,7 +8,7 @@
       "phone": "1234567890",
       "bloodGroup": "O+",
       "course": "B.Tech",
-      "department": "Computer Science and Engg", 
+      "department": "Computer Science and Engg",
       "academicYear": "2022-2026",
       "program": "Undergraduate",
       "batch": "A1",
@@ -334,84 +334,39 @@
       ],
       "schedule": {
         "Monday": [
-          {
-            "subject": "Algorithms",
-            "faculty": "Dr. Smith"
-          },
+          { "subject": "Algorithms", "faculty": "Dr. Smith" },
           null,
-          {
-            "subject": "DBMS",
-            "faculty": "Dr. Jones"
-          },
-          {
-            "subject": "OS",
-            "faculty": "Dr. Ada"
-          },
+          { "subject": "DBMS", "faculty": "Dr. Jones" },
+          { "subject": "OS", "faculty": "Dr. Ada" },
           null
         ],
         "Tuesday": [
           null,
-          {
-            "subject": "OS",
-            "faculty": "Dr. Ada"
-          },
+          { "subject": "OS", "faculty": "Dr. Ada" },
           null,
-          {
-            "subject": "Algorithms",
-            "faculty": "Dr. Smith"
-          },
-          {
-            "subject": "DBMS",
-            "faculty": "Dr. Jones"
-          }
+          { "subject": "Algorithms", "faculty": "Dr. Smith" },
+          { "subject": "DBMS", "faculty": "Dr. Jones" }
         ],
         "Wednesday": [
-          {
-            "subject": "DBMS",
-            "faculty": "Dr. Jones"
-          },
-          {
-            "subject": "Algorithms",
-            "faculty": "Dr. Smith"
-          },
+          { "subject": "DBMS", "faculty": "Dr. Jones" },
+          { "subject": "Algorithms", "faculty": "Dr. Smith" },
           null,
           null,
-          {
-            "subject": "OS",
-            "faculty": "Dr. Ada"
-          }
+          { "subject": "OS", "faculty": "Dr. Ada" }
         ],
         "Thursday": [
-          {
-            "subject": "OS",
-            "faculty": "Dr. Ada"
-          },
+          { "subject": "OS", "faculty": "Dr. Ada" },
           null,
-          {
-            "subject": "DBMS",
-            "faculty": "Dr. Jones"
-          },
-          {
-            "subject": "Algorithms",
-            "faculty": "Dr. Smith"
-          },
+          { "subject": "DBMS", "faculty": "Dr. Jones" },
+          { "subject": "Algorithms", "faculty": "Dr. Smith" },
           null
         ],
         "Friday": [
           null,
-          {
-            "subject": "DBMS",
-            "faculty": "Dr. Jones"
-          },
-          {
-            "subject": "OS",
-            "faculty": "Dr. Ada"
-          },
+          { "subject": "DBMS", "faculty": "Dr. Jones" },
+          { "subject": "OS", "faculty": "Dr. Ada" },
           null,
-          {
-            "subject": "Algorithms",
-            "faculty": "Dr. Smith"
-          }
+          { "subject": "Algorithms", "faculty": "Dr. Smith" }
         ]
       }
     }
@@ -426,41 +381,11 @@
         "2-3 PM"
       ],
       "schedule": {
-        "Monday": [
-          "Algorithms (A1)",
-          null,
-          null,
-          "OS (A2)",
-          null
-        ],
-        "Tuesday": [
-          null,
-          "OS (A2)",
-          null,
-          "Algorithms (A1)",
-          null
-        ],
-        "Wednesday": [
-          null,
-          "Algorithms (A1)",
-          "OS (A2)",
-          null,
-          null
-        ],
-        "Thursday": [
-          "OS (A2)",
-          null,
-          null,
-          "Algorithms (A1)",
-          null
-        ],
-        "Friday": [
-          null,
-          null,
-          "OS (A2)",
-          null,
-          "Algorithms (A1)"
-        ]
+        "Monday": [ "Algorithms (A1)", null, null, "OS (A2)", null ],
+        "Tuesday": [ null, "OS (A2)", null, "Algorithms (A1)", null ],
+        "Wednesday": [ null, "Algorithms (A1)", "OS (A2)", null, null ],
+        "Thursday": [ "OS (A2)", null, null, "Algorithms (A1)", null ],
+        "Friday": [ null, null, "OS (A2)", null, "Algorithms (A1)" ]
       }
     }
   },
@@ -468,53 +393,22 @@
     "B.Tech": {
       "semester": 5,
       "subjects": [
-        {
-          "subjectCode": "CS-501",
-          "subjectName": "Algorithms",
-          "faculty": "Dr. Jane Smith"
-        },
-        {
-          "subjectCode": "CS-502",
-          "subjectName": "Database Systems",
-          "faculty": "Dr. Alan Jones"
-        },
-        {
-          "subjectCode": "CS-503",
-          "subjectName": "Operating Systems",
-          "faculty": "Dr. Ada Lovelace"
-        }
+        { "subjectCode": "CS-501", "subjectName": "Algorithms", "faculty": "Dr. Jane Smith" },
+        { "subjectCode": "CS-502", "subjectName": "Database Systems", "faculty": "Dr. Alan Jones" },
+        { "subjectCode": "CS-503", "subjectName": "Operating Systems", "faculty": "Dr. Ada Lovelace" }
       ]
     }
   },
   "departmentPrograms": {
     "Computer Science and Engg": [
-      {
-        "programName": "B.Tech in Computer Science and Engineering",
-        "degree": "B.Tech",
-        "specialization": "Core"
-      },
-      {
-        "programName": "B.Tech in CSE (AI & ML)",
-        "degree": "B.Tech",
-        "specialization": "Artificial Intelligence & Machine Learning"
-      },
-      {
-        "programName": "M.Tech in Computer Science and Engineering",
-        "degree": "M.Tech",
-        "specialization": "Core"
-      }
+      { "programName": "B.Tech in Computer Science and Engineering", "degree": "B.Tech", "specialization": "Core" },
+      { "programName": "B.Tech in CSE (AI & ML)", "degree": "B.Tech", "specialization": "Artificial Intelligence & Machine Learning" },
+      { "programName": "M.Tech in Computer Science and Engineering", "degree": "M.Tech", "specialization": "Core" }
     ],
     "Dept of Computer Application": [
-      {
-        "programName": "Bachelor of Computer Applications",
-        "degree": "BCA",
-        "specialization": "General"
-      },
-      {
-        "programName": "Master of Computer Applications",
-        "degree": "MCA",
-        "specialization": "General"
-      }
+      { "programName": "Bachelor of Computer Applications", "degree": "BCA", "specialization": "General" },
+      { "programName": "Master of Computer Applications", "degree": "MCA", "specialization": "General" }
     ]
-  }
-} 
+  },
+  "leaveRequests": []
+}
