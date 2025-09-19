@@ -23,7 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/debug-ls', (req, res) => {
     const a = require('child_process').execSync('ls -laR').toString().replace(/\n/g, '<br>');
     res.send(a);
-});
+}); 
 
 // --- INITIALIZE DATABASE AND FOLDERS ---
 // This ensures the necessary files and folders exist before the server starts

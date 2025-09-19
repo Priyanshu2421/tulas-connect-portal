@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.innerHTML = `<div class="text-center text-red-500 p-8 bg-white rounded-lg shadow">Error loading profile data.</div>`;
         }
     }
-
+ 
     function showUserProfileEditForm(profile) {
         document.getElementById('profile-view').classList.add('hidden');
         const editContainer = document.getElementById('profile-edit');
