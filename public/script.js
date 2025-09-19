@@ -987,7 +987,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function showAdminTimetables() {
-        const departmentOptions = `<option value="">-- Select a Department --</option><option>Computer Science and Engg</option><option>Dept of Computer Application</option><option>Graduate School of Business</option><option>Dept of Mechanical Engg</option><option>Dept of ECE</option><option>Dept of Electronics and Communication Engg</option><option>Dept of Civil Engg</option><option>Dept of Applied Science</option><option>Dept of Agriculture</option><option>Dept of Pharmacy</option>`;
+        const departmentOptions = `
+            <option value="">-- Select a Department --</option>
+            <option>Department of Computer Science & Engineering</option>
+            <option>Department of Civil Engineering</option>
+            <option>Department of Mechanical Engineering</option>
+            <option>Department of Electrical Engineering</option>
+            <option>Department of Applied Science & Humanities</option>
+            <option>Graduate School of Business</option>
+            <option>Department of Agriculture</option>
+            <option>Department of Computer Application</option>
+            <option>Department of Journalism & Communication</option>
+            <option>Tula's Institute of Pharmacy</option>
+        `;
 
         mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg"><div id="timetable-main-view"><h2 class="text-2xl font-bold mb-6">Manage Timetables</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label for="timetable-department-filter" class="block text-sm font-medium text-gray-700 mb-1">Step 1: Department</label><select id="timetable-department-filter" class="w-full p-2 border rounded-md shadow-sm">${departmentOptions}</select></div><div id="timetable-course-container" class="hidden"></div><div id="timetable-year-container" class="hidden"></div></div><div id="timetable-selection-container" class="mt-6"></div></div><div id="timetable-edit-container" class="hidden"></div></div>`;
 
