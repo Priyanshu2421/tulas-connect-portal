@@ -1,0 +1,5 @@
+# Ignore the live database file
+db.json
+
+# Ignore Node.js dependencies
+node_modules/
