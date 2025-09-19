@@ -19,6 +19,12 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// A temporary route to list files for debugging
+app.get('/debug-ls', (req, res) => {
+    const a = require('child_process').execSync('ls -laR').toString().replace(/\n/g, '<br>');
+    res.send(a);
+});
+
 // --- INITIALIZE DATABASE AND FOLDERS ---
 // This ensures the necessary files and folders exist before the server starts
 const initializeServer = () => {
