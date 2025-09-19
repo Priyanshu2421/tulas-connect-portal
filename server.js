@@ -585,6 +585,25 @@ app.get('/hod/dashboard/:department', (req, res) => {
 // --- MISC ---
 app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
 
+// --- Temporary Route to View Live DB ---
+// IMPORTANT: Choose your own secret password/key!
+const VIEW_DB_SECRET = 'TulasConnectSuperSecretKey2025';
+
+app.get('/view-db-contents', (req, res) => {
+    // We check for a 'secret' key in the URL
+    if (req.query.secret === VIEW_DB_SECRET) {
+        try {
+            // readDB is the helper function you already have
+            const dbData = readDB(); 
+            res.json(dbData); // Send the data as a JSON response
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Could not read db.json file.' });
+        }
+    } else {
+        // If the secret is wrong or missing, deny access
+        res.status(403).json({ success: false, message: 'Forbidden: Invalid secret key.' });
+    }
+});
 
 // --- CATCH-ALL ROUTE FOR SERVING THE FRONTEND ---
 // This must be the last route in the file
