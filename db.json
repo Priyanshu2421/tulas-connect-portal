@@ -1,414 +1,118 @@
 {
   "users": {
-    "student.user": {
+    "2023012039": {
       "pass": "password",
-      "name": "Alex Doe",
+      "name": "Priyanshu Bisht",
       "role": "Student",
-      "email": "alex.doe@example.com",
-      "phone": "1234567890",
-      "bloodGroup": "O+",
-      "course": "B.Tech",
-      "department": "Computer Science and Engg",
-      "academicYear": "2022-2026",
-      "program": "Undergraduate",
-      "batch": "A1",
-      "address": "123 College Road, Dehradun",
-      "dob": "2004-05-15",
-      "photoUrl": "/uploads/1757416736384-R1.jpg"
-    },
-    "student.two": {
-      "pass": "password",
-      "name": "Priya Singh",
-      "role": "Student",
-      "email": "priya.singh@example.com",
-      "phone": "9876543210",
-      "bloodGroup": "B+",
-      "course": "B.Tech",
-      "department": "Computer Science and Engg",
-      "academicYear": "2022-2026",
-      "program": "Undergraduate",
-      "batch": "A1",
-      "address": "22B Rajpur Road, Dehradun",
-      "dob": "2004-08-22",
+      "department": "Department of Computer Application",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "course": "",
+      "academicYear": "",
+      "program": "",
+      "batch": "",
+      "address": "",
+      "dob": "",
       "photoUrl": ""
     },
-    "faculty.user": {
+    "2023016039": {
       "pass": "password",
-      "name": "Dr. Jane Smith",
-      "role": "Faculty",
-      "email": "jane.smith@example.com",
-      "phone": "0987654321",
-      "bloodGroup": "A+",
-      "department": "Computer Science and Engg",
-      "address": "456 University Ave, Dehradun",
-      "dob": "1985-11-20",
-      "photoUrl": ""
-    },
-    "faculty.two": {
-      "pass": "password",
-      "name": "Prof. Alan Jones",
-      "role": "Faculty",
-      "email": "alan.jones@example.com",
-      "phone": "0987654322",
-      "bloodGroup": "AB+",
-      "department": "Computer Science and Engg",
-      "address": "789 Tech Park, Dehradun",
-      "dob": "1980-01-15",
+      "name": "Raushan Kumar",
+      "role": "Student",
+      "department": "Department of Agriculture",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "course": "",
+      "academicYear": "",
+      "program": "",
+      "batch": "",
+      "address": "",
+      "dob": "",
       "photoUrl": ""
     },
     "admin.user": {
       "pass": "password",
       "name": "Admin User",
       "role": "Admin",
+      "department": "Administration",
       "email": "admin@example.com",
       "phone": "5555555555",
-      "bloodGroup": "B+",
-      "department": "Administration",
-      "address": "789 Admin Block, Dehradun",
-      "dob": "1980-01-01",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
       "photoUrl": ""
     },
-    "hod.cse": {
+    "siddharth.tulas.in": {
       "pass": "password",
-      "name": "Dr. Ramesh Kumar",
-      "role": "HOD",
-      "email": "hod.cse@example.com",
-      "department": "Computer Science and Engg"
+      "name": "Siddharth Sharma",
+      "role": "Faculty",
+      "department": "Department of Computer Application",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
     },
-    "hod.ca": {
-      "pass": "password",
-      "name": "Dr. Sunita Gupta",
+    "hod.catulas.in": {
+      "pass": "2025",
+      "name": "HOD Computer Application",
       "role": "HOD",
-      "email": "hod.ca@example.com",
-      "department": "Dept of Computer Application"
-    },
-    "hod.gsb": {
-      "pass": "password",
-      "name": "Dr. Devashish Kazi",
-      "role": "HOD",
-      "email": "hod.gsb@tulas.edu.in",
-      "department": "Graduate School of Business",
-      "photoUrl": "/uploads/1757421012161-D.jpg"
-    },
-    "hod.me": {
-      "pass": "password",
-      "name": "Dr. Rajesh Singh",
-      "role": "HOD",
-      "email": "hod.me@example.com",
-      "department": "Dept of Mechanical Engg"
-    },
-    "hod.ece": {
-      "pass": "password",
-      "name": "Dr. Priya Sharma",
-      "role": "HOD",
-      "email": "hod.ece@example.com",
-      "department": "Dept of ECE"
-    },
-    "hod.eс": {
-      "pass": "password",
-      "name": "Dr. Amit Patel",
-      "role": "HOD",
-      "email": "hod.ec@example.com",
-      "department": "Dept of Electronics and Communication Engg"
-    },
-    "hod.civil": {
-      "pass": "password",
-      "name": "Dr. Vikram Rathore",
-      "role": "HOD",
-      "email": "hod.civil@example.com",
-      "department": "Dept of Civil Engg"
-    },
-    "hod.as": {
-      "pass": "password",
-      "name": "Dr. Meena Kumari",
-      "role": "HOD",
-      "email": "hod.as@example.com",
-      "department": "Dept of Applied Science"
-    },
-    "hod.ag": {
-      "pass": "password",
-      "name": "Dr. Harish Negi",
-      "role": "HOD",
-      "email": "hod.ag@example.com",
-      "department": "Dept of Agriculture"
-    },
-    "hod.pharm": {
-      "pass": "password",
-      "name": "Dr. Suresh Tiwari",
-      "role": "HOD",
-      "email": "hod.pharm@example.com",
-      "department": "Dept of Pharmacy"
+      "department": "Department of Computer Application",
+      "email": "hod.ca@tulas.in",
+      "phone": "",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
     }
   },
-  "idCardRequests": [
-    {
-      "userId": "student.two",
-      "userName": "Priya Singh",
-      "photoUrl": "/uploads/1725799988960-user-photo.jpg",
-      "status": "Denied",
-      "reason": "The Information Is Not Correct"
-    },
-    {
-      "userId": "student.user",
-      "userName": "Alex Doe",
-      "photoUrl": "/uploads/1757416736384-R1.jpg",
-      "status": "Approved"
-    }
-  ],
+  "idCardRequests": [],
   "signupRequests": [],
-  "passwordRequests": [
-    {
-      "userId": "student.user",
-      "newPass": "password",
-      "userName": "Alex Doe"
-    }
-  ],
-  "announcements": [
-    {
-      "text": "Hello Students Meet Your New GSB HOD DR.Devashish Kazi ",
-      "date": "2025-09-09T12:41:17.083Z"
-    }
-  ],
-  "attendanceRecords": [
-    {
-      "studentId": "student.user",
-      "status": "P",
-      "date": "2025-09-01",
-      "class": "CS-301"
-    },
-    {
-      "studentId": "student.user",
-      "status": "A",
-      "date": "2025-09-02",
-      "class": "CS-301"
-    },
-    {
-      "studentId": "student.two",
-      "status": "P",
-      "date": "2025-09-01",
-      "class": "CS-301"
-    },
-    {
-      "studentId": "student.user",
-      "status": "P",
-      "date": "2025-09-09",
-      "class": "CS-301"
-    },
-    {
-      "studentId": "student.two",
-      "status": "A",
-      "date": "2025-09-09",
-      "class": "CS-301"
-    }
-  ],
-  "assignments": [
-    {
-      "id": "asg-1725800458814",
-      "title": "Data Structures Lab 1",
-      "description": "Implement a linked list.",
-      "dueDate": "2025-09-15",
-      "createdAt": "2025-09-08T12:00:00.000Z",
-      "filePath": null
-    },
-    {
-      "id": "asg-1757342264217",
-      "title": "MIS",
-      "description": "Do This In You Practical Copies",
-      "dueDate": "2025-09-15",
-      "createdAt": "2025-09-08T14:37:44.217Z",
-      "filePath": "/uploads/assignments/1757342264205-E-Challan (1).jpg"
-    }
-  ],
-  "submissions": [
-    {
-      "id": "sub-1757342303447",
-      "assignmentId": "asg-1757342264217",
-      "studentId": "student.user",
-      "submittedAt": "2025-09-08T14:38:23.447Z",
-      "filePath": "/uploads/submissions/1757342303443-R CV.docx",
-      "status": "Denied",
-      "reason": "Do it in hardcopy not in softcopy"
-    }
-  ],
-  "marks": {
-    "student.user": [
-      {
-        "subjectCode": "CS-501",
-        "subjectName": "Algorithms",
-        "marksObtained": 95,
-        "maxMarks": 100,
-        "gradePoint": 9,
-        "studentId": "student.user"
-      },
-      {
-        "subjectCode": "CS-502",
-        "subjectName": "Database Systems",
-        "marksObtained": 78,
-        "maxMarks": 100,
-        "gradePoint": 8
-      }
-    ],
-    "student.two": [
-      {
-        "subjectCode": "CS-501",
-        "subjectName": "Algorithms",
-        "marksObtained": 54,
-        "maxMarks": 100,
-        "gradePoint": 5,
-        "studentId": "student.two"
-      }
-    ]
-  },
-  "historicalPerformance": [
-    {
-      "studentId": "hist-01",
-      "semester": 1,
-      "cgpa": 8.5,
-      "attendance": 92
-    },
-    {
-      "studentId": "hist-01",
-      "semester": 2,
-      "cgpa": 8.6,
-      "attendance": 90
-    },
-    {
-      "studentId": "hist-02",
-      "semester": 1,
-      "cgpa": 7.2,
-      "attendance": 78
-    },
-    {
-      "studentId": "hist-02",
-      "semester": 2,
-      "cgpa": 7.5,
-      "attendance": 80
-    },
-    {
-      "studentId": "hist-03",
-      "semester": 1,
-      "cgpa": 6.1,
-      "attendance": 65
-    },
-    {
-      "studentId": "hist-03",
-      "semester": 2,
-      "cgpa": 6.4,
-      "attendance": 68
-    }
-  ],
-  "fees": {
-    "student.user": {
-      "fees": {
-        "total": 120000,
-        "paid": 100000,
-        "due": 20000
-      },
-      "transport": {
-        "status": "Active",
-        "route": "City Route 1",
-        "vehicleNumber": "UK07-1234"
-      }
-    },
-    "student.two": {
-      "fees": {
-        "total": 120000,
-        "paid": 120000,
-        "due": 0
-      },
-      "transport": {
-        "status": "Not Availed",
-        "route": "N/A",
-        "vehicleNumber": "N/A"
-      }
-    }
-  },
-  "studentTimetables": {
-    "A1": {
-      "timeSlots": [
-        "9-10 AM",
-        "10-11 AM",
-        "11-12 PM",
-        "1-2 PM",
-        "2-3 PM"
-      ],
-      "schedule": {
-        "Monday": [
-          { "subject": "Algorithms", "faculty": "Dr. Smith" },
-          null,
-          { "subject": "DBMS", "faculty": "Dr. Jones" },
-          { "subject": "OS", "faculty": "Dr. Ada" },
-          null
-        ],
-        "Tuesday": [
-          null,
-          { "subject": "OS", "faculty": "Dr. Ada" },
-          null,
-          { "subject": "Algorithms", "faculty": "Dr. Smith" },
-          { "subject": "DBMS", "faculty": "Dr. Jones" }
-        ],
-        "Wednesday": [
-          { "subject": "DBMS", "faculty": "Dr. Jones" },
-          { "subject": "Algorithms", "faculty": "Dr. Smith" },
-          null,
-          null,
-          { "subject": "OS", "faculty": "Dr. Ada" }
-        ],
-        "Thursday": [
-          { "subject": "OS", "faculty": "Dr. Ada" },
-          null,
-          { "subject": "DBMS", "faculty": "Dr. Jones" },
-          { "subject": "Algorithms", "faculty": "Dr. Smith" },
-          null
-        ],
-        "Friday": [
-          null,
-          { "subject": "DBMS", "faculty": "Dr. Jones" },
-          { "subject": "OS", "faculty": "Dr. Ada" },
-          null,
-          { "subject": "Algorithms", "faculty": "Dr. Smith" }
-        ]
-      }
-    }
-  },
-  "facultyTimetables": {
-    "faculty.user": {
-      "timeSlots": [
-        "9-10 AM",
-        "10-11 AM",
-        "11-12 PM",
-        "1-2 PM",
-        "2-3 PM"
-      ],
-      "schedule": {
-        "Monday": [ "Algorithms (A1)", null, null, "OS (A2)", null ],
-        "Tuesday": [ null, "OS (A2)", null, "Algorithms (A1)", null ],
-        "Wednesday": [ null, "Algorithms (A1)", "OS (A2)", null, null ],
-        "Thursday": [ "OS (A2)", null, null, "Algorithms (A1)", null ],
-        "Friday": [ null, null, "OS (A2)", null, "Algorithms (A1)" ]
-      }
-    }
-  },
-  "curriculum": {
-    "B.Tech": {
-      "semester": 5,
-      "subjects": [
-        { "subjectCode": "CS-501", "subjectName": "Algorithms", "faculty": "Dr. Jane Smith" },
-        { "subjectCode": "CS-502", "subjectName": "Database Systems", "faculty": "Dr. Alan Jones" },
-        { "subjectCode": "CS-503", "subjectName": "Operating Systems", "faculty": "Dr. Ada Lovelace" }
-      ]
-    }
-  },
+  "passwordRequests": [],
+  "announcements": [],
+  "attendanceRecords": [],
+  "assignments": [],
+  "submissions": [],
+  "marks": {},
+  "historicalPerformance": [],
+  "fees": {},
+  "studentTimetables": {},
+  "facultyTimetables": {},
+  "curriculum": {},
   "departmentPrograms": {
     "Computer Science and Engg": [
-      { "programName": "B.Tech in Computer Science and Engineering", "degree": "B.Tech", "specialization": "Core" },
-      { "programName": "B.Tech in CSE (AI & ML)", "degree": "B.Tech", "specialization": "Artificial Intelligence & Machine Learning" },
-      { "programName": "M.Tech in Computer Science and Engineering", "degree": "M.Tech", "specialization": "Core" }
+      {
+        "programName": "B.Tech in Computer Science and Engineering",
+        "degree": "B.Tech",
+        "specialization": "Core"
+      },
+      {
+        "programName": "B.Tech in CSE (AI & ML)",
+        "degree": "B.Tech",
+        "specialization": "Artificial Intelligence & Machine Learning"
+      },
+      {
+        "programName": "M.Tech in Computer Science and Engineering",
+        "degree": "M.Tech",
+        "specialization": "Core"
+      }
     ],
     "Dept of Computer Application": [
-      { "programName": "Bachelor of Computer Applications", "degree": "BCA", "specialization": "General" },
-      { "programName": "Master of Computer Applications", "degree": "MCA", "specialization": "General" }
+      {
+        "programName": "Bachelor of Computer Applications",
+        "degree": "BCA",
+        "specialization": "General"
+      },
+      {
+        "programName": "Master of Computer Applications",
+        "degree": "MCA",
+        "specialization": "General"
+      }
     ]
   },
   "leaveRequests": []
 }
+
