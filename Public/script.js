@@ -1,6 +1,5 @@
 // --- UTILITY FUNCTIONS ---
-const IS_LIVE = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_BASE_URL = IS_LIVE ? `https://${window.location.hostname}` : 'http://localhost:3000';
+const API_BASE_URL = '';
 function showNotification(message, isError = false) {
     const toast = document.getElementById('notification-toast');
     const messageP = document.getElementById('notification-message');
