@@ -38,7 +38,7 @@ const initializeServer = () => {
                 users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
                 announcements: [], attendanceRecords: [], assignments: [], submissions: [],
                 marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
-                facultyTimetables: {}, curriculum: {}, departmentPrograms: {}, leaveRequests: [] // <-- Added leaveRequests
+                facultyTimetables: {}, curriculum: {}, departmentPrograms: {}, leaveRequests: []
             };
             fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
         }
@@ -70,11 +70,27 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 12 * 1024 * 1024 }
+    limits: { fileSize: 15 * 1024 * 1024 } // Increased limit to 15MB
 });
 
 
-// --- ALL API ROUTES GO HERE ---
+// --- ALL API ROUTES ---
+
+// --- Temporary Route to View Live DB ---
+const VIEW_DB_SECRET = 'TulasConnectSuperSecretKey2025';
+app.get('/view-db-contents', (req, res) => {
+    if (req.query.secret === VIEW_DB_SECRET) {
+        try {
+            const dbData = readDB(); 
+            res.json(dbData);
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Could not read db.json file.' });
+        }
+    } else {
+        res.status(403).json({ success: false, message: 'Forbidden: Invalid secret key.' });
+    }
+});
+
 
 // Login
 app.post('/login', (req, res) => {
@@ -138,21 +154,6 @@ app.get('/users', (req, res) => {
     res.json({ success: true, users: usersArray });
 });
 
-app.post('/users', (req, res) => {
-    const db = readDB();
-    const { userId, ...newUser } = req.body;
-    if (!userId || !newUser.name || !newUser.pass || !newUser.role) {
-        return res.status(400).json({ success: false, message: 'Missing required fields.' });
-    }
-    if (db.users[userId]) {
-        return res.status(409).json({ success: false, message: 'User ID already exists.' });
-    }
-    db.users[userId] = { ...newUser, photoUrl: '' };
-    writeDB(db);
-    const { pass, ...userResponse } = newUser;
-    res.status(201).json({ success: true, user: { ...userResponse, id: userId } });
-});
-
 app.delete('/users/:userId', (req, res) => {
     const { userId } = req.params;
     const db = readDB();
@@ -165,8 +166,7 @@ app.delete('/users/:userId', (req, res) => {
     }
 });
 
-
-// --- SIGNUP REQUESTS ---
+// --- SIGNUP & PASSWORD REQUESTS ---
 app.post('/signup', (req, res) => {
     const db = readDB();
     const { userId } = req.body;
@@ -177,29 +177,20 @@ app.post('/signup', (req, res) => {
     writeDB(db);
     res.status(201).json({ success: true, message: 'Request submitted for approval.' });
 });
-
 app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
-
 app.post('/resolve-signup', (req, res) => {
     const { userId, action } = req.body;
     const db = readDB();
     const requestIndex = db.signupRequests.findIndex(r => r.userId === userId);
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
-
     if (action === 'approve') {
         const request = db.signupRequests[requestIndex];
-        db.users[request.userId] = {
-            pass: request.pass, name: request.name, role: request.role, email: request.email,
-            phone: "", bloodGroup: "", department: request.department || "", address: "", dob: "", photoUrl: ""
-        };
+        db.users[request.userId] = { pass: request.pass, name: request.name, role: request.role, email: request.email, phone: "", bloodGroup: "", department: request.department || "", address: "", dob: "", photoUrl: "", course: "", batch: "", program: "" };
     }
     db.signupRequests.splice(requestIndex, 1);
     writeDB(db);
     res.json({ success: true, message: `Request ${action}d.` });
 });
-
-
-// --- PASSWORD REQUESTS ---
 app.post('/forgot-password', (req, res) => {
     const { userId, newPass } = req.body;
     const db = readDB();
@@ -212,15 +203,12 @@ app.post('/forgot-password', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: 'Password reset request sent for approval.' });
 });
-
 app.get('/password-requests', (req, res) => res.json(readDB().passwordRequests));
-
 app.post('/resolve-password-request', (req, res) => {
     const { userId, action } = req.body;
     const db = readDB();
     const requestIndex = db.passwordRequests.findIndex(r => r.userId === userId);
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
-
     const request = db.passwordRequests[requestIndex];
     if (action === 'approve' && db.users[userId]) {
         db.users[userId].pass = request.newPass;
@@ -230,13 +218,11 @@ app.post('/resolve-password-request', (req, res) => {
     res.json({ success: true, message: `Request for ${request.userName} has been ${action}d.` });
 });
 
-
 // --- ASSIGNMENTS & SUBMISSIONS ---
 app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
     const db = readDB();
     const newAssignment = {
-        id: `asg-${Date.now()}`,
-        ...req.body,
+        id: `asg-${Date.now()}`, ...req.body,
         createdAt: new Date().toISOString(),
         filePath: req.file ? `/uploads/assignments/${req.file.filename}` : null
     };
@@ -244,30 +230,23 @@ app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
     writeDB(db);
     res.status(201).json({ success: true, assignment: newAssignment });
 });
-
 app.get('/assignments', (req, res) => res.json(readDB().assignments));
-
 app.post('/submissions', upload.single('submissionFile'), (req, res) => {
     const db = readDB();
     const { assignmentId, studentId } = req.body;
     if (!req.file) { return res.status(400).json({ success: false, message: 'No file submitted.' }); }
     const newSubmission = {
-        id: `sub-${Date.now()}`,
-        assignmentId,
-        studentId,
+        id: `sub-${Date.now()}`, assignmentId, studentId,
         submittedAt: new Date().toISOString(),
         filePath: `/uploads/submissions/${req.file.filename}`,
-        status: 'Pending',
-        reason: null
+        status: 'Pending', reason: null
     };
     db.submissions = db.submissions.filter(s => !(s.assignmentId === assignmentId && s.studentId === studentId));
     db.submissions.push(newSubmission);
     writeDB(db);
     res.status(201).json({ success: true, submission: newSubmission });
 });
-
 app.get('/submissions/student/:studentId', (req, res) => res.json(readDB().submissions.filter(s => s.studentId === req.params.studentId)));
-
 app.get('/submissions', (req, res) => {
     const db = readDB();
     const submissionsWithNames = db.submissions.map(sub => {
@@ -276,7 +255,6 @@ app.get('/submissions', (req, res) => {
     });
     res.json(submissionsWithNames);
 });
-
 app.post('/submissions/resolve', (req, res) => {
     const { submissionId, status, reason } = req.body;
     const db = readDB();
@@ -291,101 +269,29 @@ app.post('/submissions/resolve', (req, res) => {
     }
 });
 
-// --- NEW FEATURE: LEAVE REQUESTS ---
-
-// Student applies for leave
-app.post('/leave-requests', (req, res) => {
-    const db = readDB();
-    const { studentId, studentName, startDate, endDate, reason } = req.body;
-    
-    if (!studentId || !studentName || !startDate || !endDate || !reason) {
-        return res.status(400).json({ success: false, message: 'All fields are required.' });
-    }
-
-    const newLeaveRequest = {
-        id: `leave-${Date.now()}`,
-        studentId,
-        studentName,
-        startDate,
-        endDate,
-        reason,
-        status: 'Pending',
-        denialReason: null,
-        resolvedBy: null,
-        requestedAt: new Date().toISOString()
-    };
-
-    db.leaveRequests.push(newLeaveRequest);
-    writeDB(db);
-    res.status(201).json({ success: true, message: 'Leave request submitted.', leaveRequest: newLeaveRequest });
-});
-
-// Student gets their own leave requests
-app.get('/leave-requests/student/:studentId', (req, res) => {
-    const { studentId } = req.params;
-    const db = readDB();
-    const requests = db.leaveRequests.filter(req => req.studentId === studentId);
-    res.json(requests);
-});
-
-// Faculty gets all leave requests
-app.get('/leave-requests', (req, res) => {
-    const db = readDB();
-    // In a real app, you might filter by department
-    // For now, faculty sees all requests
-    res.json(db.leaveRequests);
-});
-
-// Faculty resolves a leave request
-app.post('/leave-requests/resolve', (req, res) => {
-    const { requestId, status, denialReason, resolvedBy } = req.body;
-    const db = readDB();
-    const request = db.leaveRequests.find(r => r.id === requestId);
-
-    if (request) {
-        request.status = status;
-        request.resolvedBy = resolvedBy;
-        if (status === 'Denied') {
-            request.denialReason = denialReason || 'No reason specified.';
-        }
-        writeDB(db);
-        res.json({ success: true, message: 'Leave request has been updated.' });
-    } else {
-        res.status(404).json({ success: false, message: 'Leave request not found.' });
-    }
-});
-
-
 // --- STUDENT-SPECIFIC INFO ---
 app.get('/analytics/:studentId', (req, res) => {
     const { studentId } = req.params;
     const db = readDB();
     const marksData = db.marks[studentId] || [];
     const attendanceData = db.attendanceRecords.filter(rec => rec.studentId === studentId);
-
     if (marksData.length === 0 && attendanceData.length === 0) {
-        return res.json({ success: true, analytics: { attendancePercentage: 0, overallPercentage: 0, cgpa: 0, subjectWiseMarks: [] }});
+        return res.json({ success: true, analytics: { attendancePercentage: 0, overallPercentage: 0, cgpa: 0, subjectWiseMarks: [] } });
     }
-
     const totalRecords = attendanceData.length;
     const presentDays = attendanceData.filter(rec => rec.status === 'P').length;
     const attendancePercentage = totalRecords > 0 ? ((presentDays / totalRecords) * 100).toFixed(2) : 0;
-
     const { totalMarksObtained, totalMaxMarks, totalGradePoints } = marksData.reduce((acc, subject) => {
         acc.totalMarksObtained += subject.marksObtained;
         acc.totalMaxMarks += subject.maxMarks;
         acc.totalGradePoints += subject.gradePoint;
         return acc;
     }, { totalMarksObtained: 0, totalMaxMarks: 0, totalGradePoints: 0 });
-
     const overallPercentage = totalMaxMarks > 0 ? ((totalMarksObtained / totalMaxMarks) * 100).toFixed(2) : 0;
     const cgpa = marksData.length > 0 ? (totalGradePoints / marksData.length).toFixed(2) : 0;
-
     res.json({ success: true, analytics: { attendancePercentage, overallPercentage, cgpa, subjectWiseMarks: marksData } });
 });
-
 app.get('/fees/:userId', (req, res) => res.json(readDB().fees[req.params.userId] || { fees: {}, transport: {} }));
-
 app.get('/attendance/student/:studentId', (req, res) => res.json(readDB().attendanceRecords.filter(a => a.studentId === req.params.studentId)));
 
 // --- TIMETABLES ---
@@ -398,7 +304,6 @@ app.get('/timetable/student/:userId', (req, res) => {
         res.status(404).json({ success: false, message: 'Timetable not found.' });
     }
 });
-
 app.get('/timetable/faculty/:facultyId', (req, res) => {
     const db = readDB();
     if (db.facultyTimetables[req.params.facultyId]) {
@@ -407,15 +312,10 @@ app.get('/timetable/faculty/:facultyId', (req, res) => {
         res.status(404).json({ success: false, message: 'Timetable not found.' });
     }
 });
-
 app.get('/timetables', (req, res) => {
     const db = readDB();
-    res.json({
-        student: db.studentTimetables,
-        faculty: db.facultyTimetables
-    });
+    res.json({ student: db.studentTimetables, faculty: db.facultyTimetables });
 });
-
 app.post('/timetables/student/:batch', (req, res) => {
     const { batch } = req.params;
     const { schedule } = req.body;
@@ -428,7 +328,6 @@ app.post('/timetables/student/:batch', (req, res) => {
         res.status(404).json({ success: false, message: 'Batch not found.' });
     }
 });
-
 app.post('/timetables/faculty/:facultyId', (req, res) => {
     const { facultyId } = req.params;
     const { schedule } = req.body;
@@ -457,7 +356,6 @@ app.post('/attendance', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: 'Attendance recorded.' });
 });
-
 app.post('/marks', (req, res) => {
     const { records } = req.body;
     const db = readDB();
@@ -476,20 +374,19 @@ app.post('/marks', (req, res) => {
     res.json({ success: true, message: 'Marks updated successfully.' });
 });
 
-// --- ID CARD REQUESTS ---
+// --- ID CARD REQUESTS (NEW & IMPROVED) ---
 app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
     if (req.fileValidationError) {
         return res.status(400).json({ success: false, message: req.fileValidationError });
     }
-    const { userId, name, phone, program, department, dob, bloodGroup } = req.body;
+    const { userId, name, course, batch, phone, bloodGroup } = req.body;
     if (!req.file) return res.status(400).json({ success: false, message: "Photo is required." });
-
     const db = readDB();
     const newRequest = {
-        userId, userName: name, phone, program, department, dob, bloodGroup,
-        photoUrl: `/uploads/${req.file.filename}`, status: 'Pending'
+        userId, userName: name, course, batch, phone, bloodGroup,
+        photoUrl: `/uploads/${req.file.filename}`,
+        status: 'Pending'
     };
-
     const existingIndex = db.idCardRequests.findIndex(r => r.userId === userId);
     if (existingIndex > -1) {
         if (db.idCardRequests[existingIndex].status === 'Denied') {
@@ -500,19 +397,15 @@ app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
     } else {
         db.idCardRequests.push(newRequest);
     }
-
     writeDB(db);
     res.json({ success: true, message: 'ID card request submitted.' });
 });
-
 app.get('/id-card-status/:userId', (req, res) => {
     const { userId } = req.params;
     const request = readDB().idCardRequests.find(r => r.userId === userId);
     res.json(request || { status: 'Not Applied' });
 });
-
 app.get('/id-card-requests', (req, res) => res.json(readDB().idCardRequests));
-
 app.post('/resolve-id-card-request', (req, res) => {
     const { userId, action, reason } = req.body;
     const db = readDB();
@@ -522,7 +415,12 @@ app.post('/resolve-id-card-request', (req, res) => {
     if (action === 'approve') {
         request.status = 'Approved';
         if (db.users[userId]) {
+            // Update the main user profile with the approved data
             db.users[userId].photoUrl = request.photoUrl;
+            db.users[userId].phone = request.phone;
+            db.users[userId].bloodGroup = request.bloodGroup;
+            db.users[userId].course = request.course;
+            db.users[userId].batch = request.batch;
         }
     } else {
         request.status = 'Denied';
@@ -532,11 +430,39 @@ app.post('/resolve-id-card-request', (req, res) => {
     res.json({ success: true, message: `Request has been ${action}d.` });
 });
 
+
+// --- LEAVE REQUESTS ---
+app.post('/leave-requests', (req, res) => {
+    const db = readDB();
+    const newRequest = { id: `leave-${Date.now()}`, ...req.body, status: 'Pending' };
+    db.leaveRequests.push(newRequest);
+    writeDB(db);
+    res.status(201).json({ success: true, request: newRequest });
+});
+app.get('/leave-requests/student/:studentId', (req, res) => {
+    const db = readDB();
+    res.json(db.leaveRequests.filter(r => r.studentId === req.params.studentId));
+});
+app.get('/leave-requests/faculty/:department', (req, res) => {
+    const db = readDB();
+    res.json(db.leaveRequests.filter(r => r.studentDepartment === req.params.department));
+});
+app.post('/leave-requests/resolve', (req, res) => {
+    const { requestId, status } = req.body;
+    const db = readDB();
+    const request = db.leaveRequests.find(r => r.id === requestId);
+    if (request) {
+        request.status = status;
+        writeDB(db);
+        res.json({ success: true, message: 'Request updated.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Request not found.' });
+    }
+});
+
+
 // --- ADMIN & HOD ---
-
-// --- ANNOUNCEMENT FEATURE ---
 app.get('/announcements', (req, res) => res.json(readDB().announcements));
-
 app.get('/announcements/feed', (req, res) => {
     const { role, department } = req.query;
     const db = readDB();
@@ -549,7 +475,6 @@ app.get('/announcements/feed', (req, res) => {
     });
     res.json({ success: true, announcements: feed });
 });
-
 app.post('/announcements', (req, res) => {
     const { text, authorName, authorRole, scope, department } = req.body;
     if (!text || !authorName || !authorRole || !scope) {
@@ -564,7 +489,6 @@ app.post('/announcements', (req, res) => {
     writeDB(db);
     res.status(201).json({ success: true, message: 'Announcement posted.', announcement: newAnnouncement });
 });
-
 app.delete('/announcements/:id', (req, res) => {
     const { id } = req.params;
     const db = readDB();
@@ -577,26 +501,26 @@ app.delete('/announcements/:id', (req, res) => {
         res.status(404).json({ success: false, message: 'Announcement not found.' });
     }
 });
-
-
 app.get('/curriculum', (req, res) => res.json(readDB().curriculum || {}));
-
 app.get('/hod/dashboard/:department', (req, res) => {
     const { department } = req.params;
     const db = readDB();
+    const students = Object.values(db.users).filter(u => u.department === department && u.role === 'Student');
     const studentIds = Object.keys(db.users).filter(id => db.users[id].department === department && db.users[id].role === 'Student');
-    const totalStudents = studentIds.length;
+    const totalStudents = students.length;
     const totalFaculty = Object.values(db.users).filter(u => u.department === department && u.role === 'Faculty').length;
     let totalAttendance = 0, attendanceRecordsCount = 0, totalCgpa = 0, studentsWithMarks = 0;
     studentIds.forEach(id => {
         const studentAttendance = db.attendanceRecords.filter(rec => rec.studentId === id);
         if (studentAttendance.length > 0) {
-            totalAttendance += (studentAttendance.filter(r => r.status === 'P').length / studentAttendance.length);
+            const present = studentAttendance.filter(r => r.status === 'P').length;
+            totalAttendance += (present / studentAttendance.length);
             attendanceRecordsCount++;
         }
         const studentMarks = db.marks[id];
         if (studentMarks && studentMarks.length > 0) {
-            totalCgpa += (studentMarks.reduce((sum, s) => sum + s.gradePoint, 0) / studentMarks.length);
+            const totalGradePoints = studentMarks.reduce((sum, s) => sum + s.gradePoint, 0);
+            totalCgpa += (totalGradePoints / studentMarks.length);
             studentsWithMarks++;
         }
     });
@@ -606,32 +530,18 @@ app.get('/hod/dashboard/:department', (req, res) => {
     res.json({ success: true, data: { totalStudents, totalFaculty, avgAttendance, avgCgpa, programs } });
 });
 
-
 // --- MISC ---
 app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
 
-// --- Temporary Route to View Live DB ---
-const VIEW_DB_SECRET = 'TulasConnectSuperSecretKey2025';
-app.get('/view-db-contents', (req, res) => {
-    if (req.query.secret === VIEW_DB_SECRET) {
-        try {
-            res.json(readDB());
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Could not read db.json file.' });
-        }
-    } else {
-        res.status(403).json({ success: false, message: 'Forbidden: Invalid secret key.' });
-    }
-});
 
 // --- CATCH-ALL ROUTE FOR SERVING THE FRONTEND ---
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-
 // --- SERVER START ---
 const LIVE_PORT = process.env.PORT || PORT;
 app.listen(LIVE_PORT, () => {
     console.log(`TULA'S CONNECT server is running on port ${LIVE_PORT}`);
 });
+
