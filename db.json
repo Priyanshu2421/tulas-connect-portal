@@ -1,0 +1,119 @@
+{
+  "users": {
+    "2023012039": {
+      "pass": "password",
+      "name": "Priyanshu Bisht",
+      "role": "Student",
+      "department": "Department of Computer Application",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "course": "",
+      "academicYear": "",
+      "program": "",
+      "batch": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
+    },
+    "2023016039": {
+      "pass": "password",
+      "name": "Raushan Kumar",
+      "role": "Student",
+      "department": "Department of Agriculture",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "course": "",
+      "academicYear": "",
+      "program": "",
+      "batch": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
+    },
+    "admin.user": {
+      "pass": "password",
+      "name": "Admin User",
+      "role": "Admin",
+      "department": "Administration",
+      "email": "admin@example.com",
+      "phone": "5555555555",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
+    },
+    "siddharth.tulas.in": {
+      "pass": "password",
+      "name": "Siddharth Sharma",
+      "role": "Faculty",
+      "department": "Department of Computer Application",
+      "email": "",
+      "phone": "",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
+    },
+    "hod.catulas.in": {
+      "pass": "2025",
+      "name": "HOD Computer Application",
+      "role": "HOD",
+      "department": "Department of Computer Application",
+      "email": "hod.ca@tulas.in",
+      "phone": "",
+      "bloodGroup": "",
+      "address": "",
+      "dob": "",
+      "photoUrl": ""
+    }
+  {
+  "users": {},
+  "idCardRequests": [],
+  "signupRequests": [],
+  "passwordRequests": [],
+  "announcements": [],
+  "attendanceRecords": [],
+  "assignments": [],
+  "submissions": [],
+  "marks": {},
+  "historicalPerformance": [],
+  "fees": {},
+  "studentTimetables": {},
+  "facultyTimetables": {},
+  "departmentPrograms": {},
+  "leaveRequests": []
+}
+      {
+        "programName": "B.Tech in Computer Science and Engineering",
+        "degree": "B.Tech",
+        "specialization": "Core"
+      },
+      {
+        "programName": "B.Tech in CSE (AI & ML)",
+        "degree": "B.Tech",
+        "specialization": "Artificial Intelligence & Machine Learning"
+      },
+      {
+        "programName": "M.Tech in Computer Science and Engineering",
+        "degree": "M.Tech",
+        "specialization": "Core"
+      }
+    ],
+    "Dept of Computer Application": [
+      {
+        "programName": "Bachelor of Computer Applications",
+        "degree": "BCA",
+        "specialization": "General"
+      },
+      {
+        "programName": "Master of Computer Applications",
+        "degree": "MCA",
+        "specialization": "General"
+      }
+    ]
+  },
+  "leaveRequests": []
+}
+

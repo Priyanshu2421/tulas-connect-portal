@@ -7,9 +7,12 @@ const multer = require('multer');
 const app = express();
 const PORT = 3000;
 const DB_PATH = path.join(__dirname, 'db.json');
-const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads'); // Serve uploads from public
+const PROFILE_PICS_DIR = path.join(UPLOADS_DIR, 'profile');
 const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
 const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
+const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
+
 
 // --- MIDDLEWARE ---
 app.use(cors());
@@ -17,28 +20,34 @@ app.use(express.json());
 
 // --- SERVE STATIC FILES ---
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// A temporary route to list files for debugging
-app.get('/debug-ls', (req, res) => {
-    const a = require('child_process').execSync('ls -laR').toString().replace(/\n/g, '<br>');
-    res.send(a);
-}); 
 
 // --- INITIALIZE DATABASE AND FOLDERS ---
 const initializeServer = () => {
     try {
-        if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-        if (!fs.existsSync(SUBMISSIONS_DIR)) fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
-        if (!fs.existsSync(ASSIGNMENTS_DIR)) fs.mkdirSync(ASSIGNMENTS_DIR, { recursive: true });
+        // Create all necessary upload directories
+        [UPLOADS_DIR, PROFILE_PICS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR, IDCARD_PICS_DIR].forEach(dir => {
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        });
 
         if (!fs.existsSync(DB_PATH)) {
             console.log("db.json not found, creating a new default database.");
             const defaultDB = {
-                users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
-                announcements: [], attendanceRecords: [], assignments: [], submissions: [],
-                marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
-                facultyTimetables: {}, curriculum: {}, departmentPrograms: {}, leaveRequests: []
+                users: {},
+                idCardRequests: [],
+                signupRequests: [],
+                passwordRequests: [],
+                announcements: [],
+                attendanceRecords: [],
+                assignments: [],
+                submissions: [],
+                marks: {},
+                historicalPerformance: [],
+                fees: {},
+                studentTimetables: {},
+                facultyTimetables: {},
+                departmentPrograms: {},
+                leaveRequests: []
             };
             fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
         }
@@ -58,39 +67,24 @@ const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2
 // --- MULTER SETUP ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        let destDir = UPLOADS_DIR;
+        let destDir = PROFILE_PICS_DIR; // Default
         if (file.fieldname === 'submissionFile') destDir = SUBMISSIONS_DIR;
         else if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
-        else if (file.fieldname === 'idCardPhoto') destDir = UPLOADS_DIR;
+        else if (file.fieldname === 'idCardPhoto') destDir = IDCARD_PICS_DIR;
+        else if (file.fieldname === 'photoFile') destDir = PROFILE_PICS_DIR;
         cb(null, destDir);
     },
     filename: function (req, file, cb) {
-        cb(null, `${Date.now()}-${file.originalname}`);
+        cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
     }
 });
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 15 * 1024 * 1024 } // Increased limit to 15MB
+    limits: { fileSize: 12 * 1024 * 1024 } // Corrected 12MB limit
 });
 
 
 // --- ALL API ROUTES ---
-
-// --- Temporary Route to View Live DB ---
-const VIEW_DB_SECRET = 'TulasConnectSuperSecretKey2025';
-app.get('/view-db-contents', (req, res) => {
-    if (req.query.secret === VIEW_DB_SECRET) {
-        try {
-            const dbData = readDB(); 
-            res.json(dbData);
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Could not read db.json file.' });
-        }
-    } else {
-        res.status(403).json({ success: false, message: 'Forbidden: Invalid secret key.' });
-    }
-});
-
 
 // Login
 app.post('/login', (req, res) => {
@@ -129,7 +123,7 @@ app.post('/profile/update', upload.single('photoFile'), (req, res) => {
             }
         });
         if (req.file) {
-            db.users[userId].photoUrl = `/uploads/${req.file.filename}`;
+            db.users[userId].photoUrl = `/uploads/profile/${req.file.filename}`;
         }
         writeDB(db);
         const { pass, ...updatedUser } = db.users[userId];
@@ -185,7 +179,8 @@ app.post('/resolve-signup', (req, res) => {
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
     if (action === 'approve') {
         const request = db.signupRequests[requestIndex];
-        db.users[request.userId] = { pass: request.pass, name: request.name, role: request.role, email: request.email, phone: "", bloodGroup: "", department: request.department || "", address: "", dob: "", photoUrl: "", course: "", batch: "", program: "" };
+        // Added program and academicYear to the default user object
+        db.users[request.userId] = { pass: request.pass, name: request.name, role: request.role, email: request.email, phone: "", bloodGroup: "", department: request.department || "", address: "", dob: "", photoUrl: "", course: "", batch: "", program: "", academicYear: "" };
     }
     db.signupRequests.splice(requestIndex, 1);
     writeDB(db);
@@ -374,38 +369,51 @@ app.post('/marks', (req, res) => {
     res.json({ success: true, message: 'Marks updated successfully.' });
 });
 
-// --- ID CARD REQUESTS (NEW & IMPROVED) ---
+// --- ID CARD REQUESTS (FIXED) ---
 app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
-    if (req.fileValidationError) {
-        return res.status(400).json({ success: false, message: req.fileValidationError });
+    const { userId, name, phone, program, department, dob, bloodGroup } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Photo is required." });
     }
-    const { userId, name, course, batch, phone, bloodGroup } = req.body;
-    if (!req.file) return res.status(400).json({ success: false, message: "Photo is required." });
+
     const db = readDB();
     const newRequest = {
-        userId, userName: name, course, batch, phone, bloodGroup,
-        photoUrl: `/uploads/${req.file.filename}`,
-        status: 'Pending'
+        userId,
+        userName: name,
+        phone,
+        program,
+        department,
+        dob,
+        bloodGroup,
+        photoUrl: `/uploads/idcards/${req.file.filename}`,
+        status: 'Pending',
+        reason: null
     };
+
     const existingIndex = db.idCardRequests.findIndex(r => r.userId === userId);
     if (existingIndex > -1) {
+        // Allow resubmission only if the previous one was denied
         if (db.idCardRequests[existingIndex].status === 'Denied') {
             db.idCardRequests[existingIndex] = newRequest;
         } else {
-            return res.status(409).json({ success: false, message: 'An ID card request for this user already exists.' });
+            return res.status(409).json({ success: false, message: 'An ID card request for this user is already pending or approved.' });
         }
     } else {
         db.idCardRequests.push(newRequest);
     }
     writeDB(db);
-    res.json({ success: true, message: 'ID card request submitted.' });
+    res.json({ success: true, message: 'ID card request submitted successfully.' });
 });
+
 app.get('/id-card-status/:userId', (req, res) => {
     const { userId } = req.params;
     const request = readDB().idCardRequests.find(r => r.userId === userId);
     res.json(request || { status: 'Not Applied' });
 });
+
 app.get('/id-card-requests', (req, res) => res.json(readDB().idCardRequests));
+
 app.post('/resolve-id-card-request', (req, res) => {
     const { userId, action, reason } = req.body;
     const db = readDB();
@@ -414,15 +422,16 @@ app.post('/resolve-id-card-request', (req, res) => {
 
     if (action === 'approve') {
         request.status = 'Approved';
+        request.reason = null;
+        // Update the main user profile with the approved data
         if (db.users[userId]) {
-            // Update the main user profile with the approved data
             db.users[userId].photoUrl = request.photoUrl;
             db.users[userId].phone = request.phone;
             db.users[userId].bloodGroup = request.bloodGroup;
-            db.users[userId].course = request.course;
-            db.users[userId].batch = request.batch;
+            db.users[userId].dob = request.dob;
+            db.users[userId].program = request.program;
         }
-    } else {
+    } else { // 'deny' action
         request.status = 'Denied';
         request.reason = reason || 'No reason specified.';
     }
@@ -431,35 +440,39 @@ app.post('/resolve-id-card-request', (req, res) => {
 });
 
 
-// --- LEAVE REQUESTS ---
+// --- LEAVE REQUESTS (FIXED) ---
 app.post('/leave-requests', (req, res) => {
     const db = readDB();
-    const newRequest = { id: `leave-${Date.now()}`, ...req.body, status: 'Pending' };
+    const newRequest = { id: `leave-${Date.now()}`, ...req.body, status: 'Pending', denialReason: null, resolvedBy: null };
     db.leaveRequests.push(newRequest);
     writeDB(db);
     res.status(201).json({ success: true, request: newRequest });
 });
+
 app.get('/leave-requests/student/:studentId', (req, res) => {
     const db = readDB();
-    res.json(db.leaveRequests.filter(r => r.studentId === req.params.studentId));
+    res.json(db.leaveRequests.filter(r => r.studentId === req.params.studentId).sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
 });
-app.get('/leave-requests/faculty/:department', (req, res) => {
+
+app.get('/leave-requests', (req, res) => {
     const db = readDB();
-    res.json(db.leaveRequests.filter(r => r.studentDepartment === req.params.department));
+    res.json(db.leaveRequests.sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
 });
+
 app.post('/leave-requests/resolve', (req, res) => {
-    const { requestId, status } = req.body;
+    const { requestId, status, denialReason, resolvedBy } = req.body;
     const db = readDB();
     const request = db.leaveRequests.find(r => r.id === requestId);
     if (request) {
         request.status = status;
+        request.resolvedBy = resolvedBy || 'N/A';
+        request.denialReason = denialReason || null;
         writeDB(db);
         res.json({ success: true, message: 'Request updated.' });
     } else {
         res.status(404).json({ success: false, message: 'Request not found.' });
     }
 });
-
 
 // --- ADMIN & HOD ---
 app.get('/announcements', (req, res) => res.json(readDB().announcements));
@@ -501,7 +514,7 @@ app.delete('/announcements/:id', (req, res) => {
         res.status(404).json({ success: false, message: 'Announcement not found.' });
     }
 });
-app.get('/curriculum', (req, res) => res.json(readDB().curriculum || {}));
+
 app.get('/hod/dashboard/:department', (req, res) => {
     const { department } = req.params;
     const db = readDB();
@@ -544,4 +557,3 @@ const LIVE_PORT = process.env.PORT || PORT;
 app.listen(LIVE_PORT, () => {
     console.log(`TULA'S CONNECT server is running on port ${LIVE_PORT}`);
 });
-
