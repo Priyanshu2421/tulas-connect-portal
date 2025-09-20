@@ -44,6 +44,17 @@
                            <option>Tula's Institute of Pharmacy</option>
                         </select>
                     </div>
+                    <!-- New Sub-Department Dropdown for Engineering HOD -->
+                    <div id="engineering-dept-select-container" class="hidden">
+                        <label for="engineering-dept" class="block text-sm font-medium text-gray-700">Select Engineering Department</label>
+                        <select id="engineering-dept" name="engineering-dept" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                           <option value="">-- Select Branch --</option>
+                           <option value="Department of Computer Science & Engineering">Department of Computer Science & Engineering (CSE)</option>
+                           <option value="Department of Electrical & Electronics Engineering">Department of Electrical & Electronics Engineering (EEE)</option>
+                           <option value="Department of Electronics & Communication Engineering">Department of Electronics & Communication Engineering (ECE)</option>
+                           <option value="Department of Mechanical Engineering">Department of Mechanical Engineering (ME)</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="userId" class="block text-sm font-medium text-gray-700">User ID / Enrollment No.</label>
                         <input id="userId" name="userId" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
@@ -97,7 +108,6 @@
                               <option>Tula's Institute of Pharmacy</option>
                           </select>
                       </div>
-                      <!-- New Course Selection Dropdown -->
                       <div id="signup-course-container" class="hidden">
                           <select name="course" required class="w-full px-3 py-2 border rounded-md">
                               <option value="">Select Course</option>
@@ -172,3 +182,4 @@
    <script src="/script.js"></script>
 </body>
 </html>
+
