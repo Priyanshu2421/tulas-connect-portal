@@ -5,9 +5,9 @@ const path = require('path');
 const multer = require('multer');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(__dirname, 'db.json');
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads'); // Serve uploads from public
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 const PROFILE_PICS_DIR = path.join(UPLOADS_DIR, 'profile');
 const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
 const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
@@ -17,15 +17,12 @@ const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
-
-// --- SERVE STATIC FILES ---
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// --- INITIALIZE DATABASE AND FOLDERS ---
+// --- INITIALIZE SERVER ---
 const initializeServer = () => {
     try {
-        // Create all necessary upload directories
         [UPLOADS_DIR, PROFILE_PICS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR, IDCARD_PICS_DIR].forEach(dir => {
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         });
@@ -33,21 +30,10 @@ const initializeServer = () => {
         if (!fs.existsSync(DB_PATH)) {
             console.log("db.json not found, creating a new default database.");
             const defaultDB = {
-                users: {},
-                idCardRequests: [],
-                signupRequests: [],
-                passwordRequests: [],
-                announcements: [],
-                attendanceRecords: [],
-                assignments: [],
-                submissions: [],
-                marks: {},
-                historicalPerformance: [],
-                fees: {},
-                studentTimetables: {},
-                facultyTimetables: {},
-                departmentPrograms: {},
-                leaveRequests: []
+                users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
+                announcements: [], attendanceRecords: [], assignments: [], submissions: [],
+                marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
+                facultyTimetables: {}, departmentPrograms: {}, leaveRequests: []
             };
             fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
         }
@@ -60,31 +46,27 @@ const initializeServer = () => {
 initializeServer();
 
 
-// --- DATABASE HELPER FUNCTIONS ---
+// --- DB HELPERS ---
 const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
 // --- MULTER SETUP ---
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        let destDir = PROFILE_PICS_DIR; // Default
+        let destDir = PROFILE_PICS_DIR;
         if (file.fieldname === 'submissionFile') destDir = SUBMISSIONS_DIR;
         else if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
         else if (file.fieldname === 'idCardPhoto') destDir = IDCARD_PICS_DIR;
-        else if (file.fieldname === 'photoFile') destDir = PROFILE_PICS_DIR;
         cb(null, destDir);
     },
     filename: function (req, file, cb) {
         cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
     }
 });
-const upload = multer({
-    storage: storage,
-    limits: { fileSize: 12 * 1024 * 1024 } // Corrected 12MB limit
-});
+const upload = multer({ storage: storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
 
-// --- ALL API ROUTES ---
+// --- ROUTES ---
 
 // Login
 app.post('/login', (req, res) => {
@@ -95,13 +77,13 @@ app.post('/login', (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: `User ID '${userId}' not found.` });
     if (user.pass !== password) return res.status(401).json({ success: false, message: 'Incorrect password.' });
     if (user.role !== role) return res.status(401).json({ success: false, message: `Role mismatch. You selected '${role}' but this user is a '${user.role}'.` });
-    if (role === 'HOD' && user.department !== department) return res.status(401).json({ success: false, message: `Access Denied. You are not the HOD for the '${department}'.` });
+    if (role === 'HOD' && user.department !== department) return res.status(401).json({ success: false, message: `Access Denied.` });
 
     const { pass, ...userResponse } = user;
     res.json({ success: true, user: { ...userResponse, id: userId } });
 });
 
-// --- USER & PROFILE MANAGEMENT ---
+// Profile Management
 app.get('/profile/:userId', (req, res) => {
     const { userId } = req.params;
     const user = readDB().users[userId];
@@ -139,12 +121,8 @@ app.get('/users', (req, res) => {
         const { pass, ...user } = db.users[id];
         return { ...user, id };
     });
-    if (req.query.role) {
-        usersArray = usersArray.filter(user => user.role === req.query.role);
-    }
-    if (req.query.department) {
-        usersArray = usersArray.filter(user => user.department === req.query.department);
-    }
+    if (req.query.role) usersArray = usersArray.filter(user => user.role === req.query.role);
+    if (req.query.department) usersArray = usersArray.filter(user => user.department === req.query.department);
     res.json({ success: true, users: usersArray });
 });
 
@@ -160,7 +138,7 @@ app.delete('/users/:userId', (req, res) => {
     }
 });
 
-// --- SIGNUP & PASSWORD REQUESTS ---
+// Signup & Password Requests
 app.post('/signup', (req, res) => {
     const db = readDB();
     const { userId } = req.body;
@@ -171,21 +149,29 @@ app.post('/signup', (req, res) => {
     writeDB(db);
     res.status(201).json({ success: true, message: 'Request submitted for approval.' });
 });
+
 app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
+
 app.post('/resolve-signup', (req, res) => {
     const { userId, action } = req.body;
     const db = readDB();
     const requestIndex = db.signupRequests.findIndex(r => r.userId === userId);
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
+    
     if (action === 'approve') {
         const request = db.signupRequests[requestIndex];
-        // Added program and academicYear to the default user object
-        db.users[request.userId] = { pass: request.pass, name: request.name, role: request.role, email: request.email, phone: "", bloodGroup: "", department: request.department || "", address: "", dob: "", photoUrl: "", course: "", batch: "", program: "", academicYear: "" };
+        db.users[request.userId] = { 
+            pass: request.pass, name: request.name, role: request.role, email: request.email, 
+            department: request.department || "", course: request.course || "", 
+            phone: "", bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
+        };
     }
+    
     db.signupRequests.splice(requestIndex, 1);
     writeDB(db);
     res.json({ success: true, message: `Request ${action}d.` });
 });
+
 app.post('/forgot-password', (req, res) => {
     const { userId, newPass } = req.body;
     const db = readDB();
@@ -198,7 +184,9 @@ app.post('/forgot-password', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: 'Password reset request sent for approval.' });
 });
+
 app.get('/password-requests', (req, res) => res.json(readDB().passwordRequests));
+
 app.post('/resolve-password-request', (req, res) => {
     const { userId, action } = req.body;
     const db = readDB();
@@ -369,7 +357,7 @@ app.post('/marks', (req, res) => {
     res.json({ success: true, message: 'Marks updated successfully.' });
 });
 
-// --- ID CARD REQUESTS (FIXED) ---
+// --- ID CARD REQUESTS ---
 app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
     const { userId, name, phone, program, department, dob, bloodGroup } = req.body;
 
@@ -379,21 +367,13 @@ app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
 
     const db = readDB();
     const newRequest = {
-        userId,
-        userName: name,
-        phone,
-        program,
-        department,
-        dob,
-        bloodGroup,
+        userId, userName: name, phone, program, department, dob, bloodGroup,
         photoUrl: `/uploads/idcards/${req.file.filename}`,
-        status: 'Pending',
-        reason: null
+        status: 'Pending', reason: null
     };
 
     const existingIndex = db.idCardRequests.findIndex(r => r.userId === userId);
     if (existingIndex > -1) {
-        // Allow resubmission only if the previous one was denied
         if (db.idCardRequests[existingIndex].status === 'Denied') {
             db.idCardRequests[existingIndex] = newRequest;
         } else {
@@ -405,15 +385,12 @@ app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
     writeDB(db);
     res.json({ success: true, message: 'ID card request submitted successfully.' });
 });
-
 app.get('/id-card-status/:userId', (req, res) => {
     const { userId } = req.params;
     const request = readDB().idCardRequests.find(r => r.userId === userId);
     res.json(request || { status: 'Not Applied' });
 });
-
 app.get('/id-card-requests', (req, res) => res.json(readDB().idCardRequests));
-
 app.post('/resolve-id-card-request', (req, res) => {
     const { userId, action, reason } = req.body;
     const db = readDB();
@@ -423,7 +400,6 @@ app.post('/resolve-id-card-request', (req, res) => {
     if (action === 'approve') {
         request.status = 'Approved';
         request.reason = null;
-        // Update the main user profile with the approved data
         if (db.users[userId]) {
             db.users[userId].photoUrl = request.photoUrl;
             db.users[userId].phone = request.phone;
@@ -431,7 +407,7 @@ app.post('/resolve-id-card-request', (req, res) => {
             db.users[userId].dob = request.dob;
             db.users[userId].program = request.program;
         }
-    } else { // 'deny' action
+    } else {
         request.status = 'Denied';
         request.reason = reason || 'No reason specified.';
     }
@@ -440,7 +416,7 @@ app.post('/resolve-id-card-request', (req, res) => {
 });
 
 
-// --- LEAVE REQUESTS (FIXED) ---
+// --- LEAVE REQUESTS ---
 app.post('/leave-requests', (req, res) => {
     const db = readDB();
     const newRequest = { id: `leave-${Date.now()}`, ...req.body, status: 'Pending', denialReason: null, resolvedBy: null };
@@ -448,17 +424,14 @@ app.post('/leave-requests', (req, res) => {
     writeDB(db);
     res.status(201).json({ success: true, request: newRequest });
 });
-
 app.get('/leave-requests/student/:studentId', (req, res) => {
     const db = readDB();
     res.json(db.leaveRequests.filter(r => r.studentId === req.params.studentId).sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
 });
-
 app.get('/leave-requests', (req, res) => {
     const db = readDB();
     res.json(db.leaveRequests.sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
 });
-
 app.post('/leave-requests/resolve', (req, res) => {
     const { requestId, status, denialReason, resolvedBy } = req.body;
     const db = readDB();
@@ -473,6 +446,7 @@ app.post('/leave-requests/resolve', (req, res) => {
         res.status(404).json({ success: false, message: 'Request not found.' });
     }
 });
+
 
 // --- ADMIN & HOD ---
 app.get('/announcements', (req, res) => res.json(readDB().announcements));
@@ -514,7 +488,6 @@ app.delete('/announcements/:id', (req, res) => {
         res.status(404).json({ success: false, message: 'Announcement not found.' });
     }
 });
-
 app.get('/hod/dashboard/:department', (req, res) => {
     const { department } = req.params;
     const db = readDB();
@@ -539,7 +512,7 @@ app.get('/hod/dashboard/:department', (req, res) => {
     });
     const avgAttendance = attendanceRecordsCount > 0 ? ((totalAttendance / attendanceRecordsCount) * 100).toFixed(2) : 0;
     const avgCgpa = studentsWithMarks > 0 ? (totalCgpa / studentsWithMarks).toFixed(2) : 0;
-    const programs = db.departmentPrograms[department] || [];
+    const programs = db.departmentPrograms[decodeURIComponent(department)] || [];
     res.json({ success: true, data: { totalStudents, totalFaculty, avgAttendance, avgCgpa, programs } });
 });
 
@@ -547,13 +520,13 @@ app.get('/hod/dashboard/:department', (req, res) => {
 app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
 
 
-// --- CATCH-ALL ROUTE FOR SERVING THE FRONTEND ---
+// Fallback route
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // --- SERVER START ---
-const LIVE_PORT = process.env.PORT || PORT;
-app.listen(LIVE_PORT, () => {
-    console.log(`TULA'S CONNECT server is running on port ${LIVE_PORT}`);
+app.listen(PORT, () => {
+    console.log(`TULA'S CONNECT server is running on port ${PORT}`);
 });
+
