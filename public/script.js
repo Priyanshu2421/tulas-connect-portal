@@ -72,10 +72,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENT SELECTORS ---
     const roleSelect = document.getElementById('role');
     const departmentSelectContainer = document.getElementById('department-select-container');
+    const departmentSelect = document.getElementById('department');
+    const engineeringDeptSelectContainer = document.getElementById('engineering-dept-select-container');
+    const engineeringDeptSelect = document.getElementById('engineering-dept');
     const loginForm = document.getElementById('loginForm');
     const userIdInput = document.getElementById('userId');
     const passwordInput = document.getElementById('password');
-    const departmentSelect = document.getElementById('department');
     const dashboardContainer = document.getElementById('dashboard-container');
     const mainContent = document.getElementById('main-content');
     const logoutButton = document.getElementById('logout-button');
@@ -103,23 +105,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const signupForm = document.getElementById('signupForm');
     const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 
+    // --- LOGIN FORM VISIBILITY LOGIC (RESTORED) ---
+    function updateDepartmentVisibility() {
+        const isDeptLogin = roleSelect.value === 'Department Login';
+        const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
 
-    // --- EVENT LISTENERS ---
+        // Show main department dropdown only for HOD login
+        departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
+        // Show engineering branch dropdown ONLY if HOD login AND Engineering is selected
+        engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
 
-    roleSelect.addEventListener('change', (e) => {
-        departmentSelectContainer.classList.toggle('hidden', e.target.value !== 'Department Login');
-        const isAdminSelected = e.target.value === 'Admin';
+        const isAdminSelected = roleSelect.value === 'Admin';
         forgotPasswordLinkWrapper.classList.toggle('hidden', isAdminSelected);
         signupLinkWrapper.classList.toggle('hidden', isAdminSelected);
-    });
+    }
+
+
+    // --- EVENT LISTENERS ---
+    roleSelect.addEventListener('change', updateDepartmentVisibility);
+    departmentSelect.addEventListener('change', updateDepartmentVisibility);
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const userId = userIdInput.value.trim();
         const password = passwordInput.value.trim();
         const selectedRole = roleSelect.value;
-        const department = departmentSelect.value;
         const errorMessage = document.getElementById('error-message');
+        errorMessage.textContent = ''; // Clear previous errors
+
+        // RESTORED: Logic to get the correct department value
+        let department = null;
+        if (selectedRole === 'Department Login') {
+            const mainDepartmentValue = departmentSelect.value;
+            if (mainDepartmentValue === 'Department of Engineering') {
+                department = engineeringDeptSelect.value; // Get value from the specific engineering dropdown
+                if (!department) {
+                    errorMessage.textContent = 'Please select an engineering branch.';
+                    return;
+                }
+            } else {
+                department = mainDepartmentValue; // Get value from the main department dropdown
+            }
+        }
 
         if (!userId || !password) {
             errorMessage.textContent = 'Please enter both User ID and Password.';
@@ -164,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             signupMessage.textContent = result.message;
             if (response.ok) {
                 signupForm.reset();
-                // Also reset and hide the dynamic dropdowns
                 document.getElementById('signup-department-container').classList.add('hidden');
                 document.getElementById('signup-course-container').classList.add('hidden');
             }
@@ -223,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // --- NEW SIGNUP LOGIC FOR DYNAMIC DROPDOWNS ---
+    // --- SIGNUP LOGIC FOR DYNAMIC DROPDOWNS ---
     const signupRoleSelect = document.getElementById('signup-role');
     const signupDepartmentContainer = document.getElementById('signup-department-container');
     const signupDepartmentSelect = signupDepartmentContainer.querySelector('select');
@@ -233,14 +259,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (signupRoleSelect) {
         signupRoleSelect.addEventListener('change', (e) => {
             const selectedRole = e.target.value;
-            if (selectedRole === 'Student') {
-                signupDepartmentContainer.classList.remove('hidden');
-            } else if (selectedRole === 'Faculty') {
-                signupDepartmentContainer.classList.remove('hidden');
-                signupCourseContainer.classList.add('hidden'); // Hide course for faculty
-            } else {
-                signupDepartmentContainer.classList.add('hidden');
+            signupDepartmentContainer.classList.toggle('hidden', selectedRole === '');
+            if (selectedRole !== 'Student') {
                 signupCourseContainer.classList.add('hidden');
+            } else {
+                 signupDepartmentSelect.dispatchEvent(new Event('change'));
             }
         });
     }
@@ -248,10 +271,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (signupDepartmentSelect) {
         signupDepartmentSelect.addEventListener('change', (e) => {
             const selectedDepartment = e.target.value;
-            signupCourseSelect.innerHTML = '<option value="">Select Course</option>'; // Reset
-
-            if (selectedDepartment && departmentCourses[selectedDepartment]) {
-                const courses = departmentCourses[selectedDepartment];
+            signupCourseSelect.innerHTML = '<option value="">Select Course</option>'; 
+            const courses = departmentCourses[selectedDepartment];
+            if (signupRoleSelect.value === 'Student' && courses) {
                 courses.forEach(course => {
                     const option = document.createElement('option');
                     option.value = course;
@@ -268,14 +290,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function showDashboard(user) {
         document.getElementById('login-signup-wrapper').classList.add('hidden');
         dashboardContainer.classList.remove('hidden');
-
         welcomeMessage.textContent = `Welcome, ${user.name}`;
         userRoleDisplay.textContent = `${user.role}${user.role === 'HOD' ? ` (${user.department})` : ''}`;
-
         const photoUrl = user.photoUrl ? `${API_BASE_URL}${user.photoUrl}` : 'https://placehold.co/40x40/a0aec0/ffffff?text=U';
         headerProfilePic.src = photoUrl;
         headerProfilePic.onerror = () => { headerProfilePic.src = 'https://placehold.co/40x40/a0aec0/ffffff?text=U'; };
-
         const roleDashboards = {
             'Student': populateStudentDashboard,
             'Faculty': populateFacultyDashboard,
@@ -290,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateNav(links) {
         desktopNavContainer.innerHTML = '';
         mobileNavContainer.innerHTML = '';
-
         links.forEach(linkInfo => {
             const dLink = document.createElement('a');
             dLink.href = '#';
@@ -298,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dLink.dataset.target = linkInfo.target;
             dLink.innerHTML = `<span>${linkInfo.name}</span>`;
             desktopNavContainer.appendChild(dLink);
-
             const mLink = document.createElement('a');
             mLink.href = '#';
             mLink.className = 'nav-link flex-1 text-center px-2 py-2 text-sm text-gray-200 rounded hover:bg-green-700';
@@ -306,17 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
             mLink.textContent = linkInfo.name;
             mobileNavContainer.appendChild(mLink);
         });
-
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const target = e.currentTarget.dataset.target;
-
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'bg-green-700'));
                 document.querySelectorAll(`.nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active', 'bg-green-700'));
-
                 loadMainContent(target);
-
                 const sidebar = document.getElementById('sidebar-nav');
                 if (window.innerWidth < 768 && !sidebar.classList.contains('hidden')) {
                     sidebar.classList.add('hidden');
@@ -600,15 +613,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const requestsHtml = requests.length > 0 ? requests.map(r => {
                 const statusColor = { 'Approved': 'text-green-600 bg-green-100', 'Denied': 'text-red-600 bg-red-100', 'Pending': 'text-orange-500 bg-orange-100' }[r.status] || 'text-gray-500';
                 return `<div class="border p-4 rounded-md">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="font-semibold">Leave from ${new Date(r.startDate).toLocaleDateString()} to ${new Date(r.endDate).toLocaleDateString()}</p>
-                            <p class="text-sm text-gray-600 mt-1"><strong>Reason:</strong> ${r.reason}</p>
-                            ${r.status === 'Denied' && r.denialReason ? `<p class="text-sm text-red-700 mt-1"><strong>Denial Reason:</strong> ${r.denialReason}</p>` : ''}
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-semibold">Leave from ${new Date(r.startDate).toLocaleDateString()} to ${new Date(r.endDate).toLocaleDateString()}</p>
+                                <p class="text-sm text-gray-600 mt-1"><strong>Reason:</strong> ${r.reason}</p>
+                                ${r.status === 'Denied' && r.denialReason ? `<p class="text-sm text-red-700 mt-1"><strong>Denial Reason:</strong> ${r.denialReason}</p>` : ''}
+                            </div>
+                            <span class="text-sm font-bold px-3 py-1 rounded-full ${statusColor}">${r.status}</span>
                         </div>
-                        <span class="text-sm font-bold px-3 py-1 rounded-full ${statusColor}">${r.status}</span>
-                    </div>
-                </div>`;
+                    </div>`;
             }).join('') : '<p class="text-gray-500">You have not submitted any leave requests yet.</p>';
 
             mainContent.innerHTML = `
@@ -748,20 +761,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 return `<div class="border p-4 rounded-lg">
-                    <div class="flex flex-col md:flex-row justify-between md:items-center">
-                        <div>
-                            <p class="font-bold text-lg">${r.studentName} (${r.studentId})</p>
-                            <p class="text-sm text-gray-500">Applied for: ${new Date(r.startDate).toLocaleDateString()} to ${new Date(r.endDate).toLocaleDateString()}</p>
-                            <p class="mt-2"><strong>Reason:</strong> ${r.reason}</p>
+                        <div class="flex flex-col md:flex-row justify-between md:items-center">
+                            <div>
+                                <p class="font-bold text-lg">${r.studentName} (${r.studentId})</p>
+                                <p class="text-sm text-gray-500">Applied for: ${new Date(r.startDate).toLocaleDateString()} to ${new Date(r.endDate).toLocaleDateString()}</p>
+                                <p class="mt-2"><strong>Reason:</strong> ${r.reason}</p>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex flex-col items-start md:items-end gap-2">
+                                 <span class="text-sm font-bold px-3 py-1 rounded-full ${statusColor}">${r.status}</span>
+                                 <div class="flex gap-2 mt-2">
+                                    ${actionButtons}
+                                 </div>
+                            </div>
                         </div>
-                        <div class="mt-4 md:mt-0 flex flex-col items-start md:items-end gap-2">
-                             <span class="text-sm font-bold px-3 py-1 rounded-full ${statusColor}">${r.status}</span>
-                             <div class="flex gap-2 mt-2">
-                                 ${actionButtons}
-                             </div>
-                        </div>
-                    </div>
-                </div>`;
+                    </div>`;
             }).join('') : '<p>No leave requests have been submitted.</p>';
 
             mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">
@@ -1438,4 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loggedInUser) {
         showDashboard(JSON.parse(loggedInUser));
     }
+    // Initial call to set the correct dropdown visibility on page load
+    updateDepartmentVisibility();
 });
+
