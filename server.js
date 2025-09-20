@@ -1,541 +1,530 @@
-// --- UTILITY FUNCTIONS ---
-const API_BASE_URL = '';
+const express = require('express');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
 
-// Data for dynamic course selection
-const departmentCourses = {
-    "Department of Engineering": [
-        "Bachelor of Technology - Civil Engineering (CE)",
-        "Bachelor of Technology - Computer Science & Engineering (CSE)",
-        "Bachelor of Technology - CSE (Artificial Intelligence & Machine Learning)",
-        "Bachelor of Technology - CSE (Cyber Security)",
-        "Bachelor of Technology - CSE (Data Science)",
-        "Bachelor of Technology - Electronics & Communication Engineering (ECE)",
-        "Bachelor of Technology - Electrical & Electronics Engineering (EEE)",
-        "Bachelor of Technology - Mechanical Engineering (ME)",
-        "Diploma in Civil Engineering",
-        "Diploma in Mechanical Engineering",
-        "Diploma in Computer Science Engineering",
-        "Masters in Technology"
-    ],
-    "Department of Applied Sciences and Humanities": [
-        "Applied Sciences and Humanities"
-    ],
-    "Department of Agriculture": [
-        "B.Sc Agriculture"
-    ],
-    "Department of Journalism and Communications": [
-        "BA (Hons.) Journalism and Mass Communication"
-    ],
-    "Graduate School of Business": [
-        "Bachelor of Business Administration (BBA)",
-        "Bachelor of Commerce (B.Com Hons.)",
-        "Master of Business Administration (MBA)"
-    ],
-    "Department of Computer Applications": [
-        "Bachelor of Computer Applications (BCA)",
-        "Master of Computer Applications (MCA)"
-    ],
-    "Tula's Institute of Pharmacy": [
-        "Bachelor of Pharmacy (B.Pharm)",
-        "Diploma in Pharmacy (D.Pharm)"
-    ]
+const app = express();
+const PORT = process.env.PORT || 3000;
+const DB_PATH = path.join(__dirname, 'db.json');
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+const PROFILE_PICS_DIR = path.join(UPLOADS_DIR, 'profile');
+const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
+const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
+const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
+
+
+// --- MIDDLEWARE ---
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+
+// --- INITIALIZE SERVER ---
+const initializeServer = () => {
+    try {
+        [UPLOADS_DIR, PROFILE_PICS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR, IDCARD_PICS_DIR].forEach(dir => {
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        });
+
+        if (!fs.existsSync(DB_PATH)) {
+            console.log("db.json not found, creating a new default database.");
+            const defaultDB = {
+                users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
+                announcements: [], attendanceRecords: [], assignments: [], submissions: [],
+                marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
+                facultyTimetables: {}, departmentPrograms: {}, leaveRequests: []
+            };
+            fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
+        }
+    } catch (error) {
+        console.error("Error during server initialization:", error);
+        process.exit(1);
+    }
 };
 
+initializeServer();
 
-function showNotification(message, isError = false) {
-    const toast = document.getElementById('notification-toast');
-    const messageP = document.getElementById('notification-message');
 
-    if (!toast || !messageP) return;
+// --- DB HELPERS ---
+const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
-    messageP.textContent = message;
-    toast.className = 'fixed bottom-20 md:bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transition-all duration-500 transform z-50';
+// --- MULTER SETUP ---
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        let destDir = PROFILE_PICS_DIR;
+        if (file.fieldname === 'submissionFile') destDir = SUBMISSIONS_DIR;
+        else if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
+        else if (file.fieldname === 'idCardPhoto') destDir = IDCARD_PICS_DIR;
+        cb(null, destDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
+    }
+});
+const upload = multer({ storage: storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
-    if (isError) {
-        toast.classList.add('bg-red-600');
+
+// --- ROUTES ---
+
+// Login
+app.post('/login', (req, res) => {
+    const { userId, password, role, department } = req.body;
+    const db = readDB();
+    const user = db.users[userId];
+
+    if (!user) return res.status(404).json({ success: false, message: `User ID '${userId}' not found.` });
+    if (user.pass !== password) return res.status(401).json({ success: false, message: 'Incorrect password.' });
+    if (user.role !== role) return res.status(401).json({ success: false, message: `Role mismatch. You selected '${role}' but this user is a '${user.role}'.` });
+    if (role === 'HOD' && user.department !== department) return res.status(401).json({ success: false, message: `Access Denied. Expected department: ${user.department}` });
+
+    const { pass, ...userResponse } = user;
+    res.json({ success: true, user: { ...userResponse, id: userId } });
+});
+
+// Profile Management
+app.get('/profile/:userId', (req, res) => {
+    const { userId } = req.params;
+    const user = readDB().users[userId];
+    if (user) {
+        const { pass, ...userProfile } = user;
+        res.json({ success: true, profile: { ...userProfile, id: userId } });
     } else {
-        toast.classList.add('bg-green-600');
+        res.status(404).json({ success: false, message: 'User not found.' });
     }
+});
 
-    toast.style.transform = 'translateY(0)';
-    toast.style.opacity = '1';
-
-    setTimeout(() => {
-        toast.style.transform = 'translateY(5rem)';
-        toast.style.opacity = '0';
-    }, 4000);
-}
-
-
-// --- DOMContentLoaded ---
-document.addEventListener('DOMContentLoaded', () => {
-    // --- ELEMENT SELECTORS ---
-    const roleSelect = document.getElementById('role');
-    const departmentSelectContainer = document.getElementById('department-select-container');
-    const departmentSelect = document.getElementById('department');
-    const engineeringDeptSelectContainer = document.getElementById('engineering-dept-select-container');
-    const engineeringDeptSelect = document.getElementById('engineering-dept');
-    const loginForm = document.getElementById('loginForm');
-    const userIdInput = document.getElementById('userId');
-    const passwordInput = document.getElementById('password');
-    const dashboardContainer = document.getElementById('dashboard-container');
-    const mainContent = document.getElementById('main-content');
-    const logoutButton = document.getElementById('logout-button');
-    const headerProfilePic = document.getElementById('header-profile-pic');
-    const welcomeMessage = document.getElementById('welcome-message');
-    const userRoleDisplay = document.getElementById('user-role');
-
-    const desktopNavContainer = document.getElementById('sidebar-nav-links-desktop');
-    const mobileNavContainer = document.getElementById('footer-nav-links-mobile');
-    const mobileMenuButton = document.getElementById('mobile-menu-button');
-
-    const togglePassword = document.getElementById('toggle-password');
-    const showSignupLink = document.getElementById('show-signup-link');
-    const showLoginLinkFromSignup = document.getElementById('show-login-link-from-signup');
-    const showForgotPasswordLink = document.getElementById('show-forgot-password-link');
-    const showLoginLinkFromForgot = document.getElementById('show-login-link-from-forgot');
-
-    const forgotPasswordLinkWrapper = showForgotPasswordLink.parentElement;
-    const signupLinkWrapper = showSignupLink.parentElement;
-
-    const loginContainer = document.getElementById('login-container');
-    const signupContainer = document.getElementById('signup-container');
-    const forgotPasswordContainer = document.getElementById('forgot-password-container');
-
-    const signupForm = document.getElementById('signupForm');
-    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-
-    // --- LOGIN FORM VISIBILITY LOGIC ---
-    function updateDepartmentVisibility() {
-        const isDeptLogin = roleSelect.value === 'Department Login';
-        const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
-
-        departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
-        engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
-
-        const isAdminSelected = roleSelect.value === 'Admin';
-        forgotPasswordLinkWrapper.classList.toggle('hidden', isAdminSelected);
-        signupLinkWrapper.classList.toggle('hidden', isAdminSelected);
-    }
-
-
-    // --- EVENT LISTENERS ---
-    roleSelect.addEventListener('change', updateDepartmentVisibility);
-    departmentSelect.addEventListener('change', updateDepartmentVisibility);
-
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const userId = userIdInput.value.trim();
-        const password = passwordInput.value.trim();
-        const selectedRole = roleSelect.value;
-        const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = ''; // Clear previous errors
-
-        let department = null;
-        if (selectedRole === 'Department Login') {
-            const mainDepartmentValue = departmentSelect.value;
-            if (mainDepartmentValue === 'Department of Engineering') {
-                department = engineeringDeptSelect.value;
-                if (!department) {
-                    errorMessage.textContent = 'Please select an engineering branch.';
-                    return;
-                }
-            } else {
-                department = mainDepartmentValue;
+app.post('/profile/update', upload.single('photoFile'), (req, res) => {
+    const { userId } = req.body;
+    const db = readDB();
+    if (db.users[userId]) {
+        Object.keys(req.body).forEach(key => {
+            if (key !== 'userId' && db.users[userId].hasOwnProperty(key)) {
+                db.users[userId][key] = req.body[key];
             }
-        }
-
-        if (!userId || !password) {
-            errorMessage.textContent = 'Please enter both User ID and Password.';
-            return;
-        }
-
-        const roleForBackend = selectedRole === 'Department Login' ? 'HOD' : selectedRole;
-        const loginPayload = { userId, password, role: roleForBackend, department };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(loginPayload)
-            });
-            const data = await response.json();
-            if (response.ok) {
-                sessionStorage.setItem('loggedInUser', JSON.stringify(data.user));
-                sessionStorage.setItem('userId', data.user.id);
-                showDashboard(data.user);
-            } else {
-                errorMessage.textContent = data.message || 'Login failed.';
-            }
-        } catch (error) {
-            errorMessage.textContent = 'Could not connect to the server.';
-        }
-    });
-
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(e.target).entries());
-        const signupMessage = document.getElementById('signup-message');
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/signup`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            signupMessage.className = response.ok ? 'text-green-600 text-center' : 'text-red-500 text-center';
-            signupMessage.textContent = result.message;
-            if (response.ok) {
-                signupForm.reset();
-                document.getElementById('signup-department-container').classList.add('hidden');
-                document.getElementById('signup-course-container').classList.add('hidden');
-            }
-        } catch (error) {
-            signupMessage.className = 'text-red-500 text-center';
-            signupMessage.textContent = 'Could not connect to the server.';
-        }
-    });
-
-    forgotPasswordForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const data = Object.fromEntries(new FormData(e.target).entries());
-        const messageEl = document.getElementById('forgot-password-message');
-        try {
-            const response = await fetch(`${API_BASE_URL}/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            const result = await response.json();
-            messageEl.className = response.ok ? 'text-green-600 text-center' : 'text-red-500 text-center';
-            messageEl.textContent = result.message || 'Request failed.';
-            if(response.ok) forgotPasswordForm.reset();
-        } catch (error) {
-            messageEl.className = 'text-red-500 text-center';
-            messageEl.textContent = 'Could not connect to server.';
-        }
-    });
-
-    function showAuthPage(pageToShow) {
-        loginContainer.classList.add('hidden');
-        signupContainer.classList.add('hidden');
-        forgotPasswordContainer.classList.add('hidden');
-        pageToShow.classList.remove('hidden');
-    }
-
-    showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(signupContainer); });
-    showForgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(forgotPasswordContainer); });
-    showLoginLinkFromSignup.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
-    showLoginLinkFromForgot.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
-
-    logoutButton.addEventListener('click', () => {
-        sessionStorage.clear();
-        window.location.reload();
-    });
-
-    togglePassword.addEventListener('click', () => {
-        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-        togglePassword.querySelectorAll('svg').forEach(svg => svg.classList.toggle('hidden'));
-    });
-
-    if (mobileMenuButton) {
-        mobileMenuButton.addEventListener('click', () => {
-            const sidebar = document.getElementById('sidebar-nav');
-            sidebar.classList.toggle('hidden');
         });
+        if (req.file) {
+            db.users[userId].photoUrl = `/uploads/profile/${req.file.filename}`;
+        }
+        writeDB(db);
+        const { pass, ...updatedUser } = db.users[userId];
+        res.json({ success: true, updatedUser: { ...updatedUser, id: userId } });
+    } else {
+        res.status(404).json({ success: false, message: 'User not found.' });
     }
+});
+
+app.get('/users', (req, res) => {
+    const db = readDB();
+    let usersArray = Object.keys(db.users).map(id => {
+        const { pass, ...user } = db.users[id];
+        return { ...user, id };
+    });
+    if (req.query.role) usersArray = usersArray.filter(user => user.role === req.query.role);
+    if (req.query.department) usersArray = usersArray.filter(user => user.department === req.query.department);
+    res.json({ success: true, users: usersArray });
+});
+
+app.delete('/users/:userId', (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    if (db.users[userId]) {
+        delete db.users[userId];
+        writeDB(db);
+        res.json({ success: true, message: 'User deleted.' });
+    } else {
+        res.status(404).json({ success: false, message: 'User not found.' });
+    }
+});
+
+// Signup & Password Requests
+app.post('/signup', (req, res) => {
+    const db = readDB();
+    const { userId } = req.body;
+    if (db.users[userId] || db.signupRequests.some(r => r.userId === userId)) {
+        return res.status(409).json({ success: false, message: 'User ID already exists or has a pending request.' });
+    }
+    db.signupRequests.push(req.body);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Request submitted for approval.' });
+});
+
+app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
+
+app.post('/resolve-signup', (req, res) => {
+    const { userId, action } = req.body;
+    const db = readDB();
+    const requestIndex = db.signupRequests.findIndex(r => r.userId === userId);
+    if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
     
-    // --- SIGNUP LOGIC FOR DYNAMIC DROPDOWNS ---
-    const signupRoleSelect = document.getElementById('signup-role');
-    const signupDepartmentContainer = document.getElementById('signup-department-container');
-    const signupDepartmentSelect = signupDepartmentContainer.querySelector('select');
-    const signupCourseContainer = document.getElementById('signup-course-container');
-    const signupCourseSelect = signupCourseContainer.querySelector('select');
-
-    if (signupRoleSelect) {
-        signupRoleSelect.addEventListener('change', (e) => {
-            const selectedRole = e.target.value;
-            signupDepartmentContainer.classList.toggle('hidden', selectedRole === '');
-            if (selectedRole !== 'Student') {
-                signupCourseContainer.classList.add('hidden');
-            } else {
-                 signupDepartmentSelect.dispatchEvent(new Event('change'));
-            }
-        });
-    }
-    
-    if (signupDepartmentSelect) {
-        signupDepartmentSelect.addEventListener('change', (e) => {
-            const selectedDepartment = e.target.value;
-            signupCourseSelect.innerHTML = '<option value="">Select Course</option>'; 
-            const courses = departmentCourses[selectedDepartment];
-            if (signupRoleSelect.value === 'Student' && courses) {
-                courses.forEach(course => {
-                    const option = document.createElement('option');
-                    option.value = course;
-                    option.textContent = course;
-                    signupCourseSelect.appendChild(option);
-                });
-                signupCourseContainer.classList.remove('hidden');
-            } else {
-                signupCourseContainer.classList.add('hidden');
-            }
-        });
-    }
-
-    function showDashboard(user) {
-        document.getElementById('login-signup-wrapper').classList.add('hidden');
-        dashboardContainer.classList.remove('hidden');
-        welcomeMessage.textContent = `Welcome, ${user.name}`;
-        userRoleDisplay.textContent = `${user.role}${user.role === 'HOD' ? ` (${user.department})` : ''}`;
-        const photoUrl = user.photoUrl ? `${API_BASE_URL}${user.photoUrl}` : 'https://placehold.co/40x40/a0aec0/ffffff?text=U';
-        headerProfilePic.src = photoUrl;
-        headerProfilePic.onerror = () => { headerProfilePic.src = 'https://placehold.co/40x40/a0aec0/ffffff?text=U'; };
-        const roleDashboards = {
-            'Student': populateStudentDashboard,
-            'Faculty': populateFacultyDashboard,
-            'HOD': populateHODDashboard,
-            'Admin': populateAdminDashboard
+    if (action === 'approve') {
+        const request = db.signupRequests[requestIndex];
+        db.users[request.userId] = { 
+            pass: request.pass, name: request.name, role: request.role, email: request.email, 
+            department: request.department || "", course: request.course || "", 
+            phone: "", bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
         };
-        if(roleDashboards[user.role]) {
-            roleDashboards[user.role]();
-        }
-    }
-
-    function populateNav(links) {
-        desktopNavContainer.innerHTML = '';
-        mobileNavContainer.innerHTML = '';
-        links.forEach(linkInfo => {
-            const dLink = document.createElement('a');
-            dLink.href = '#';
-            dLink.className = 'nav-link flex items-center px-4 py-2 mt-2 text-gray-100 rounded-lg hover:bg-green-700';
-            dLink.dataset.target = linkInfo.target;
-            dLink.innerHTML = `<span>${linkInfo.name}</span>`;
-            desktopNavContainer.appendChild(dLink);
-            const mLink = document.createElement('a');
-            mLink.href = '#';
-            mLink.className = 'nav-link flex-1 text-center px-2 py-2 text-sm text-gray-200 rounded hover:bg-green-700';
-            mLink.dataset.target = linkInfo.target;
-            mLink.textContent = linkInfo.name;
-            mobileNavContainer.appendChild(mLink);
-        });
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const target = e.currentTarget.dataset.target;
-                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'bg-green-700'));
-                document.querySelectorAll(`.nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active', 'bg-green-700'));
-                loadMainContent(target);
-                const sidebar = document.getElementById('sidebar-nav');
-                if (window.innerWidth < 768 && !sidebar.classList.contains('hidden')) {
-                    sidebar.classList.add('hidden');
-                }
-            });
-        });
-    }
-
-    function loadMainContent(target) {
-        const functions = {
-            'user-profile': showUserProfile,
-            'student-analytics': showStudentAnalytics,
-            'student-assignments': showStudentAssignments,
-            'student-attendance': showStudentAttendance,
-            'student-fees': showStudentFees,
-            'student-timetable': showStudentTimetable,
-            'student-id-card': showStudentIdCard,
-            'student-announcements': showStudentAnnouncements,
-            'student-leave': showStudentLeave, 
-            'faculty-assignments': showFacultyAssignments,
-            'faculty-timetable': showFacultyTimetable,
-            'faculty-attendance': showFacultyAttendance,
-            'faculty-marks': showFacultyMarks,
-            'faculty-search': showFacultySearch,
-            'faculty-ml-insights': showFacultyMLInsights,
-            'faculty-announcements': showFacultyAnnouncements,
-            'faculty-leave': showFacultyLeave, 
-            'hod-dashboard': showHODDashboard,
-            'hod-faculty': showHODFaculty,
-            'hod-announcements': showHODAnnouncements,
-            'admin-announce': showAdminAnnouncements,
-            'admin-manage-users': showAdminManageUsers,
-            'admin-timetables': showAdminTimetables,
-            'admin-id-requests': showAdminIdRequests,
-            'admin-signup-requests': showAdminSignupRequests,
-            'admin-password-requests': showAdminPasswordRequests,
-        };
-        const func = functions[target];
-        if (func) func();
-        else mainContent.innerHTML = `<div class="p-4 bg-white rounded-lg shadow">Page for target '${target}' is not yet implemented.</div>`;
-    }
-
-    function setDefaultPage(links) {
-        if (links.length > 0) {
-            const defaultTarget = links[0].target;
-            document.querySelectorAll(`.nav-link[data-target="${defaultTarget}"]`).forEach(l => l.classList.add('active', 'bg-green-700'));
-            loadMainContent(defaultTarget);
-        }
-    }
-
-    function populateStudentDashboard() {
-        const links = [
-            { name: 'My Profile', target: 'user-profile'},
-            { name: 'Announcements', target: 'student-announcements'},
-            { name: 'My Analytics', target: 'student-analytics'},
-            { name: 'Assignments', target: 'student-assignments'},
-            { name: 'Attendance', target: 'student-attendance'},
-            { name: 'Apply for Leave', target: 'student-leave'},
-            { name: 'Fee Details', target: 'student-fees'},
-            { name: 'Timetable', target: 'student-timetable'},
-            { name: 'ID Card', target: 'student-id-card'},
-        ];
-        populateNav(links);
-        setDefaultPage(links);
-    }
-    function populateFacultyDashboard() {
-        const links = [
-            { name: 'My Profile', target: 'user-profile' },
-            { name: 'Announcements', target: 'faculty-announcements' },
-            { name: 'Assignments', target: 'faculty-assignments' },
-            { name: 'Leave Requests', target: 'faculty-leave' },
-            { name: 'ML Insights', target: 'faculty-ml-insights' },
-            { name: 'Attendance', target: 'faculty-attendance' },
-            { name: 'Marks', target: 'faculty-marks' },
-            { name: 'Search Student', target: 'faculty-search' },
-        ];
-        populateNav(links);
-        setDefaultPage(links);
-    }
-    function populateAdminDashboard() {
-        const links = [ { name: 'Announcements', target: 'admin-announce' }, { name: 'Manage Users', target: 'admin-manage-users' }, { name: 'Sign-up Requests', target: 'admin-signup-requests' }, { name: 'Password Requests', target: 'admin-password-requests' }, { name: 'ID Card Requests', target: 'admin-id-requests' }, { name: 'Timetables', target: 'admin-timetables'}, ];
-        populateNav(links);
-        setDefaultPage(links);
-    }
-    function populateHODDashboard() {
-        const links = [
-            { name: 'Department', target: 'hod-dashboard' },
-            { name: 'Manage Faculty', target: 'hod-faculty' },
-            { name: 'Announcements', target: 'hod-announcements' },
-            { name: 'Sign-up Requests', target: 'admin-signup-requests' },
-            { name: 'Search Student', target: 'faculty-search' },
-            { name: 'My Profile', target: 'user-profile' }
-        ];
-        populateNav(links);
-        setDefaultPage(links);
-    }
-
-    // --- CONTENT RENDERING FUNCTIONS ---
-    async function showUserProfile() {
-        mainContent.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow">Loading profile...</div>`;
-        const userId = sessionStorage.getItem('userId');
-        try {
-            const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
-            if (!response.ok) throw new Error('Failed to fetch profile');
-            const data = await response.json();
-            const profile = data.profile;
-            const profilePhoto = profile.photoUrl ? `${API_BASE_URL}${profile.photoUrl}` : 'https://placehold.co/150x150/a0aec0/ffffff?text=Photo';
-            mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto"><div id="profile-view"><div class="flex flex-col md:flex-row items-center md:items-start text-center md:text-left"><img src="${profilePhoto}" alt="Profile Photo" class="w-40 h-40 rounded-full mb-4 md:mb-0 md:mr-8 border-4 border-green-500 object-cover"><div class="flex-grow"><h2 class="text-3xl font-bold">${profile.name}</h2><p class="text-lg text-gray-600">${profile.role}${profile.department ? ` - ${profile.department}` : ''}</p></div></div><hr class="my-6"><div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-left">${Object.entries(profile).filter(([k])=>!['pass','name','role','photoUrl','id'].includes(k)).map(([k,v])=>`<div class="flex flex-col"><span class="text-sm font-semibold text-gray-500 uppercase">${k.replace(/([A-Z])/g,' $1').trim()}</span><span class="text-lg">${v||'N/A'}</span></div>`).join('')}</div><div class="text-left mt-8"><button id="edit-profile-btn" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">Edit Profile</button></div></div><div id="profile-edit" class="hidden"></div></div>`;
-            document.getElementById('edit-profile-btn').addEventListener('click', () => showUserProfileEditForm(profile));
-        } catch (error) {
-            mainContent.innerHTML = `<div class="text-center text-red-500 p-8 bg-white rounded-lg shadow">Error loading profile data.</div>`;
-        }
-    }
- 
-    function showUserProfileEditForm(profile) {
-        document.getElementById('profile-view').classList.add('hidden');
-        const editContainer = document.getElementById('profile-edit');
-        editContainer.classList.remove('hidden');
-        editContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4">Edit Your Profile</h2><form id="edit-profile-form"><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div class="md:col-span-2"><label class="block">Upload New Photo</label><input type="file" name="photoFile" accept="image/*" class="w-full mt-1 p-2 border rounded file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"></div><div><label class="block">Full Name</label><input type="text" name="name" value="${profile.name||''}" class="w-full mt-1 p-2 border rounded"></div><div><label class="block">Email</label><input type="email" name="email" value="${profile.email||''}" class="w-full mt-1 p-2 border rounded"></div><div><label class="block">Phone Number</label><input type="text" name="phone" value="${profile.phone||''}" class="w-full mt-1 p-2 border rounded"></div><div><label class="block">Blood Group</label><input type="text" name="bloodGroup" value="${profile.bloodGroup||''}" class="w-full mt-1 p-2 border rounded"></div></div><div class="mt-6 flex gap-4"><button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg">Save</button><button type="button" id="cancel-edit-btn" class="bg-gray-400 text-white px-6 py-2 rounded-lg">Cancel</button></div></form>`;
-        document.getElementById('cancel-edit-btn').addEventListener('click', () => { document.getElementById('profile-view').classList.remove('hidden'); editContainer.classList.add('hidden'); });
-        document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            formData.append('userId', sessionStorage.getItem('userId'));
-            try {
-                const response = await fetch(`${API_BASE_URL}/profile/update`, { method: 'POST', body: formData });
-                const result = await response.json();
-                if (result.success) {
-                    showNotification('Profile updated!');
-                    sessionStorage.setItem('loggedInUser', JSON.stringify(result.updatedUser));
-                    const newPhotoUrl = result.updatedUser.photoUrl ? `${API_BASE_URL}${result.updatedUser.photoUrl}` : 'https://placehold.co/40x40/a0aec0/ffffff?text=U';
-                    headerProfilePic.src = `${newPhotoUrl}?t=${new Date().getTime()}`; // bust cache
-                    showUserProfile();
-                } else { showNotification('Failed to update profile.', true); }
-            } catch (error) { showNotification("Could not connect to server.", true); }
-        });
-    }
-
-    async function showStudentAnalytics() {
-        mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">Loading analytics...</div>`;
-        const studentId = sessionStorage.getItem('userId');
-        try {
-            const response = await fetch(`${API_BASE_URL}/analytics/${studentId}`);
-            const data = await response.json();
-            if (!data.success) throw new Error(data.message || "Failed to fetch analytics data.");
-
-            const { attendancePercentage, overallPercentage, cgpa, subjectWiseMarks } = data.analytics;
-            mainContent.innerHTML = `<div class="space-y-8"><div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="bg-white p-6 rounded-lg shadow-lg text-center"><h3 class="text-lg font-semibold text-gray-500">Overall CGPA</h3><p class="text-4xl font-bold text-green-600 mt-2">${cgpa}</p></div><div class="bg-white p-6 rounded-lg shadow-lg text-center"><h3 class="text-lg font-semibold text-gray-500">Overall Percentage</h3><p class="text-4xl font-bold text-blue-600 mt-2">${overallPercentage}%</p></div><div class="bg-white p-6 rounded-lg shadow-lg text-center"><h3 class="text-lg font-semibold text-gray-500">Attendance</h3><p class="text-4xl font-bold text-orange-500 mt-2">${attendancePercentage}%</p></div></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-8"><div class="bg-white p-6 rounded-lg shadow-lg"><h3 class="text-xl font-bold mb-4">Subject-wise Performance</h3><div class="overflow-x-auto">${subjectWiseMarks.length > 0 ? `<table class="min-w-full"><thead class="bg-gray-100"><tr><th class="py-2 px-3 text-left">Subject</th><th class="py-2 px-3 text-center">Marks</th><th class="py-2 px-3 text-center">Grade Point</th></tr></thead><tbody class="divide-y">${subjectWiseMarks.map(s => `<tr><td class="py-2 px-3 font-medium">${s.subjectName}</td><td class="py-2 px-3 text-center">${s.marksObtained}/${s.maxMarks}</td><td class="py-2 px-3 text-center font-bold">${s.gradePoint}</td></tr>`).join('')}</tbody></table>` : '<p>No marks data available yet.</p>'}</div></div><div class="bg-white p-6 rounded-lg shadow-lg"><h3 class="text-xl font-bold mb-4">Marks Distribution</h3><canvas id="marksChart"></canvas></div></div></div>`;
-
-            if(subjectWiseMarks.length > 0) {
-                const ctx = document.getElementById('marksChart').getContext('2d');
-                new Chart(ctx, { type: 'bar', data: { labels: subjectWiseMarks.map(s => s.subjectCode), datasets: [{ label: 'Marks Obtained', data: subjectWiseMarks.map(s => s.marksObtained), backgroundColor: 'rgba(34, 197, 94, 0.6)', borderColor: 'rgba(22, 163, 74, 1)', borderWidth: 1 }] }, options: { scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } } });
-            }
-        } catch(error) {
-            mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg text-red-500">Could not load your analytics data. ${error.message}</div>`;
-        }
-    }
-
-    async function showStudentAssignments() {
-        mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">Loading assignments...</div>`;
-        try {
-            const [assignmentsRes, submissionsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/assignments`),
-                fetch(`${API_BASE_URL}/submissions/student/${sessionStorage.getItem('userId')}`)
-            ]);
-            const assignments = await assignmentsRes.json();
-            const submissions = await submissionsRes.json();
-
-            if (assignments.length === 0) { mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">No assignments have been posted yet.</div>`; return; }
-            mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-4">Assignments & Practicals</h2><div class="space-y-6">${assignments.map(asg => { const submission = submissions.find(s => s.assignmentId === asg.id); const statusColor = { 'Approved': 'text-green-600', 'Denied': 'text-red-600', 'Pending': 'text-orange-500' }[submission?.status] || 'text-gray-500'; const assignmentFileLink = asg.filePath ? `<a href="${API_BASE_URL}${asg.filePath}" target="_blank" class="text-green-600 font-medium hover:underline">Download Assignment File</a>` : ''; return `<div class="border p-4 rounded-lg"><h3 class="text-xl font-semibold">${asg.title}</h3><p class="text-gray-600 my-2">${asg.description}</p>${assignmentFileLink}<p class="text-sm text-red-600 font-medium mt-2">Due Date: ${new Date(asg.dueDate).toLocaleDateString()}</p><hr class="my-4">${!submission || submission.status === 'Denied' ? `<form class="assignment-submission-form" data-assignment-id="${asg.id}"><label class="block mb-2 font-medium">Submit Your Work:</label><input type="file" name="submissionFile" class="p-2 border rounded w-full file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" required><button type="submit" class="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg">Submit</button></form>` : ''}<div class="mt-2"><p><strong>Status:</strong> <span class="${statusColor}">${submission ? submission.status : 'Not Submitted'}</span></p>${submission?.status === 'Denied' ? `<p class="text-sm"><strong>Reason:</strong> ${submission.reason}</p>` : ''}${submission?.status === 'Approved' ? `<p class="text-sm text-green-600">Your work has been approved.</p>` : ''}</div></div>`; }).join('')}</div></div>`;
-            document.querySelectorAll('.assignment-submission-form').forEach(form => {
-                form.addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target);
-                    formData.append('assignmentId', e.target.dataset.assignmentId);
-                    formData.append('studentId', sessionStorage.getItem('userId'));
-                    try {
-                        const response = await fetch(`${API_BASE_URL}/submissions`, { method: 'POST', body: formData });
-                        if(response.ok) { showNotification('Submission successful!'); showStudentAssignments(); } else { showNotification('Submission failed.', true); }
-                    } catch (error) { showNotification('Could not connect to server.', true); }
-                });
-            });
-        } catch (error) { mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg text-red-500">Could not load assignments.</div>`; }
-    }
-
-    async function showStudentAttendance() {
-        mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">Loading attendance...</div>`;
-        try {
-            const response = await fetch(`${API_BASE_URL}/attendance/student/${sessionStorage.getItem('userId')}`);
-            if (!response.ok) throw new Error('Could not fetch attendance');
-            const attendance = await response.json();
-            if (attendance.length === 0) {
-                mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg">No attendance records found.</div>`;
-                return;
-            }
-            mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg"><h2 class="text-2xl font-bold mb-4">My Attendance</h2><div class="overflow-x-auto"><table class="min-w-full"><thead class="bg-gray-100"><tr><th class="py-2 px-3 text-left">Date</th><th class="py-2 px-3 text-left">Class</th><th class="py-2 px-3 text-center">Status</th></tr></thead><tbody class="divide-y">${attendance.map(rec => `<tr><td class="py-2 px-3">${new Date(rec.date).toLocaleDateString()}</td><td class="py-2 px-3 font-medium">${rec.class}</td><td class="py-2 px-3 text-center font-bold ${rec.status === 'P' ? 'text-green-600' : 'text-red-600'}">${rec.status === 'P' ? 'Present' : 'Absent'}</td></tr>`).join('')}</tbody></table></div></div>`;
-        } catch(error) { mainContent.innerHTML = `<div class="bg-white p-8 rounded-lg shadow-lg text-red-500">Could not load attendance.</div>`; }
     }
     
-    // ... And so on for all your other content rendering functions
-    // (The rest of the file is identical to what you originally had, 
-    // ensuring all `show...` functions are present)
+    db.signupRequests.splice(requestIndex, 1);
+    writeDB(db);
+    res.json({ success: true, message: `Request ${action}d.` });
+});
 
-    // Check for logged-in user on page load
-    const loggedInUser = sessionStorage.getItem('loggedInUser');
-    if (loggedInUser) {
-        showDashboard(JSON.parse(loggedInUser));
+app.post('/forgot-password', (req, res) => {
+    const { userId, newPass } = req.body;
+    const db = readDB();
+    const user = db.users[userId];
+    if (!user) return res.status(404).json({ success: false, message: 'User ID not found.' });
+    if (db.passwordRequests.some(r => r.userId === userId)) {
+        return res.status(409).json({ success: false, message: 'A password request for this user already exists.' });
     }
-    // Initial call to set the correct dropdown visibility on page load
-    updateDepartmentVisibility();
+    db.passwordRequests.push({ userId, newPass, userName: user.name });
+    writeDB(db);
+    res.json({ success: true, message: 'Password reset request sent for approval.' });
+});
+
+app.get('/password-requests', (req, res) => res.json(readDB().passwordRequests));
+
+app.post('/resolve-password-request', (req, res) => {
+    const { userId, action } = req.body;
+    const db = readDB();
+    const requestIndex = db.passwordRequests.findIndex(r => r.userId === userId);
+    if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
+    const request = db.passwordRequests[requestIndex];
+    if (action === 'approve' && db.users[userId]) {
+        db.users[userId].pass = request.newPass;
+    }
+    db.passwordRequests.splice(requestIndex, 1);
+    writeDB(db);
+    res.json({ success: true, message: `Request for ${request.userName} has been ${action}d.` });
+});
+
+// --- ASSIGNMENTS & SUBMISSIONS ---
+app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
+    const db = readDB();
+    const newAssignment = {
+        id: `asg-${Date.now()}`, ...req.body,
+        createdAt: new Date().toISOString(),
+        filePath: req.file ? `/uploads/assignments/${req.file.filename}` : null
+    };
+    db.assignments.push(newAssignment);
+    writeDB(db);
+    res.status(201).json({ success: true, assignment: newAssignment });
+});
+app.get('/assignments', (req, res) => res.json(readDB().assignments));
+app.post('/submissions', upload.single('submissionFile'), (req, res) => {
+    const db = readDB();
+    const { assignmentId, studentId } = req.body;
+    if (!req.file) { return res.status(400).json({ success: false, message: 'No file submitted.' }); }
+    const student = db.users[studentId];
+    const newSubmission = {
+        id: `sub-${Date.now()}`, assignmentId, studentId,
+        studentName: student ? student.name : 'Unknown',
+        submittedAt: new Date().toISOString(),
+        filePath: `/uploads/submissions/${req.file.filename}`,
+        status: 'Pending', reason: null
+    };
+    db.submissions = db.submissions.filter(s => !(s.assignmentId === assignmentId && s.studentId === studentId));
+    db.submissions.push(newSubmission);
+    writeDB(db);
+    res.status(201).json({ success: true, submission: newSubmission });
+});
+app.get('/submissions/student/:studentId', (req, res) => res.json(readDB().submissions.filter(s => s.studentId === req.params.studentId)));
+app.get('/submissions', (req, res) => {
+    const db = readDB();
+    res.json(db.submissions);
+});
+app.post('/submissions/resolve', (req, res) => {
+    const { submissionId, status, reason } = req.body;
+    const db = readDB();
+    const submission = db.submissions.find(s => s.id === submissionId);
+    if (submission) {
+        submission.status = status;
+        submission.reason = reason || null;
+        writeDB(db);
+        res.json({ success: true, message: 'Submission status updated.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Submission not found.' });
+    }
+});
+
+// --- STUDENT-SPECIFIC INFO ---
+app.get('/analytics/:studentId', (req, res) => {
+    const { studentId } = req.params;
+    const db = readDB();
+    const marksData = db.marks[studentId] || [];
+    const attendanceData = db.attendanceRecords.filter(rec => rec.studentId === studentId);
+    if (marksData.length === 0 && attendanceData.length === 0) {
+        return res.json({ success: true, analytics: { attendancePercentage: 0, overallPercentage: 0, cgpa: 0, subjectWiseMarks: [] } });
+    }
+    const totalRecords = attendanceData.length;
+    const presentDays = attendanceData.filter(rec => rec.status === 'P').length;
+    const attendancePercentage = totalRecords > 0 ? ((presentDays / totalRecords) * 100).toFixed(2) : 0;
+    const { totalMarksObtained, totalMaxMarks, totalGradePoints } = marksData.reduce((acc, subject) => {
+        acc.totalMarksObtained += subject.marksObtained;
+        acc.totalMaxMarks += subject.maxMarks;
+        acc.totalGradePoints += subject.gradePoint;
+        return acc;
+    }, { totalMarksObtained: 0, totalMaxMarks: 0, totalGradePoints: 0 });
+    const overallPercentage = totalMaxMarks > 0 ? ((totalMarksObtained / totalMaxMarks) * 100).toFixed(2) : 0;
+    const cgpa = marksData.length > 0 ? (totalGradePoints / marksData.length).toFixed(2) : 0;
+    res.json({ success: true, analytics: { attendancePercentage, overallPercentage, cgpa, subjectWiseMarks: marksData } });
+});
+app.get('/fees/:userId', (req, res) => res.json(readDB().fees[req.params.userId] || { fees: {}, transport: {} }));
+app.get('/attendance/student/:studentId', (req, res) => res.json(readDB().attendanceRecords.filter(a => a.studentId === req.params.studentId)));
+
+// --- TIMETABLES ---
+app.get('/timetable/student/:userId', (req, res) => {
+    const db = readDB();
+    const user = db.users[req.params.userId];
+    if (user && user.batch && db.studentTimetables[user.batch]) {
+        res.json(db.studentTimetables[user.batch]);
+    } else {
+        res.status(404).json({ success: false, message: 'Timetable not found.' });
+    }
+});
+app.get('/timetable/faculty/:facultyId', (req, res) => {
+    const db = readDB();
+    if (db.facultyTimetables[req.params.facultyId]) {
+        res.json(db.facultyTimetables[req.params.facultyId]);
+    } else {
+        res.status(404).json({ success: false, message: 'Timetable not found.' });
+    }
+});
+app.get('/timetables', (req, res) => {
+    const db = readDB();
+    res.json({ student: db.studentTimetables, faculty: db.facultyTimetables });
+});
+app.post('/timetables/student/:batch', (req, res) => {
+    const { batch } = req.params;
+    const { schedule } = req.body;
+    const db = readDB();
+    if (db.studentTimetables[batch]) {
+        db.studentTimetables[batch].schedule = schedule;
+        writeDB(db);
+        res.json({ success: true, message: `Timetable for batch ${batch} updated.` });
+    } else {
+        res.status(404).json({ success: false, message: 'Batch not found.' });
+    }
+});
+app.post('/timetables/faculty/:facultyId', (req, res) => {
+    const { facultyId } = req.params;
+    const { schedule } = req.body;
+    const db = readDB();
+    if (db.facultyTimetables[facultyId]) {
+        db.facultyTimetables[facultyId].schedule = schedule;
+        writeDB(db);
+        res.json({ success: true, message: `Timetable for faculty ${facultyId} updated.` });
+    } else {
+        res.status(404).json({ success: false, message: 'Faculty ID not found.' });
+    }
+});
+
+// --- ATTENDANCE & MARKS (FACULTY) ---
+app.post('/attendance', (req, res) => {
+    const { records } = req.body;
+    const db = readDB();
+    records.forEach(record => {
+        const existingIndex = db.attendanceRecords.findIndex(r => r.studentId === record.studentId && r.date === record.date && r.class === record.class);
+        if (existingIndex > -1) {
+            db.attendanceRecords[existingIndex] = record;
+        } else {
+            db.attendanceRecords.push(record);
+        }
+    });
+    writeDB(db);
+    res.json({ success: true, message: 'Attendance recorded.' });
+});
+app.post('/marks', (req, res) => {
+    const { records } = req.body;
+    const db = readDB();
+    records.forEach(record => {
+        if (!db.marks[record.studentId]) {
+            db.marks[record.studentId] = [];
+        }
+        const existingIndex = db.marks[record.studentId].findIndex(m => m.subjectCode === record.subjectCode);
+        if (existingIndex > -1) {
+            db.marks[record.studentId][existingIndex] = { ...db.marks[record.studentId][existingIndex], ...record };
+        } else {
+            db.marks[record.studentId].push(record);
+        }
+    });
+    writeDB(db);
+    res.json({ success: true, message: 'Marks updated successfully.' });
+});
+
+// --- ID CARD REQUESTS ---
+app.post('/id-card-request', upload.single('idCardPhoto'), (req, res) => {
+    const { userId, name, phone, program, department, dob, bloodGroup } = req.body;
+
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Photo is required." });
+    }
+
+    const db = readDB();
+    const newRequest = {
+        userId, userName: name, phone, program, department, dob, bloodGroup,
+        photoUrl: `/uploads/idcards/${req.file.filename}`,
+        status: 'Pending', reason: null
+    };
+
+    const existingIndex = db.idCardRequests.findIndex(r => r.userId === userId);
+    if (existingIndex > -1) {
+        if (db.idCardRequests[existingIndex].status === 'Denied') {
+            db.idCardRequests[existingIndex] = newRequest;
+        } else {
+            return res.status(409).json({ success: false, message: 'An ID card request for this user is already pending or approved.' });
+        }
+    } else {
+        db.idCardRequests.push(newRequest);
+    }
+    writeDB(db);
+    res.json({ success: true, message: 'ID card request submitted successfully.' });
+});
+app.get('/id-card-status/:userId', (req, res) => {
+    const { userId } = req.params;
+    const request = readDB().idCardRequests.find(r => r.userId === userId);
+    res.json(request || { status: 'Not Applied' });
+});
+app.get('/id-card-requests', (req, res) => res.json(readDB().idCardRequests));
+app.post('/resolve-id-card-request', (req, res) => {
+    const { userId, action, reason } = req.body;
+    const db = readDB();
+    const request = db.idCardRequests.find(r => r.userId === userId);
+    if (!request) return res.status(404).json({ success: false, message: 'Request not found.' });
+
+    if (action === 'approve') {
+        request.status = 'Approved';
+        request.reason = null;
+        if (db.users[userId]) {
+            db.users[userId].photoUrl = request.photoUrl;
+            db.users[userId].phone = request.phone;
+            db.users[userId].bloodGroup = request.bloodGroup;
+            db.users[userId].dob = request.dob;
+            db.users[userId].program = request.program;
+        }
+    } else {
+        request.status = 'Denied';
+        request.reason = reason || 'No reason specified.';
+    }
+    writeDB(db);
+    res.json({ success: true, message: `Request has been ${action}d.` });
+});
+
+
+// --- LEAVE REQUESTS ---
+app.post('/leave-requests', (req, res) => {
+    const db = readDB();
+    const newRequest = { id: `leave-${Date.now()}`, ...req.body, status: 'Pending', denialReason: null, resolvedBy: null };
+    db.leaveRequests.push(newRequest);
+    writeDB(db);
+    res.status(201).json({ success: true, request: newRequest });
+});
+app.get('/leave-requests/student/:studentId', (req, res) => {
+    const db = readDB();
+    res.json(db.leaveRequests.filter(r => r.studentId === req.params.studentId).sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
+});
+app.get('/leave-requests', (req, res) => {
+    const db = readDB();
+    res.json(db.leaveRequests.sort((a, b) => new Date(b.startDate) - new Date(a.startDate)));
+});
+app.post('/leave-requests/resolve', (req, res) => {
+    const { requestId, status, denialReason, resolvedBy } = req.body;
+    const db = readDB();
+    const request = db.leaveRequests.find(r => r.id === requestId);
+    if (request) {
+        request.status = status;
+        request.resolvedBy = resolvedBy || 'N/A';
+        request.denialReason = denialReason || null;
+        writeDB(db);
+        res.json({ success: true, message: 'Request updated.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Request not found.' });
+    }
+});
+
+
+// --- ADMIN & HOD ---
+app.get('/announcements', (req, res) => res.json(readDB().announcements));
+app.get('/announcements/feed', (req, res) => {
+    const { role, department } = req.query;
+    const db = readDB();
+    const feed = db.announcements.filter(ann => {
+        if (ann.scope === 'all') return true;
+        if (ann.scope === 'department_all' && ann.department === department) return true;
+        if (ann.scope === 'department_students' && ann.department === department && role === 'Student') return true;
+        if (ann.scope === 'students' && role === 'Student') return true;
+        return false;
+    });
+    res.json({ success: true, announcements: feed });
+});
+app.post('/announcements', (req, res) => {
+    const { text, authorName, authorRole, scope, department } = req.body;
+    if (!text || !authorName || !authorRole || !scope) {
+        return res.status(400).json({ success: false, message: "Missing required announcement fields." });
+    }
+    const db = readDB();
+    const newAnnouncement = {
+        id: `ann-${Date.now()}`, text, date: new Date().toISOString(),
+        authorName, authorRole, scope, department: department || null
+    };
+    db.announcements.unshift(newAnnouncement);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Announcement posted.', announcement: newAnnouncement });
+});
+app.delete('/announcements/:id', (req, res) => {
+    const { id } = req.params;
+    const db = readDB();
+    const initialLength = db.announcements.length;
+    db.announcements = db.announcements.filter(ann => ann.id !== id);
+    if (db.announcements.length < initialLength) {
+        writeDB(db);
+        res.json({ success: true, message: 'Announcement deleted.' });
+    } else {
+        res.status(404).json({ success: false, message: 'Announcement not found.' });
+    }
+});
+app.get('/hod/dashboard/:department', (req, res) => {
+    const { department } = req.params;
+    const db = readDB();
+    const students = Object.values(db.users).filter(u => u.department === department && u.role === 'Student');
+    const studentIds = Object.keys(db.users).filter(id => db.users[id].department === department && db.users[id].role === 'Student');
+    const totalStudents = students.length;
+    const totalFaculty = Object.values(db.users).filter(u => u.department === department && u.role === 'Faculty').length;
+    let totalAttendance = 0, attendanceRecordsCount = 0, totalCgpa = 0, studentsWithMarks = 0;
+    studentIds.forEach(id => {
+        const studentAttendance = db.attendanceRecords.filter(rec => rec.studentId === id);
+        if (studentAttendance.length > 0) {
+            const present = studentAttendance.filter(r => r.status === 'P').length;
+            totalAttendance += (present / studentAttendance.length);
+            attendanceRecordsCount++;
+        }
+        const studentMarks = db.marks[id];
+        if (studentMarks && studentMarks.length > 0) {
+            const totalGradePoints = studentMarks.reduce((sum, s) => sum + s.gradePoint, 0);
+            totalCgpa += (totalGradePoints / studentMarks.length);
+            studentsWithMarks++;
+        }
+    });
+    const avgAttendance = attendanceRecordsCount > 0 ? ((totalAttendance / attendanceRecordsCount) * 100).toFixed(2) : 0;
+    const avgCgpa = studentsWithMarks > 0 ? (totalCgpa / studentsWithMarks).toFixed(2) : 0;
+    const programs = db.departmentPrograms[decodeURIComponent(department)] || [];
+    res.json({ success: true, data: { totalStudents, totalFaculty, avgAttendance, avgCgpa, programs } });
+});
+
+// --- MISC ---
+app.get('/historical-data', (req, res) => res.json({ success: true, historicalData: readDB().historicalPerformance }));
+
+
+// Fallback route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// --- SERVER START ---
+app.listen(PORT, () => {
+    console.log(`TULA'S CONNECT server is running on port ${PORT}`);
 });
 
