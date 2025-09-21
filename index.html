@@ -47,12 +47,10 @@
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <!-- Wrapper for all authentication-related screens -->
     <div id="login-signup-wrapper">
         <div class="min-h-screen flex items-center justify-center bg-cover bg-center" style="background-image: url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
             <div class="absolute inset-0 bg-black opacity-50"></div>
             
-            <!-- Login Container -->
             <div id="login-container" class="relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <div class="flex flex-col items-center space-y-2">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" alt="Tula's Institute Logo" class="h-20 w-auto">
@@ -120,7 +118,6 @@
                 </div>
             </div>
 
-            <!-- Signup Container -->
             <div id="signup-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <h2 class="text-2xl font-bold text-center text-gray-800">Create Account</h2>
                 <form id="signupForm" class="space-y-4">
@@ -156,7 +153,6 @@
                 <p class="text-center text-sm">Already have an account? <a href="#" id="show-login-link-from-signup" class="text-green-600">Log In</a></p>
             </div>
 
-            <!-- Forgot Password Container -->
             <div id="forgot-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                  <h2 class="text-2xl font-bold text-center text-gray-800">Forgot Password</h2>
                  <p class="text-center text-sm text-gray-600">Enter your User ID and we'll send you a link to reset your password.</p>
@@ -168,7 +164,6 @@
                  <p class="text-center text-sm">Remembered your password? <a href="#" id="show-login-link-from-forgot" class="text-green-600">Log In</a></p>
             </div>
             
-            <!-- Reset Password Container -->
             <div id="reset-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <h2 class="text-2xl font-bold text-center text-gray-800">Reset Your Password</h2>
                 <form id="resetPasswordForm" class="space-y-4">
@@ -182,7 +177,6 @@
         </div>
     </div>
 
-    <!-- Dashboard Main Container -->
     <div id="dashboard-container" class="hidden">
         <header class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40">
             <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -274,36 +268,24 @@ const departmentCourses = {
     ]
 };
 
-
 function showNotification(message, isError = false) {
     const toast = document.getElementById('notification-toast');
     const messageP = document.getElementById('notification-message');
-
     if (!toast || !messageP) return;
-
     messageP.textContent = message;
     toast.className = 'fixed bottom-20 md:bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transition-all duration-500 transform z-50';
-
-    if (isError) {
-        toast.classList.add('bg-red-600');
-    } else {
-        toast.classList.add('bg-green-600');
-    }
-
+    toast.classList.add(isError ? 'bg-red-600' : 'bg-green-600');
     toast.style.transform = 'translateY(0)';
     toast.style.opacity = '1';
-
     setTimeout(() => {
         toast.style.transform = 'translateY(5rem)';
         toast.style.opacity = '0';
     }, 4000);
 }
 
-// Helper to render a loading spinner
 function renderLoader(container) {
     container.innerHTML = `<div class="loader"></div>`;
 }
-
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,25 +304,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerProfilePic = document.getElementById('header-profile-pic');
     const welcomeMessage = document.getElementById('welcome-message');
     const userRoleDisplay = document.getElementById('user-role');
-
     const desktopNavContainer = document.getElementById('sidebar-nav-links-desktop');
     const mobileNavContainer = document.getElementById('footer-nav-links-mobile');
     const mobileMenuButton = document.getElementById('mobile-menu-button');
-
     const togglePassword = document.getElementById('toggle-password');
     const showSignupLink = document.getElementById('show-signup-link');
     const showLoginLinkFromSignup = document.getElementById('show-login-link-from-signup');
     const showForgotPasswordLink = document.getElementById('show-forgot-password-link');
     const showLoginLinkFromForgot = document.getElementById('show-login-link-from-forgot');
-
     const forgotPasswordLinkWrapper = showForgotPasswordLink.parentElement;
     const signupLinkWrapper = showSignupLink.parentElement;
-
     const loginContainer = document.getElementById('login-container');
     const signupContainer = document.getElementById('signup-container');
     const forgotPasswordContainer = document.getElementById('forgot-password-container');
     const resetPasswordContainer = document.getElementById('reset-password-container');
-
     const signupForm = document.getElementById('signupForm');
     const forgotPasswordForm = document.getElementById('forgotPasswordForm');
     const resetPasswordForm = document.getElementById('resetPasswordForm');
@@ -349,15 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDepartmentVisibility() {
         const isDeptLogin = roleSelect.value === 'Department Login';
         const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
-
         departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
         engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
-
         const isAdminSelected = roleSelect.value === 'Admin';
         forgotPasswordLinkWrapper.classList.toggle('hidden', isAdminSelected);
         signupLinkWrapper.classList.toggle('hidden', isAdminSelected);
     }
-
 
     // --- EVENT LISTENERS ---
     roleSelect.addEventListener('change', updateDepartmentVisibility);
@@ -369,13 +343,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value.trim();
         const selectedRole = roleSelect.value;
         const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = ''; 
+        errorMessage.textContent = '';
 
         let department = null;
         if (selectedRole === 'Department Login') {
             const mainDepartmentValue = departmentSelect.value;
             if (mainDepartmentValue === 'Department of Engineering') {
-                department = engineeringDeptSelect.value; 
+                department = engineeringDeptSelect.value;
                 if (!department) {
                     errorMessage.textContent = 'Please select an engineering branch.';
                     return;
@@ -417,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = Object.fromEntries(new FormData(e.target).entries());
         const signupMessage = document.getElementById('signup-message');
         signupMessage.textContent = 'Submitting...';
-
         try {
             const response = await fetch(`${API_BASE_URL}/signup`, {
                 method: 'POST',
@@ -443,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = Object.fromEntries(new FormData(e.target).entries());
         const messageEl = document.getElementById('forgot-password-message');
         messageEl.textContent = 'Sending reset link...';
-
         try {
             const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
@@ -464,15 +436,12 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const messageEl = document.getElementById('reset-password-message');
-        
         if(data.newPassword !== data.confirmPassword){
             messageEl.className = 'text-red-500 text-center';
             messageEl.textContent = 'Passwords do not match.';
             return;
         }
-        
         messageEl.textContent = 'Resetting password...';
-        
         try {
             const response = await fetch(`${API_BASE_URL}/reset-password`, {
                 method: 'POST',
@@ -543,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (signupDepartmentSelect) {
         signupDepartmentSelect.addEventListener('change', (e) => {
             const selectedDepartment = e.target.value;
-            signupCourseSelect.innerHTML = '<option value="">Select Course</option>'; 
+            signupCourseSelect.innerHTML = '<option value="">Select Course</option>';
             const courses = departmentCourses[selectedDepartment];
             if (signupRoleSelect.value === 'Student' && courses) {
                 courses.forEach(course => {
@@ -620,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'student-timetable': showStudentTimetable,
             'student-id-card': showStudentIdCard,
             'student-announcements': showStudentAnnouncements,
-            'student-leave': showStudentLeave, 
+            'student-leave': showStudentLeave,
             'faculty-assignments': showFacultyAssignments,
             'faculty-timetable': showFacultyTimetable,
             'faculty-attendance': showFacultyAttendance,
@@ -628,7 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'faculty-search': showFacultySearch,
             'faculty-ml-insights': showFacultyMLInsights,
             'faculty-announcements': showFacultyAnnouncements,
-            'faculty-leave': showFacultyLeave, 
+            'faculty-leave': showFacultyLeave,
             'hod-dashboard': showHODDashboard,
             'hod-faculty': showHODFaculty,
             'hod-announcements': showHODAnnouncements,
@@ -682,7 +651,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setDefaultPage(links);
     }
     function populateAdminDashboard() {
-        const links = [ { name: 'Announcements', target: 'admin-announce' }, { name: 'Manage Users', target: 'admin-manage-users' }, { name: 'Sign-up Requests', target: 'admin-signup-requests' }, { name: 'Password Requests', target: 'admin-password-requests' }, { name: 'ID Card Requests', target: 'admin-id-requests' }, { name: 'Timetables', target: 'admin-timetables'}, ];
+        const links = [ 
+            { name: 'Announcements', target: 'admin-announce' }, 
+            { name: 'Manage Users', target: 'admin-manage-users' }, 
+            { name: 'ID Card Requests', target: 'admin-id-requests' }, 
+            { name: 'Timetables', target: 'admin-timetables'}, 
+        ];
         populateNav(links);
         setDefaultPage(links);
     }
@@ -740,61 +714,61 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function showStudentAnalytics() { /* ... implementation ... */ }
-    async function showStudentAssignments() { /* ... implementation ... */ }
-    async function showStudentAttendance() { /* ... implementation ... */ }
-    async function showStudentFees() { /* ... implementation ... */ }
-    async function showStudentTimetable() { /* ... implementation ... */ }
-    async function showStudentIdCard() { /* ... implementation ... */ }
-    async function showStudentLeave() { /* ... implementation ... */ }
-    async function showFacultyAssignments() { /* ... implementation ... */ }
-    async function showFacultyLeave() { /* ... implementation ... */ }
-    async function showFacultyTimetable() { /* ... implementation ... */ }
-    async function showFacultyAttendance() { /* ... implementation ... */ }
-    async function showFacultyMarks() { /* ... implementation ... */ }
-    async function showFacultySearch() { /* ... implementation ... */ }
-    async function showFacultyMLInsights() { /* ... implementation ... */ }
-    async function showHODDashboard() { /* ... implementation ... */ }
-    async function showHODFaculty() { /* ... implementation ... */ }
-    async function showAdminManageUsers() { /* ... implementation ... */ }
-    async function showAdminTimetables() { /* ... implementation ... */ }
-    async function showAdminIdRequests() { /* ... implementation ... */ }
-    async function showAdminSignupRequests() { /* ... implementation ... */ }
-    async function showAdminPasswordRequests() { /* ... implementation ... */ }
-    async function showStudentAnnouncements() { /* ... implementation ... */ }
-    async function showFacultyAnnouncements() { /* ... implementation ... */ }
-    async function showHODAnnouncements() { /* ... implementation ... */ }
-    async function showAdminAnnouncements() { /* ... implementation ... */ }
+    async function showStudentAnalytics() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My Analytics</h2><p>Analytics and performance charts will be displayed here.</p></div>`; }
+    async function showStudentAssignments() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My Assignments</h2><p>A list of current and past assignments will be shown here.</p></div>`; }
+    async function showStudentAttendance() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My Attendance</h2><p>Your attendance record will be displayed here.</p></div>`; }
+    async function showStudentFees() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Fee Details</h2><p>Your fee payment history and upcoming dues will be shown here.</p></div>`; }
+    async function showStudentTimetable() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My Timetable</h2><p>Your class schedule will be displayed here.</p></div>`; }
+    async function showStudentIdCard() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My ID Card</h2><p>Your digital ID card will be displayed here.</p></div>`; }
+    async function showStudentLeave() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Apply for Leave</h2><p>A form to apply for leave and view past applications will be available here.</p></div>`; }
+    async function showFacultyAssignments() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Manage Assignments</h2><p>Tools for creating and managing student assignments will be here.</p></div>`; }
+    async function showFacultyLeave() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Leave Requests</h2><p>Review and approve student leave requests here.</p></div>`; }
+    async function showFacultyTimetable() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>My Timetable</h2><p>Your teaching schedule will be displayed here.</p></div>`; }
+    async function showFacultyAttendance() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Mark Attendance</h2><p>Tools for marking student attendance will be available here.</p></div>`; }
+    async function showFacultyMarks() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Enter Marks</h2><p>A portal for entering student marks and grades will be here.</p></div>`; }
+    async function showFacultySearch() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Search Student</h2><p>A tool to search for student details will be available here.</p></div>`; }
+    async function showFacultyMLInsights() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>ML Insights</h2><p>Machine Learning insights on student performance will be shown here.</p></div>`; }
+    async function showHODDashboard() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Department Dashboard</h2><p>An overview of your department's analytics will be displayed here.</p></div>`; }
+    async function showHODFaculty() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Manage Faculty</h2><p>Tools for managing faculty members in your department will be here.</p></div>`; }
+    async function showAdminManageUsers() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Manage Users</h2><p>Tools for managing all users (Students, Faculty, HODs) will be here.</p></div>`; }
+    async function showAdminTimetables() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Manage Timetables</h2><p>A portal for creating and updating timetables will be here.</p></div>`; }
+    async function showAdminIdRequests() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>ID Card Requests</h2><p>A queue for approving and printing student ID card requests will be here.</p></div>`; }
+    async function showAdminSignupRequests() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Sign-up Requests</h2><p>Approve or deny new user registration requests here.</p></div>`; }
+    async function showAdminPasswordRequests() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Password Requests</h2><p>Admin-level password reset requests will be managed here.</p></div>`; }
+    async function showStudentAnnouncements() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Announcements</h2><p>Important announcements will be displayed here.</p></div>`; }
+    async function showFacultyAnnouncements() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Announcements</h2><p>Tools to create announcements for students will be here.</p></div>`; }
+    async function showHODAnnouncements() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Department Announcements</h2><p>Tools to create announcements for your department will be here.</p></div>`; }
+    async function showAdminAnnouncements() { mainContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><h2>Post Announcements</h2><p>Tools to create and post global announcements will be here.</p></div>`; }
 
     // --- CHECK FOR LOGGED IN USER OR URL PARAMS ON PAGE LOAD ---
     function checkInitialState(){
         const urlParams = new URLSearchParams(window.location.search);
         const resetToken = urlParams.get('reset_token');
         const verificationToken = urlParams.get('verify_token');
+        const verificationMessage = urlParams.get('message');
+
+        if(verificationMessage){
+            showNotification(decodeURIComponent(verificationMessage));
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
 
         if(resetToken){
             document.getElementById('reset-token-input').value = resetToken;
             showAuthPage(resetPasswordContainer);
         } else if(verificationToken) {
-            // Can add a UI for "verifying..." here if needed
-            fetch(`${API_BASE_URL}/verify-email?token=${verificationToken}`)
-                .then(res => res.json())
-                .then(data => {
-                    showNotification(data.message, !data.success);
-                    showAuthPage(loginContainer);
-                })
-                .catch(() => showNotification("Verification failed.", true));
-
+            const messageEl = document.getElementById('error-message');
+            messageEl.textContent = "Verifying your email, please wait...";
+            messageEl.className = "text-blue-500 text-sm text-center min-h-[1.25rem]";
         } else {
             const loggedInUser = sessionStorage.getItem('loggedInUser');
             if (loggedInUser) {
                 showDashboard(JSON.parse(loggedInUser));
             } else {
+                 showAuthPage(loginContainer);
                  updateDepartmentVisibility();
             }
         }
     }
-
     checkInitialState();
 });
 </script>
