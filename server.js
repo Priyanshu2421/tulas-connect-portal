@@ -127,6 +127,72 @@ app.get('/verify-email', (req, res) => {
     res.redirect(`/?message=${encodeURIComponent(message)}`);
 });
 
+app.post('/forgot-password', async (req, res) => {
+    const { userId } = req.body;
+    const db = readDB();
+    const user = db.users[userId];
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    db.passwordResets[resetToken] = { userId, expires: Date.now() + 3600000 };
+    writeDB(db);
+    const resetLink = `${req.protocol}://${req.get('host')}/?reset_token=${resetToken}`;
+    try {
+        await transporter.sendMail({
+            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`,
+            to: user.email,
+            subject: "Password Reset Request",
+            html: `<b>Hello!</b><p>You requested a password reset. Please click the following link to reset your password:</p><a href="${resetLink}">${resetLink}</a><p>If you did not request this, please ignore this email.</p>`
+        });
+        res.json({ success: true, message: 'Password reset link sent to your email.' });
+    } catch (error) {
+        console.error("Failed to send password reset email:", error);
+        res.status(500).json({ success: false, message: 'Failed to send password reset email.' });
+    }
+});
+
+app.post('/reset-password', (req, res) => {
+    const { token, newPassword } = req.body;
+    const db = readDB();
+    const resetData = db.passwordResets[token];
+    if (!resetData || resetData.expires < Date.now()) {
+        return res.status(400).json({ success: false, message: 'Invalid or expired token.' });
+    }
+    const user = db.users[resetData.userId];
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    user.pass = newPassword;
+    delete db.passwordResets[token];
+    writeDB(db);
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+});
+
+app.post('/profile/update', upload.single('photoFile'), (req, res) => {
+    const db = readDB();
+    const { userId, name, email, phone, bloodGroup, address, dob, batch, program } = req.body;
+    const user = db.users[userId];
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const updatedUser = {
+        ...user,
+        name: name || user.name,
+        email: email || user.email,
+        phone: phone || user.phone,
+        bloodGroup: bloodGroup || user.bloodGroup,
+        address: address || user.address,
+        dob: dob || user.dob,
+        batch: batch || user.batch,
+        program: program || user.program,
+        photoUrl: req.file ? `/uploads/profile/${req.file.filename}` : user.photoUrl
+    };
+
+    db.users[userId] = updatedUser;
+    writeDB(db);
+    res.json({ success: true, updatedUser, message: 'Profile updated successfully.' });
+});
+
 app.get('/profile/:userId', (req, res) => {
     const { userId } = req.params;
     const user = readDB().users[userId];
@@ -221,7 +287,7 @@ app.post('/resolve-leave-request', (req, res) => {
     }
 });
 
-// --- SIGNUP REQUEST ROUTES (Unchanged) ---
+// --- SIGNUP REQUEST ROUTES ---
 app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests || []));
 
 app.post('/resolve-signup', (req, res) => {
@@ -231,16 +297,68 @@ app.post('/resolve-signup', (req, res) => {
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
     if (action === 'approve') {
         const request = db.signupRequests[requestIndex];
-        db.users[request.userId] = { 
-            pass: request.pass, name: request.name, role: request.role, email: request.email, 
-            department: request.department || "", course: request.course || "", phone: "", 
-            bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
+        db.users[request.userId] = {
+            pass: request.pass, name: request.name, role: request.role, email: request.email,
+            department: request.department || "", course: request.course || "", phone: "",
+            bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: ""
         };
     }
     db.signupRequests.splice(requestIndex, 1);
     writeDB(db);
     res.json({ success: true, message: `Request ${action}d.` });
 });
+
+// --- NEW: PASSWORD REQUEST ROUTES ---
+app.get('/password-requests', (req, res) => {
+    const db = readDB();
+    res.json(db.passwordRequests || []);
+});
+
+app.post('/password-requests', (req, res) => {
+    const { userId, reason } = req.body;
+    const db = readDB();
+    const newRequest = {
+        id: Date.now(),
+        userId,
+        reason,
+        timestamp: Date.now(),
+        status: 'Pending'
+    };
+    if (!db.passwordRequests) db.passwordRequests = [];
+    db.passwordRequests.push(newRequest);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Password reset request submitted. An admin will contact you.' });
+});
+
+app.post('/resolve-password-request', async (req, res) => {
+    const { id, action } = req.body;
+    const db = readDB();
+    const request = (db.passwordRequests || []).find(r => r.id == id);
+    if (!request) return res.status(404).json({ success: false, message: 'Request not found.' });
+
+    if (action === 'reset') {
+        const user = db.users[request.userId];
+        if (!user) return res.status(404).json({ success: false, message: 'User not found for this request.' });
+
+        const newPassword = crypto.randomBytes(8).toString('hex');
+        user.pass = newPassword;
+        request.status = 'Resolved';
+        writeDB(db);
+
+        try {
+            await transporter.sendMail({
+                from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`,
+                to: user.email,
+                subject: "Your New Password",
+                html: `<b>Hello ${user.name},</b><p>Your password has been reset by an administrator. Your new password is: <strong>${newPassword}</strong></p><p>Please log in and change your password immediately.</p>`
+            });
+            res.json({ success: true, message: 'New password sent to user email.' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Failed to send new password via email. Password has been reset in the database.' });
+        }
+    }
+});
+
 
 // --- ANNOUNCEMENT ROUTES (Unchanged) ---
 app.get('/announcements', (req, res) => {

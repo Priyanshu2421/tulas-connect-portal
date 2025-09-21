@@ -1,37 +1,5 @@
 {
   "users": {
-    "2023012039": {
-      "pass": "password",
-      "name": "Priyanshu Bisht",
-      "role": "Student",
-      "department": "Department of Computer Application",
-      "email": "",
-      "phone": "",
-      "bloodGroup": "",
-      "course": "",
-      "academicYear": "",
-      "program": "",
-      "batch": "",
-      "address": "",
-      "dob": "",
-      "photoUrl": ""
-    },
-    "2023016039": {
-      "pass": "password",
-      "name": "Raushan Kumar",
-      "role": "Student",
-      "department": "Department of Agriculture",
-      "email": "",
-      "phone": "",
-      "bloodGroup": "",
-      "course": "",
-      "academicYear": "",
-      "program": "",
-      "batch": "",
-      "address": "",
-      "dob": "",
-      "photoUrl": ""
-    },
     "admin.user": {
       "pass": "password",
       "name": "Admin User",
@@ -43,36 +11,38 @@
       "address": "",
       "dob": "",
       "photoUrl": ""
-    },
-    "siddharth.tulas.in": {
-      "pass": "password",
-      "name": "Siddharth Sharma",
-      "role": "Faculty",
-      "department": "Department of Computer Application",
-      "email": "",
-      "phone": "",
-      "bloodGroup": "",
-      "address": "",
-      "dob": "",
-      "photoUrl": ""
-    },
-    "hod.catulas.in": {
-      "pass": "2025",
-      "name": "HOD Computer Application",
-      "role": "HOD",
-      "department": "Department of Computer Application",
-      "email": "hod.ca@tulas.in",
-      "phone": "",
-      "bloodGroup": "",
-      "address": "",
-      "dob": "",
-      "photoUrl": ""
     }
   },
   "pendingUsers": {},
   "passwordResets": {},
   "idCardRequests": [],
-  "signupRequests": [],
+  "signupRequests": [
+      {
+          "name": "Priyanshu Bisht",
+          "userId": "2023012039",
+          "email": "priyanshu.2023012039@tulas.edu.in",
+          "pass": "password",
+          "role": "Student",
+          "department": "Department of Computer Applications",
+          "course": "Bachelor of Computer Applications (BCA)"
+      },
+      {
+          "name": "Siddharth Sharma",
+          "userId": "siddharth.tulas.in",
+          "email": "siddharth@tulas.in",
+          "pass": "password",
+          "role": "Faculty",
+          "department": "Department of Computer Applications"
+      },
+      {
+          "name": "HOD Computer Applications",
+          "userId": "hod.ca@tulas.in",
+          "email": "hod.ca@tulas.in",
+          "pass": "2025",
+          "role": "HOD",
+          "department": "Department of Computer Applications"
+      }
+  ],
   "passwordRequests": [],
   "announcements": [],
   "attendanceRecords": [],
@@ -83,36 +53,6 @@
   "fees": {},
   "studentTimetables": {},
   "facultyTimetables": {},
-  "departmentPrograms": {
-    "Department of Computer Science & Engineering": [
-      {
-        "programName": "B.Tech in Computer Science and Engineering",
-        "degree": "B.Tech",
-        "specialization": "Core"
-      },
-      {
-        "programName": "B.Tech in CSE (AI & ML)",
-        "degree": "B.Tech",
-        "specialization": "Artificial Intelligence & Machine Learning"
-      },
-      {
-        "programName": "M.Tech in Computer Science and Engineering",
-        "degree": "M.Tech",
-        "specialization": "Core"
-      }
-    ],
-    "Department of Computer Application": [
-      {
-        "programName": "Bachelor of Computer Applications",
-        "degree": "BCA",
-        "specialization": "General"
-      },
-      {
-        "programName": "Master of Computer Applications",
-        "degree": "MCA",
-        "specialization": "General"
-      }
-    ]
-  },
+  "departmentPrograms": {},
   "leaveRequests": []
 }
