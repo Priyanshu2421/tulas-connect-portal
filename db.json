@@ -5,54 +5,162 @@
       "name": "Admin User",
       "role": "Admin",
       "department": "Administration",
-      "email": "admin@example.com",
-      "phone": "5555555555",
-      "bloodGroup": "",
-      "address": "",
-      "dob": "",
+      "email": "admin@tulas.com",
+      "phone": "1234567890",
+      "bloodGroup": "O+",
+      "address": "Tula's Institute, Dehradun",
+      "dob": "1990-01-01",
+      "photoUrl": ""
+    },
+    "2023012039": {
+      "pass": "password",
+      "name": "Priyanshu Bisht",
+      "role": "Student",
+      "department": "Department of Computer Applications",
+      "course": "Bachelor of Computer Applications (BCA)",
+      "email": "priyanshu@example.com",
+      "phone": "9876543210",
+      "bloodGroup": "B+",
+      "address": "123 Student Lane, Dehradun",
+      "dob": "2004-05-10",
+      "photoUrl": ""
+    },
+    "siddharth.tulas.in": {
+      "pass": "password",
+      "name": "Siddharth Sharma",
+      "role": "Faculty",
+      "department": "Department of Computer Applications",
+      "email": "siddharth.sharma@tulas.com",
+      "phone": "8765432109",
+      "bloodGroup": "A+",
+      "address": "456 Faculty Quarters, Dehradun",
+      "dob": "1985-11-20",
+      "photoUrl": ""
+    },
+    "hod.ca.tulas.in": {
+      "pass": "password",
+      "name": "HOD Computer Applications",
+      "role": "HOD",
+      "department": "Department of Computer Applications",
+      "email": "hod.ca@tulas.com",
+      "phone": "7654321098",
+      "bloodGroup": "AB+",
+      "address": "789 HOD Residence, Dehradun",
+      "dob": "1978-03-15",
       "photoUrl": ""
     }
   },
   "pendingUsers": {},
   "passwordResets": {},
-  "idCardRequests": [],
-  "signupRequests": [
-      {
-          "name": "Priyanshu Bisht",
-          "userId": "2023012039",
-          "email": "priyanshu.2023012039@tulas.edu.in",
-          "pass": "password",
-          "role": "Student",
-          "department": "Department of Computer Applications",
-          "course": "Bachelor of Computer Applications (BCA)"
-      },
-      {
-          "name": "Siddharth Sharma",
-          "userId": "siddharth.tulas.in",
-          "email": "siddharth@tulas.in",
-          "pass": "password",
-          "role": "Faculty",
-          "department": "Department of Computer Applications"
-      },
-      {
-          "name": "HOD Computer Applications",
-          "userId": "hod.ca@tulas.in",
-          "email": "hod.ca@tulas.in",
-          "pass": "2025",
-          "role": "HOD",
-          "department": "Department of Computer Applications"
-      }
+  "idCardRequests": [
+    {
+      "userId": "2023012039",
+      "name": "Priyanshu Bisht",
+      "timestamp": 1726917600000,
+      "status": "Pending"
+    }
   ],
-  "passwordRequests": [],
-  "announcements": [],
-  "attendanceRecords": [],
+  "signupRequests": [],
+  "announcements": [
+    {
+      "id": 1726917600000,
+      "timestamp": 1726917600000,
+      "title": "Welcome to TULA'S CONNECT!",
+      "content": "This is the new and improved ERP portal for all students and faculty. Please explore the features and update your profile information.",
+      "authorName": "Admin User",
+      "authorRole": "Admin",
+      "department": "Global"
+    }
+  ],
   "assignments": [],
-  "submissions": [],
-  "marks": {},
-  "historicalPerformance": [],
-  "fees": {},
-  "studentTimetables": {},
-  "facultyTimetables": {},
-  "departmentPrograms": {},
-  "leaveRequests": []
+  "leaveRequests": [],
+  "analytics": {
+    "2023012039": {
+      "attendance": {
+        "total": 120,
+        "present": 105
+      },
+      "marks": {
+        "Data Structures": 85,
+        "Algorithms": 78,
+        "Database Management": 92,
+        "Operating Systems": 81
+      }
+    }
+  },
+  "attendance": {
+    "2023012039": [
+      {
+        "subject": "Data Structures",
+        "total": 30,
+        "present": 28,
+        "percentage": 93
+      },
+      {
+        "subject": "Algorithms",
+        "total": 30,
+        "present": 25,
+        "percentage": 83
+      },
+      {
+        "subject": "Database Management",
+        "total": 30,
+        "present": 29,
+        "percentage": 97
+      },
+      {
+        "subject": "Operating Systems",
+        "total": 30,
+        "present": 23,
+        "percentage": 77
+      }
+    ]
+  },
+  "fees": {
+    "2023012039": {
+      "total": 150000,
+      "paid": 125000,
+      "due": 25000,
+      "history": [
+        {
+          "receiptId": "TULAS-001",
+          "date": "2025-07-15T10:00:00Z",
+          "amount": 75000,
+          "description": "1st Installment"
+        },
+        {
+          "receiptId": "TULAS-002",
+          "date": "2025-08-20T11:30:00Z",
+          "amount": 50000,
+          "description": "2nd Installment"
+        }
+      ]
+    }
+  },
+  "timetables": {
+    "student": {
+      "Bachelor of Computer Applications (BCA)": {
+        "Monday": [
+          { "time": "09:00 - 10:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" },
+          { "time": "10:00 - 11:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
+        ],
+        "Tuesday": [
+          { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
+          { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
+        ],
+        "Wednesday": [
+          { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" },
+          { "time": "12:00 - 01:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
+        ],
+        "Thursday": [
+          { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
+          { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
+        ],
+        "Friday": [
+          { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" },
+          { "time": "12:00 - 01:00", "subject": "Project Work", "faculty": "Siddharth Sharma" }
+        ]
+      }
+    }
+  }
 }
