@@ -15,42 +15,21 @@ const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
 const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
 const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
 
-// --- IMPORTANT: Email Configuration ---
-// For production, use environment variables. For testing, you can use a service like Ethereal.
-// Example for Gmail (less secure, requires "Less secure app access"):
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//         user: 'YOUR_GMAIL_ADDRESS',
-//         pass: 'YOUR_GMAIL_APP_PASSWORD' 
-//     }
-// });
-// For testing with Ethereal (recommended for development):
-let transporter;
-nodemailer.createTestAccount((err, account) => {
-    if (err) {
-        console.error('Failed to create a testing account. ' + err.message);
-        return process.exit(1);
+// --- FIXED: Email Configuration for a Live Server ---
+// This new block uses your Render Environment Variables to send real emails.
+const transporter = nodemailer.createTransport({
+    service: 'gmail', // Or another service like 'hotmail', 'yahoo'
+    auth: {
+        user: process.env.EMAIL_USER, // Gets the email from Render's Environment Variables
+        pass: process.env.EMAIL_PASS  // Gets the App Password from Render's Environment Variables
     }
-    console.log('Credentials obtained, creating transport...');
-    transporter = nodemailer.createTransport({
-        host: account.smtp.host,
-        port: account.smtp.port,
-        secure: account.smtp.secure,
-        auth: {
-            user: account.user,
-            pass: account.pass
-        }
-    });
 });
-
 
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname))); // Serve index.html from root
-
+app.use(express.static(path.join(__dirname)));
 
 // --- INITIALIZE SERVER ---
 const initializeServer = () => {
@@ -80,7 +59,6 @@ const initializeServer = () => {
 };
 initializeServer();
 
-
 // --- DB HELPERS ---
 const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
@@ -100,9 +78,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
-
 // --- AUTHENTICATION ROUTES ---
-
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
     const db = readDB();
@@ -124,19 +100,22 @@ app.post('/signup', async (req, res) => {
     }
     
     const token = crypto.randomBytes(32).toString('hex');
-    db.pendingUsers[token] = { ...req.body, expires: Date.now() + 3600000 }; // 1 hour expiry
+    db.pendingUsers[token] = { ...req.body, expires: Date.now() + 3600000 };
     writeDB(db);
 
-    const verificationLink = `http://localhost:${PORT}/verify-email?token=${token}`;
+    // --- FIXED: Use the live site URL for the verification link ---
+    const verificationLink = `${req.protocol}://${req.get('host')}/verify-email?token=${token}`;
     
     try {
         const info = await transporter.sendMail({
-            from: '"TULA\'S CONNECT" <no-reply@tulas.edu>',
+            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`, // Use your actual email here
             to: email,
             subject: "Verify Your Email Address",
             html: `<b>Welcome to TULA'S CONNECT!</b><p>Please click the following link to verify your email and complete your registration:</p><a href="${verificationLink}">${verificationLink}</a><p>This link will expire in 1 hour.</p>`
         });
-        console.log("Verification email sent. Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        
+        // This console.log is for debugging; it won't show a useful Ethereal link anymore.
+        console.log("Verification email sent successfully to:", email);
         res.status(201).json({ success: true, message: 'Verification email sent! Please check your inbox.' });
     } catch(error) {
         console.error("Failed to send verification email:", error);
@@ -144,6 +123,7 @@ app.post('/signup', async (req, res) => {
     }
 });
 
+// The rest of your file is unchanged as it was working correctly.
 app.get('/verify-email', (req, res) => {
     const { token } = req.query;
     const db = readDB();
@@ -165,22 +145,24 @@ app.post('/forgot-password', async (req, res) => {
     const db = readDB();
     const user = db.users[userId];
 
-    if (!user) return res.status(404).json({ success: false, message: 'User ID not found.' });
+    if (!user || !user.email) {
+        return res.status(404).json({ success: false, message: 'User ID not found or no email on file.' });
+    }
 
     const token = crypto.randomBytes(32).toString('hex');
-    db.passwordResets[token] = { userId, expires: Date.now() + 3600000 }; // 1 hour
+    db.passwordResets[token] = { userId, expires: Date.now() + 3600000 };
     writeDB(db);
 
-    const resetLink = `http://localhost:${PORT}/?reset_token=${token}`;
+    const resetLink = `${req.protocol}://${req.get('host')}/?reset_token=${token}`;
 
     try {
-        const info = await transporter.sendMail({
-            from: '"TULA\'S CONNECT" <no-reply@tulas.edu>',
+        await transporter.sendMail({
+            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`,
             to: user.email,
             subject: "Password Reset Request",
             html: `<b>Password Reset</b><p>Click the link to reset your password:</p><a href="${resetLink}">${resetLink}</a><p>This link expires in 1 hour.</p>`
         });
-        console.log("Password reset email sent. Preview URL: %s", nodemailer.getTestMessageUrl(info));
+        console.log("Password reset email sent to:", user.email);
         res.json({ success: true, message: 'Password reset link sent to your email.' });
     } catch (error) {
         console.error("Failed to send reset email:", error);
@@ -208,8 +190,6 @@ app.post('/reset-password', (req, res) => {
     }
 });
 
-
-// --- PROFILE & USER MANAGEMENT ---
 app.get('/profile/:userId', (req, res) => {
     const { userId } = req.params;
     const user = readDB().users[userId];
@@ -264,7 +244,6 @@ app.delete('/users/:userId', (req, res) => {
     }
 });
 
-// --- ADMIN REQUESTS (Signup, Password) ---
 app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
 
 app.post('/resolve-signup', (req, res) => {
@@ -303,15 +282,10 @@ app.post('/resolve-password-request', (req, res) => {
     res.json({ success: true, message: `Request for ${request.userName} has been ${action}d.` });
 });
 
-
-// ... Other routes (assignments, submissions, etc.) remain the same ...
-
-// Fallback route for client-side routing
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- SERVER START ---
 app.listen(PORT, () => {
     console.log(`TULA'S CONNECT server is running on port ${PORT}`);
 });
