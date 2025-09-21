@@ -66,6 +66,9 @@ function showNotification(message, isError = false) {
     }, 4000);
 }
 
+function renderLoader(container) {
+    container.innerHTML = `<div class="loader"></div>`;
+}
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -101,18 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById('login-container');
     const signupContainer = document.getElementById('signup-container');
     const forgotPasswordContainer = document.getElementById('forgot-password-container');
+    const resetPasswordContainer = document.getElementById('reset-password-container');
 
     const signupForm = document.getElementById('signupForm');
     const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-
-    // --- LOGIN FORM VISIBILITY LOGIC (RESTORED) ---
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    
+    // --- LOGIN FORM VISIBILITY LOGIC ---
     function updateDepartmentVisibility() {
         const isDeptLogin = roleSelect.value === 'Department Login';
         const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
 
-        // Show main department dropdown only for HOD login
         departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
-        // Show engineering branch dropdown ONLY if HOD login AND Engineering is selected
         engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
 
         const isAdminSelected = roleSelect.value === 'Admin';
@@ -131,20 +134,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value.trim();
         const selectedRole = roleSelect.value;
         const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = ''; // Clear previous errors
+        errorMessage.textContent = ''; 
 
-        // RESTORED: Logic to get the correct department value
         let department = null;
         if (selectedRole === 'Department Login') {
             const mainDepartmentValue = departmentSelect.value;
             if (mainDepartmentValue === 'Department of Engineering') {
-                department = engineeringDeptSelect.value; // Get value from the specific engineering dropdown
+                department = engineeringDeptSelect.value; 
                 if (!department) {
                     errorMessage.textContent = 'Please select an engineering branch.';
                     return;
                 }
             } else {
-                department = mainDepartmentValue; // Get value from the main department dropdown
+                department = mainDepartmentValue;
             }
         }
 
@@ -179,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const signupMessage = document.getElementById('signup-message');
+        signupMessage.textContent = 'Submitting...';
 
         try {
             const response = await fetch(`${API_BASE_URL}/signup`, {
@@ -204,6 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const messageEl = document.getElementById('forgot-password-message');
+        messageEl.textContent = 'Sending reset link...';
+
         try {
             const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
@@ -219,11 +224,43 @@ document.addEventListener('DOMContentLoaded', () => {
             messageEl.textContent = 'Could not connect to server.';
         }
     });
+    
+    resetPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const messageEl = document.getElementById('reset-password-message');
+        
+        if(data.newPassword !== data.confirmPassword){
+            messageEl.className = 'text-red-500 text-center';
+            messageEl.textContent = 'Passwords do not match.';
+            return;
+        }
+        
+        messageEl.textContent = 'Resetting password...';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            messageEl.className = response.ok ? 'text-green-600 text-center' : 'text-red-500 text-center';
+            messageEl.textContent = result.message || 'Failed to reset password.';
+            if(response.ok) {
+                setTimeout(() => showAuthPage(loginContainer), 2000);
+            }
+        } catch(error) {
+             messageEl.className = 'text-red-500 text-center';
+             messageEl.textContent = 'Could not connect to server.';
+        }
+    });
 
     function showAuthPage(pageToShow) {
         loginContainer.classList.add('hidden');
         signupContainer.classList.add('hidden');
         forgotPasswordContainer.classList.add('hidden');
+        resetPasswordContainer.classList.add('hidden');
         pageToShow.classList.remove('hidden');
     }
 
@@ -234,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', () => {
         sessionStorage.clear();
-        window.location.reload();
+        window.location.href = '/';
     });
 
     togglePassword.addEventListener('click', () => {
@@ -429,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONTENT RENDERING FUNCTIONS ---
     async function showUserProfile() {
-        mainContent.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow">Loading profile...</div>`;
+        renderLoader(mainContent);
         const userId = sessionStorage.getItem('userId');
         try {
             const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
@@ -461,48 +498,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification('Profile updated!');
                     sessionStorage.setItem('loggedInUser', JSON.stringify(result.updatedUser));
                     const newPhotoUrl = result.updatedUser.photoUrl ? `${API_BASE_URL}${result.updatedUser.photoUrl}` : 'https://placehold.co/40x40/a0aec0/ffffff?text=U';
-                    headerProfilePic.src = `${newPhotoUrl}?t=${new Date().getTime()}`; // bust cache
+                    headerProfilePic.src = `${newPhotoUrl}?t=${new Date().getTime()}`;
                     showUserProfile();
                 } else { showNotification('Failed to update profile.', true); }
             } catch (error) { showNotification("Could not connect to server.", true); }
         });
     }
 
-    async function showStudentAnalytics() { /* ... full original code ... */ }
-    async function showStudentAssignments() { /* ... full original code ... */ }
-    async function showStudentAttendance() { /* ... full original code ... */ }
-    async function showStudentFees() { /* ... full original code ... */ }
-    async function showStudentTimetable() { /* ... full original code ... */ }
-    async function showStudentIdCard() { /* ... full original code ... */ }
-    async function showStudentLeave() { /* ... full original code ... */ }
-    async function showFacultyAssignments() { /* ... full original code ... */ }
-    async function showFacultyLeave() { /* ... full original code ... */ }
-    async function showFacultyTimetable() { /* ... full original code ... */ }
-    async function showFacultyAttendance() { /* ... full original code ... */ }
-    async function showFacultyMarks() { /* ... full original code ... */ }
-    async function showFacultySearch() { /* ... full original code ... */ }
-    async function showFacultyMLInsights() { /* ... full original code ... */ }
-    async function showHODDashboard() { /* ... full original code ... */ }
-    async function showHODFaculty() { /* ... full original code ... */ }
-    async function showAdminManageUsers() { /* ... full original code ... */ }
-    async function showAdminTimetables() { /* ... full original code ... */ }
-    function renderEditableTimetable(type, id, data) { /* ... full original code ... */ }
-    async function showAdminIdRequests() { /* ... full original code ... */ }
-    async function showAdminSignupRequests() { /* ... full original code ... */ }
-    async function showAdminPasswordRequests() { /* ... full original code ... */ }
-    async function showStudentAnnouncements() { /* ... full original code ... */ }
-    async function showFacultyAnnouncements() { /* ... full original code ... */ }
-    async function showHODAnnouncements() { /* ... full original code ... */ }
-    async function showAdminAnnouncements() { /* ... full original code ... */ }
+    // --- CHECK FOR LOGGED IN USER OR URL PARAMS ON PAGE LOAD ---
+    function checkInitialState(){
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('reset_token');
+        const verificationToken = urlParams.get('verify_token');
+        const verificationMessage = urlParams.get('message');
 
-    // Check for logged-in user on page load
-    const loggedInUser = sessionStorage.getItem('loggedInUser');
-    if (loggedInUser) {
-        showDashboard(JSON.parse(loggedInUser));
+        if(verificationMessage){
+            showNotification(decodeURIComponent(verificationMessage));
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        if(resetToken){
+            document.getElementById('reset-token-input').value = resetToken;
+            showAuthPage(resetPasswordContainer);
+        } else if(verificationToken) {
+            // This endpoint now redirects, so this code is less likely to run,
+            // but it's good for fallback or if the redirect fails.
+            const messageEl = document.getElementById('error-message');
+            messageEl.textContent = "Verifying your email, please wait...";
+            messageEl.className = "text-blue-500 text-sm text-center min-h-[1.25rem]";
+        } else {
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                showDashboard(JSON.parse(loggedInUser));
+            } else {
+                 showAuthPage(loginContainer);
+                 updateDepartmentVisibility();
+            }
+        }
     }
-    // Initial call to set the correct dropdown visibility on page load
-    updateDepartmentVisibility();
+    checkInitialState();
 });
-</script>
-</body>
-</html>

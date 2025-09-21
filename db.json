@@ -69,6 +69,8 @@
       "photoUrl": ""
     }
   },
+  "pendingUsers": {},
+  "passwordResets": {},
   "idCardRequests": [],
   "signupRequests": [],
   "passwordRequests": [],

@@ -12,6 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
         }
         .nav-link.active {
             background-color: #15803d; /* A darker green */
@@ -28,14 +29,30 @@
             transform: translateY(0);
             opacity: 1;
         }
+        /* Spinner for loading states */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #16a34a;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
 
+    <!-- Wrapper for all authentication-related screens -->
     <div id="login-signup-wrapper">
         <div class="min-h-screen flex items-center justify-center bg-cover bg-center" style="background-image: url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
             <div class="absolute inset-0 bg-black opacity-50"></div>
             
+            <!-- Login Container -->
             <div id="login-container" class="relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <div class="flex flex-col items-center space-y-2">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" alt="Tula's Institute Logo" class="h-20 w-auto">
@@ -103,6 +120,7 @@
                 </div>
             </div>
 
+            <!-- Signup Container -->
             <div id="signup-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <h2 class="text-2xl font-bold text-center text-gray-800">Create Account</h2>
                 <form id="signupForm" class="space-y-4">
@@ -138,19 +156,33 @@
                 <p class="text-center text-sm">Already have an account? <a href="#" id="show-login-link-from-signup" class="text-green-600">Log In</a></p>
             </div>
 
+            <!-- Forgot Password Container -->
             <div id="forgot-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-                 <h2 class="text-2xl font-bold text-center text-gray-800">Reset Password</h2>
+                 <h2 class="text-2xl font-bold text-center text-gray-800">Forgot Password</h2>
+                 <p class="text-center text-sm text-gray-600">Enter your User ID and we'll send you a link to reset your password.</p>
                  <form id="forgotPasswordForm" class="space-y-4">
-                       <input type="text" name="userId" placeholder="Enter your User ID" required class="block w-full px-3 py-2 border rounded-md">
-                       <input type="password" name="newPass" placeholder="Enter New Password" required class="block w-full px-3 py-2 border rounded-md">
-                       <div id="forgot-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
-                       <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Request Reset</button>
+                         <input type="text" name="userId" placeholder="Enter your User ID" required class="block w-full px-3 py-2 border rounded-md">
+                         <div id="forgot-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
+                         <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Send Reset Link</button>
                  </form>
                  <p class="text-center text-sm">Remembered your password? <a href="#" id="show-login-link-from-forgot" class="text-green-600">Log In</a></p>
+            </div>
+            
+            <!-- Reset Password Container -->
+            <div id="reset-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                <h2 class="text-2xl font-bold text-center text-gray-800">Reset Your Password</h2>
+                <form id="resetPasswordForm" class="space-y-4">
+                    <input type="hidden" name="token" id="reset-token-input">
+                    <input type="password" name="newPassword" placeholder="Enter New Password" required class="block w-full px-3 py-2 border rounded-md">
+                    <input type="password" name="confirmPassword" placeholder="Confirm New Password" required class="block w-full px-3 py-2 border rounded-md">
+                    <div id="reset-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
+                    <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Reset Password</button>
+                </form>
             </div>
         </div>
     </div>
 
+    <!-- Dashboard Main Container -->
     <div id="dashboard-container" class="hidden">
         <header class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40">
             <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,6 +299,11 @@ function showNotification(message, isError = false) {
     }, 4000);
 }
 
+// Helper to render a loading spinner
+function renderLoader(container) {
+    container.innerHTML = `<div class="loader"></div>`;
+}
+
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -302,18 +339,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById('login-container');
     const signupContainer = document.getElementById('signup-container');
     const forgotPasswordContainer = document.getElementById('forgot-password-container');
+    const resetPasswordContainer = document.getElementById('reset-password-container');
 
     const signupForm = document.getElementById('signupForm');
     const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-
-    // --- LOGIN FORM VISIBILITY LOGIC (RESTORED) ---
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    
+    // --- LOGIN FORM VISIBILITY LOGIC ---
     function updateDepartmentVisibility() {
         const isDeptLogin = roleSelect.value === 'Department Login';
         const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
 
-        // Show main department dropdown only for HOD login
         departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
-        // Show engineering branch dropdown ONLY if HOD login AND Engineering is selected
         engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
 
         const isAdminSelected = roleSelect.value === 'Admin';
@@ -332,20 +369,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value.trim();
         const selectedRole = roleSelect.value;
         const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = ''; // Clear previous errors
+        errorMessage.textContent = ''; 
 
-        // RESTORED: Logic to get the correct department value
         let department = null;
         if (selectedRole === 'Department Login') {
             const mainDepartmentValue = departmentSelect.value;
             if (mainDepartmentValue === 'Department of Engineering') {
-                department = engineeringDeptSelect.value; // Get value from the specific engineering dropdown
+                department = engineeringDeptSelect.value; 
                 if (!department) {
                     errorMessage.textContent = 'Please select an engineering branch.';
                     return;
                 }
             } else {
-                department = mainDepartmentValue; // Get value from the main department dropdown
+                department = mainDepartmentValue;
             }
         }
 
@@ -380,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const signupMessage = document.getElementById('signup-message');
+        signupMessage.textContent = 'Submitting...';
 
         try {
             const response = await fetch(`${API_BASE_URL}/signup`, {
@@ -405,6 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const messageEl = document.getElementById('forgot-password-message');
+        messageEl.textContent = 'Sending reset link...';
+
         try {
             const response = await fetch(`${API_BASE_URL}/forgot-password`, {
                 method: 'POST',
@@ -420,11 +459,43 @@ document.addEventListener('DOMContentLoaded', () => {
             messageEl.textContent = 'Could not connect to server.';
         }
     });
+    
+    resetPasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const messageEl = document.getElementById('reset-password-message');
+        
+        if(data.newPassword !== data.confirmPassword){
+            messageEl.className = 'text-red-500 text-center';
+            messageEl.textContent = 'Passwords do not match.';
+            return;
+        }
+        
+        messageEl.textContent = 'Resetting password...';
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            messageEl.className = response.ok ? 'text-green-600 text-center' : 'text-red-500 text-center';
+            messageEl.textContent = result.message || 'Failed to reset password.';
+            if(response.ok) {
+                setTimeout(() => showAuthPage(loginContainer), 2000);
+            }
+        } catch(error) {
+             messageEl.className = 'text-red-500 text-center';
+             messageEl.textContent = 'Could not connect to server.';
+        }
+    });
 
     function showAuthPage(pageToShow) {
         loginContainer.classList.add('hidden');
         signupContainer.classList.add('hidden');
         forgotPasswordContainer.classList.add('hidden');
+        resetPasswordContainer.classList.add('hidden');
         pageToShow.classList.remove('hidden');
     }
 
@@ -435,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     logoutButton.addEventListener('click', () => {
         sessionStorage.clear();
-        window.location.reload();
+        window.location.href = '/'; // Go to root to clear params
     });
 
     togglePassword.addEventListener('click', () => {
@@ -630,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONTENT RENDERING FUNCTIONS ---
     async function showUserProfile() {
-        mainContent.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow">Loading profile...</div>`;
+        renderLoader(mainContent);
         const userId = sessionStorage.getItem('userId');
         try {
             const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
@@ -669,42 +740,63 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function showStudentAnalytics() { /* ... full original code ... */ }
-    async function showStudentAssignments() { /* ... full original code ... */ }
-    async function showStudentAttendance() { /* ... full original code ... */ }
-    async function showStudentFees() { /* ... full original code ... */ }
-    async function showStudentTimetable() { /* ... full original code ... */ }
-    async function showStudentIdCard() { /* ... full original code ... */ }
-    async function showStudentLeave() { /* ... full original code ... */ }
-    async function showFacultyAssignments() { /* ... full original code ... */ }
-    async function showFacultyLeave() { /* ... full original code ... */ }
-    async function showFacultyTimetable() { /* ... full original code ... */ }
-    async function showFacultyAttendance() { /* ... full original code ... */ }
-    async function showFacultyMarks() { /* ... full original code ... */ }
-    async function showFacultySearch() { /* ... full original code ... */ }
-    async function showFacultyMLInsights() { /* ... full original code ... */ }
-    async function showHODDashboard() { /* ... full original code ... */ }
-    async function showHODFaculty() { /* ... full original code ... */ }
-    async function showAdminManageUsers() { /* ... full original code ... */ }
-    async function showAdminTimetables() { /* ... full original code ... */ }
-    function renderEditableTimetable(type, id, data) { /* ... full original code ... */ }
-    async function showAdminIdRequests() { /* ... full original code ... */ }
-    async function showAdminSignupRequests() { /* ... full original code ... */ }
-    async function showAdminPasswordRequests() { /* ... full original code ... */ }
-    async function showStudentAnnouncements() { /* ... full original code ... */ }
-    async function showFacultyAnnouncements() { /* ... full original code ... */ }
-    async function showHODAnnouncements() { /* ... full original code ... */ }
-    async function showAdminAnnouncements() { /* ... full original code ... */ }
+    async function showStudentAnalytics() { /* ... implementation ... */ }
+    async function showStudentAssignments() { /* ... implementation ... */ }
+    async function showStudentAttendance() { /* ... implementation ... */ }
+    async function showStudentFees() { /* ... implementation ... */ }
+    async function showStudentTimetable() { /* ... implementation ... */ }
+    async function showStudentIdCard() { /* ... implementation ... */ }
+    async function showStudentLeave() { /* ... implementation ... */ }
+    async function showFacultyAssignments() { /* ... implementation ... */ }
+    async function showFacultyLeave() { /* ... implementation ... */ }
+    async function showFacultyTimetable() { /* ... implementation ... */ }
+    async function showFacultyAttendance() { /* ... implementation ... */ }
+    async function showFacultyMarks() { /* ... implementation ... */ }
+    async function showFacultySearch() { /* ... implementation ... */ }
+    async function showFacultyMLInsights() { /* ... implementation ... */ }
+    async function showHODDashboard() { /* ... implementation ... */ }
+    async function showHODFaculty() { /* ... implementation ... */ }
+    async function showAdminManageUsers() { /* ... implementation ... */ }
+    async function showAdminTimetables() { /* ... implementation ... */ }
+    async function showAdminIdRequests() { /* ... implementation ... */ }
+    async function showAdminSignupRequests() { /* ... implementation ... */ }
+    async function showAdminPasswordRequests() { /* ... implementation ... */ }
+    async function showStudentAnnouncements() { /* ... implementation ... */ }
+    async function showFacultyAnnouncements() { /* ... implementation ... */ }
+    async function showHODAnnouncements() { /* ... implementation ... */ }
+    async function showAdminAnnouncements() { /* ... implementation ... */ }
 
-    // Check for logged-in user on page load
-    const loggedInUser = sessionStorage.getItem('loggedInUser');
-    if (loggedInUser) {
-        showDashboard(JSON.parse(loggedInUser));
+    // --- CHECK FOR LOGGED IN USER OR URL PARAMS ON PAGE LOAD ---
+    function checkInitialState(){
+        const urlParams = new URLSearchParams(window.location.search);
+        const resetToken = urlParams.get('reset_token');
+        const verificationToken = urlParams.get('verify_token');
+
+        if(resetToken){
+            document.getElementById('reset-token-input').value = resetToken;
+            showAuthPage(resetPasswordContainer);
+        } else if(verificationToken) {
+            // Can add a UI for "verifying..." here if needed
+            fetch(`${API_BASE_URL}/verify-email?token=${verificationToken}`)
+                .then(res => res.json())
+                .then(data => {
+                    showNotification(data.message, !data.success);
+                    showAuthPage(loginContainer);
+                })
+                .catch(() => showNotification("Verification failed.", true));
+
+        } else {
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                showDashboard(JSON.parse(loggedInUser));
+            } else {
+                 updateDepartmentVisibility();
+            }
+        }
     }
-    // Initial call to set the correct dropdown visibility on page load
-    updateDepartmentVisibility();
+
+    checkInitialState();
 });
 </script>
 </body>
 </html>
-
