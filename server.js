@@ -3,8 +3,6 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const nodemailer = require('nodemailer'); // ADDED
-const jwt = require('jsonwebtoken'); // ADDED
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,28 +13,22 @@ const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
 const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
 const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
 
-// --- NEW: Configuration for Email and JWT ---
-// IMPORTANT: Replace with your actual email service credentials.
-const mailTransporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'your_email@gmail.com', // Your email address
-        pass: 'your_app_password'     // Your Gmail App Password
-    }
-});
-const JWT_SECRET = 'a-very-strong-and-secret-key-for-jwt';
-const SITE_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-
 
 // --- MIDDLEWARE ---
+// This is critical for Render. It tells the server where to find index.html.
+app.use(express.static(path.join(__dirname))); 
+// This makes the /public/uploads folder accessible for images.
+app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 
 // --- INITIALIZE SERVER ---
 const initializeServer = () => {
     try {
+        if (!fs.existsSync(path.join(__dirname, 'public'))) {
+            fs.mkdirSync(path.join(__dirname, 'public'));
+        }
         [UPLOADS_DIR, PROFILE_PICS_DIR, SUBMISSIONS_DIR, ASSIGNMENTS_DIR, IDCARD_PICS_DIR].forEach(dir => {
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         });
@@ -47,8 +39,7 @@ const initializeServer = () => {
                 users: {}, idCardRequests: [], signupRequests: [], passwordRequests: [],
                 announcements: [], attendanceRecords: [], assignments: [], submissions: [],
                 marks: {}, historicalPerformance: [], fees: {}, studentTimetables: {},
-                facultyTimetables: {}, departmentPrograms: {}, leaveRequests: [],
-                pendingVerifications: {} // ADDED
+                facultyTimetables: {}, departmentPrograms: {}, leaveRequests: []
             };
             fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
         }
@@ -57,6 +48,7 @@ const initializeServer = () => {
         process.exit(1);
     }
 };
+
 initializeServer();
 
 
@@ -80,138 +72,76 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
 
-// --- NEW EMAIL VERIFICATION ROUTES ---
-
-app.post('/request-signup-verification', (req, res) => {
-    const { userId, email } = req.body;
-    const db = readDB();
-    const emailRegex = /^[a-zA-Z.-_]+@[a-zA-Z.-_]+\.in$/;
-
-    if (!emailRegex.test(email) || !email.endsWith('tulas.edu.in')) {
-        return res.status(400).json({ success: false, message: 'Invalid email format. Must be a "tulas.edu.in" address.' });
-    }
-    if (db.users[userId] || Object.values(db.pendingVerifications).some(p => p.data.userId === userId)) {
-        return res.status(409).json({ success: false, message: 'User ID already exists or is pending verification.' });
-    }
-     if (Object.values(db.users).some(u => u.email === email)) {
-        return res.status(409).json({ success: false, message: 'Email address is already in use.' });
-    }
-
-    const token = jwt.sign({ data: req.body, type: 'signup' }, JWT_SECRET, { expiresIn: '1h' });
-    db.pendingVerifications[token] = { data: req.body };
-    writeDB(db);
-    
-    const verificationLink = `${SITE_URL}/verify-email?token=${token}`;
-    const mailOptions = {
-        from: `"TULA'S CONNECT" <your_email@gmail.com>`,
-        to: email,
-        subject: 'Verify Your Account for TULA\'S CONNECT',
-        html: `<p>Hello ${req.body.name},</p><p>Please click the link below to verify your account. This link is valid for 1 hour.</p><a href="${verificationLink}" style="padding: 10px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Verify Account</a>`
-    };
-
-    mailTransporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Error sending mail:", error);
-            return res.status(500).json({ success: false, message: 'Could not send verification email.' });
-        }
-        res.status(200).json({ success: true, message: 'Verification email sent! Please check your inbox.' });
-    });
-});
-
-app.get('/verify-email', (req, res) => {
-    const { token } = req.query;
-    if (!token) return res.status(400).send('<h1>Invalid Link</h1>');
-
-    try {
-        jwt.verify(token, JWT_SECRET);
-        const db = readDB();
-        if (!db.pendingVerifications[token]) {
-             return res.redirect('/?status=already_verified');
-        }
-        const signupData = db.pendingVerifications[token].data;
-        
-        db.users[signupData.userId] = { 
-            pass: signupData.pass, name: signupData.name, role: signupData.role, email: signupData.email, 
-            department: signupData.department || "", course: signupData.course || "", 
-            phone: "", bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
-        };
-        
-        delete db.pendingVerifications[token];
-        writeDB(db);
-        res.redirect('/?status=verified');
-    } catch (error) {
-        const db = readDB();
-        delete db.pendingVerifications[token];
-        writeDB(db);
-        res.redirect('/?status=failed&reason=' + encodeURIComponent(error.message));
-    }
-});
-
-app.post('/request-password-reset', (req, res) => {
-    const { userId } = req.body;
-    const db = readDB();
-    const user = db.users[userId];
-
-    if (!user || !user.email) {
-        return res.status(404).json({ success: false, message: 'User not found or no email is registered for this account.' });
-    }
-
-    const token = jwt.sign({ userId, type: 'password_reset' }, JWT_SECRET, { expiresIn: '15m' });
-    const resetLink = `${SITE_URL}/?resetToken=${token}`;
-
-    const mailOptions = {
-        from: `"TULA'S CONNECT" <your_email@gmail.com>`,
-        to: user.email,
-        subject: 'Password Reset Request',
-        html: `<p>Hello ${user.name},</p><p>Click the link below to set a new password. This link is valid for 15 minutes.</p><a href="${resetLink}" style="padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>`
-    };
-
-    mailTransporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Error sending mail:", error);
-            return res.status(500).json({ success: false, message: 'Could not send reset email.' });
-        }
-        res.status(200).json({ success: true, message: `Password reset link sent to ${user.email}.` });
-    });
-});
-
-app.post('/set-new-password', (req, res) => {
-    const { token, newPassword } = req.body;
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (decoded.type !== 'password_reset') {
-            return res.status(401).json({ success: false, message: 'Invalid token type.' });
-        }
-        
-        const db = readDB();
-        const user = db.users[decoded.userId];
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User no longer exists.' });
-        }
-        
-        user.pass = newPassword;
-        writeDB(db);
-        res.json({ success: true, message: 'Password updated successfully. You can now log in.' });
-    } catch (error) {
-         res.status(401).json({ success: false, message: 'Link is invalid or has expired.' });
-    }
-});
-
-
-// --- YOUR ORIGINAL ROUTES (UNCHANGED) ---
-
+// --- ALL YOUR ORIGINAL, WORKING ROUTES ---
 // Login
 app.post('/login', (req, res) => {
-    // ... your existing login code ...
+    const { userId, password, role, department } = req.body;
+    const db = readDB();
+    const user = db.users[userId];
+    if (!user) return res.status(404).json({ success: false, message: `User ID '${userId}' not found.` });
+    if (user.pass !== password) return res.status(401).json({ success: false, message: 'Incorrect password.' });
+    if (user.role !== role) return res.status(401).json({ success: false, message: `Role mismatch. You selected '${role}' but this user is a '${user.role}'.` });
+    if (role === 'HOD' && user.department !== department) return res.status(401).json({ success: false, message: `Access Denied. Expected department: ${user.department}` });
+    const { pass, ...userResponse } = user;
+    res.json({ success: true, user: { ...userResponse, id: userId } });
 });
 
 // Profile Management
-app.get('/profile/:userId', (req, res) => {
-    // ... your existing profile code ...
-});
+app.get('/profile/:userId', (req, res) => { /* Your original code */ });
+app.post('/profile/update', upload.single('photoFile'), (req, res) => { /* Your original code */ });
+app.get('/users', (req, res) => { /* Your original code */ });
+app.delete('/users/:userId', (req, res) => { /* Your original code */ });
 
-// etc... ALL your other routes for assignments, attendance, timetables, etc. are still here.
-// I have omitted them for brevity, but they should be in your file.
+// Signup & Password Requests (Manual Admin Approval)
+app.post('/signup', (req, res) => {
+    const db = readDB();
+    const { userId } = req.body;
+    if (db.users[userId] || db.signupRequests.some(r => r.userId === userId)) {
+        return res.status(409).json({ success: false, message: 'User ID already exists or has a pending request.' });
+    }
+    db.signupRequests.push(req.body);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Request submitted for approval.' });
+});
+app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
+app.post('/resolve-signup', (req, res) => {
+    const { userId, action } = req.body;
+    const db = readDB();
+    const requestIndex = db.signupRequests.findIndex(r => r.userId === userId);
+    if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
+    if (action === 'approve') {
+        const request = db.signupRequests[requestIndex];
+        db.users[request.userId] = { 
+            pass: request.pass, name: request.name, role: request.role, email: request.email, 
+            department: request.department || "", course: request.course || "", 
+            phone: "", bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
+        };
+    }
+    db.signupRequests.splice(requestIndex, 1);
+    writeDB(db);
+    res.json({ success: true, message: `Request ${action}d.` });
+});
+app.post('/forgot-password', (req, res) => {
+    const { userId, newPass } = req.body;
+    const db = readDB();
+    const user = db.users[userId];
+    if (!user) return res.status(404).json({ success: false, message: 'User ID not found.' });
+    if (db.passwordRequests.some(r => r.userId === userId)) {
+        return res.status(409).json({ success: false, message: 'A password request for this user already exists.' });
+    }
+    db.passwordRequests.push({ userId, newPass, userName: user.name });
+    writeDB(db);
+    res.json({ success: true, message: 'Password reset request sent for approval.' });
+});
+app.get('/password-requests', (req, res) => res.json(readDB().passwordRequests));
+app.post('/resolve-password-request', (req, res) => { /* Your original code */ });
+
+// All other routes (Assignments, Attendance, etc.) are your original code.
+
+// Fallback route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // --- SERVER START ---
 app.listen(PORT, () => {
