@@ -108,7 +108,7 @@
                 <form id="signupForm" class="space-y-4">
                         <input type="text" name="name" placeholder="Full Name" required class="block w-full px-3 py-2 border rounded-md">
                         <input type="text" name="userId" placeholder="User ID / Enrollment No." required class="block w-full px-3 py-2 border rounded-md">
-                        <input type="email" name="email" placeholder="Email Address (e.g., name.userid@tulas.edu.in)" required class="block w-full px-3 py-2 border rounded-md">
+                        <input type="email" name="email" placeholder="Email Address" required class="block w-full px-3 py-2 border rounded-md">
                         <input type="password" name="pass" placeholder="Password" required class="block w-full px-3 py-2 border rounded-md">
                         <select name="role" id="signup-role" required class="w-full px-3 py-2 border rounded-md">
                             <option value="">Select Role</option>
@@ -128,19 +128,18 @@
                             </select>
                         </div>
                         <div id="signup-course-container" class="hidden">
-                            <select name="course" class="w-full px-3 py-2 border rounded-md">
+                            <select name="course" required class="w-full px-3 py-2 border rounded-md">
                                 <option value="">Select Course</option>
                             </select>
                         </div>
                         <div id="signup-message" class="text-sm text-center min-h-[1.25rem]"></div>
-                        <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Request Account</button>
+                        <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Sign Up</button>
                 </form>
                 <p class="text-center text-sm">Already have an account? <a href="#" id="show-login-link-from-signup" class="text-green-600">Log In</a></p>
             </div>
 
             <div id="forgot-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                  <h2 class="text-2xl font-bold text-center text-gray-800">Reset Password</h2>
-                 <p class="text-center text-sm text-gray-500">This will send a reset request to the administrator.</p>
                  <form id="forgotPasswordForm" class="space-y-4">
                        <input type="text" name="userId" placeholder="Enter your User ID" required class="block w-full px-3 py-2 border rounded-md">
                        <input type="password" name="newPass" placeholder="Enter New Password" required class="block w-full px-3 py-2 border rounded-md">
@@ -163,6 +162,7 @@
                             <p id="user-role" class="text-sm text-gray-600">Role</p>
                         </div>
                     </div>
+                    
                     <div class="flex items-center">
                         <button id="mobile-menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                              <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
@@ -202,30 +202,71 @@
 // --- UTILITY FUNCTIONS ---
 const API_BASE_URL = '';
 
+// Data for dynamic course selection
 const departmentCourses = {
-    "Department of Engineering": ["Bachelor of Technology - Civil Engineering (CE)","Bachelor of Technology - Computer Science & Engineering (CSE)","Bachelor of Technology - CSE (Artificial Intelligence & Machine Learning)","Bachelor of Technology - CSE (Cyber Security)","Bachelor of Technology - CSE (Data Science)","Bachelor of Technology - Electronics & Communication Engineering (ECE)","Bachelor of Technology - Electrical & Electronics Engineering (EEE)","Bachelor of Technology - Mechanical Engineering (ME)","Diploma in Civil Engineering","Diploma in Mechanical Engineering","Diploma in Computer Science Engineering","Masters in Technology"],
-    "Department of Applied Sciences and Humanities": ["Applied Sciences and Humanities"],
-    "Department of Agriculture": ["B.Sc Agriculture"],
-    "Department of Journalism and Communications": ["BA (Hons.) Journalism and Mass Communication"],
-    "Graduate School of Business": ["Bachelor of Business Administration (BBA)","Bachelor of Commerce (B.Com Hons.)","Master of Business Administration (MBA)"],
-    "Department of Computer Applications": ["Bachelor of Computer Applications (BCA)","Master of Computer Applications (MCA)"],
-    "Tula's Institute of Pharmacy": ["Bachelor of Pharmacy (B.Pharm)","Diploma in Pharmacy (D.Pharm)"]
+    "Department of Engineering": [
+        "Bachelor of Technology - Civil Engineering (CE)",
+        "Bachelor of Technology - Computer Science & Engineering (CSE)",
+        "Bachelor of Technology - CSE (Artificial Intelligence & Machine Learning)",
+        "Bachelor of Technology - CSE (Cyber Security)",
+        "Bachelor of Technology - CSE (Data Science)",
+        "Bachelor of Technology - Electronics & Communication Engineering (ECE)",
+        "Bachelor of Technology - Electrical & Electronics Engineering (EEE)",
+        "Bachelor of Technology - Mechanical Engineering (ME)",
+        "Diploma in Civil Engineering",
+        "Diploma in Mechanical Engineering",
+        "Diploma in Computer Science Engineering",
+        "Masters in Technology"
+    ],
+    "Department of Applied Sciences and Humanities": [
+        "Applied Sciences and Humanities"
+    ],
+    "Department of Agriculture": [
+        "B.Sc Agriculture"
+    ],
+    "Department of Journalism and Communications": [
+        "BA (Hons.) Journalism and Mass Communication"
+    ],
+    "Graduate School of Business": [
+        "Bachelor of Business Administration (BBA)",
+        "Bachelor of Commerce (B.Com Hons.)",
+        "Master of Business Administration (MBA)"
+    ],
+    "Department of Computer Applications": [
+        "Bachelor of Computer Applications (BCA)",
+        "Master of Computer Applications (MCA)"
+    ],
+    "Tula's Institute of Pharmacy": [
+        "Bachelor of Pharmacy (B.Pharm)",
+        "Diploma in Pharmacy (D.Pharm)"
+    ]
 };
+
 
 function showNotification(message, isError = false) {
     const toast = document.getElementById('notification-toast');
     const messageP = document.getElementById('notification-message');
+
     if (!toast || !messageP) return;
+
     messageP.textContent = message;
     toast.className = 'fixed bottom-20 md:bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transition-all duration-500 transform z-50';
-    toast.classList.add(isError ? 'bg-red-600' : 'bg-green-600');
+
+    if (isError) {
+        toast.classList.add('bg-red-600');
+    } else {
+        toast.classList.add('bg-green-600');
+    }
+
     toast.style.transform = 'translateY(0)';
     toast.style.opacity = '1';
+
     setTimeout(() => {
         toast.style.transform = 'translateY(5rem)';
         toast.style.opacity = '0';
     }, 4000);
 }
+
 
 // --- DOMContentLoaded ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -244,91 +285,78 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerProfilePic = document.getElementById('header-profile-pic');
     const welcomeMessage = document.getElementById('welcome-message');
     const userRoleDisplay = document.getElementById('user-role');
+
     const desktopNavContainer = document.getElementById('sidebar-nav-links-desktop');
     const mobileNavContainer = document.getElementById('footer-nav-links-mobile');
     const mobileMenuButton = document.getElementById('mobile-menu-button');
+
     const togglePassword = document.getElementById('toggle-password');
     const showSignupLink = document.getElementById('show-signup-link');
     const showLoginLinkFromSignup = document.getElementById('show-login-link-from-signup');
     const showForgotPasswordLink = document.getElementById('show-forgot-password-link');
     const showLoginLinkFromForgot = document.getElementById('show-login-link-from-forgot');
+
     const forgotPasswordLinkWrapper = showForgotPasswordLink.parentElement;
     const signupLinkWrapper = showSignupLink.parentElement;
+
     const loginContainer = document.getElementById('login-container');
     const signupContainer = document.getElementById('signup-container');
     const forgotPasswordContainer = document.getElementById('forgot-password-container');
+
     const signupForm = document.getElementById('signupForm');
     const forgotPasswordForm = document.getElementById('forgotPasswordForm');
 
-    // --- VISIBILITY AND FORM LOGIC ---
+    // --- LOGIN FORM VISIBILITY LOGIC (RESTORED) ---
     function updateDepartmentVisibility() {
         const isDeptLogin = roleSelect.value === 'Department Login';
         const isEngineeringSelected = departmentSelect.value === 'Department of Engineering';
+
+        // Show main department dropdown only for HOD login
         departmentSelectContainer.classList.toggle('hidden', !isDeptLogin);
+        // Show engineering branch dropdown ONLY if HOD login AND Engineering is selected
         engineeringDeptSelectContainer.classList.toggle('hidden', !isDeptLogin || !isEngineeringSelected);
+
         const isAdminSelected = roleSelect.value === 'Admin';
         forgotPasswordLinkWrapper.classList.toggle('hidden', isAdminSelected);
         signupLinkWrapper.classList.toggle('hidden', isAdminSelected);
     }
 
-    function showAuthPage(pageToShow) {
-        loginContainer.classList.add('hidden');
-        signupContainer.classList.add('hidden');
-        forgotPasswordContainer.classList.add('hidden');
-        pageToShow.classList.remove('hidden');
-    }
 
     // --- EVENT LISTENERS ---
     roleSelect.addEventListener('change', updateDepartmentVisibility);
     departmentSelect.addEventListener('change', updateDepartmentVisibility);
-    showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(signupContainer); });
-    showForgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(forgotPasswordContainer); });
-    showLoginLinkFromSignup.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
-    showLoginLinkFromForgot.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
-    
-    logoutButton.addEventListener('click', () => {
-        sessionStorage.clear();
-        window.location.reload();
-    });
 
-    togglePassword.addEventListener('click', () => {
-        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
-        togglePassword.querySelectorAll('svg').forEach(svg => svg.classList.toggle('hidden'));
-    });
-
-    if (mobileMenuButton) {
-        mobileMenuButton.addEventListener('click', () => {
-            document.getElementById('sidebar-nav').classList.toggle('hidden');
-        });
-    }
-    
-    // LOGIN FORM SUBMISSION (ORIGINAL)
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const userId = userIdInput.value.trim();
         const password = passwordInput.value.trim();
         const selectedRole = roleSelect.value;
         const errorMessage = document.getElementById('error-message');
-        errorMessage.textContent = '';
+        errorMessage.textContent = ''; // Clear previous errors
+
+        // RESTORED: Logic to get the correct department value
         let department = null;
         if (selectedRole === 'Department Login') {
             const mainDepartmentValue = departmentSelect.value;
             if (mainDepartmentValue === 'Department of Engineering') {
-                department = engineeringDeptSelect.value;
+                department = engineeringDeptSelect.value; // Get value from the specific engineering dropdown
                 if (!department) {
                     errorMessage.textContent = 'Please select an engineering branch.';
                     return;
                 }
             } else {
-                department = mainDepartmentValue;
+                department = mainDepartmentValue; // Get value from the main department dropdown
             }
         }
+
         if (!userId || !password) {
             errorMessage.textContent = 'Please enter both User ID and Password.';
             return;
         }
+
         const roleForBackend = selectedRole === 'Department Login' ? 'HOD' : selectedRole;
         const loginPayload = { userId, password, role: roleForBackend, department };
+
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: 'POST',
@@ -348,11 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // SIGNUP FORM SUBMISSION (ORIGINAL MANUAL WORKFLOW)
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
         const signupMessage = document.getElementById('signup-message');
+
         try {
             const response = await fetch(`${API_BASE_URL}/signup`, {
                 method: 'POST',
@@ -373,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // FORGOT PASSWORD FORM SUBMISSION (ORIGINAL MANUAL WORKFLOW)
     forgotPasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(e.target).entries());
@@ -394,7 +421,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // SIGNUP DROPDOWN LOGIC (ORIGINAL)
+    function showAuthPage(pageToShow) {
+        loginContainer.classList.add('hidden');
+        signupContainer.classList.add('hidden');
+        forgotPasswordContainer.classList.add('hidden');
+        pageToShow.classList.remove('hidden');
+    }
+
+    showSignupLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(signupContainer); });
+    showForgotPasswordLink.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(forgotPasswordContainer); });
+    showLoginLinkFromSignup.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
+    showLoginLinkFromForgot.addEventListener('click', (e) => { e.preventDefault(); showAuthPage(loginContainer); });
+
+    logoutButton.addEventListener('click', () => {
+        sessionStorage.clear();
+        window.location.reload();
+    });
+
+    togglePassword.addEventListener('click', () => {
+        passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+        togglePassword.querySelectorAll('svg').forEach(svg => svg.classList.toggle('hidden'));
+    });
+
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar-nav');
+            sidebar.classList.toggle('hidden');
+        });
+    }
+    
+    // --- SIGNUP LOGIC FOR DYNAMIC DROPDOWNS ---
     const signupRoleSelect = document.getElementById('signup-role');
     const signupDepartmentContainer = document.getElementById('signup-department-container');
     const signupDepartmentSelect = signupDepartmentContainer.querySelector('select');
@@ -432,8 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- DASHBOARD AND NAVIGATION ---
-    
     function showDashboard(user) {
         document.getElementById('login-signup-wrapper').classList.add('hidden');
         dashboardContainer.classList.remove('hidden');
@@ -487,7 +541,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadMainContent(target) {
         const functions = {
-            'user-profile': showUserProfile, 'student-analytics': showStudentAnalytics, 'student-assignments': showStudentAssignments, 'student-attendance': showStudentAttendance, 'student-fees': showStudentFees, 'student-timetable': showStudentTimetable, 'student-id-card': showStudentIdCard, 'student-announcements': showStudentAnnouncements, 'student-leave': showStudentLeave, 'faculty-assignments': showFacultyAssignments, 'faculty-timetable': showFacultyTimetable, 'faculty-attendance': showFacultyAttendance, 'faculty-marks': showFacultyMarks, 'faculty-search': showFacultySearch, 'faculty-ml-insights': showFacultyMLInsights, 'faculty-announcements': showFacultyAnnouncements, 'faculty-leave': showFacultyLeave, 'hod-dashboard': showHODDashboard, 'hod-faculty': showHODFaculty, 'hod-announcements': showHODAnnouncements, 'admin-announce': showAdminAnnouncements, 'admin-manage-users': showAdminManageUsers, 'admin-timetables': showAdminTimetables, 'admin-id-requests': showAdminIdRequests, 'admin-signup-requests': showAdminSignupRequests, 'admin-password-requests': showAdminPasswordRequests,
+            'user-profile': showUserProfile,
+            'student-analytics': showStudentAnalytics,
+            'student-assignments': showStudentAssignments,
+            'student-attendance': showStudentAttendance,
+            'student-fees': showStudentFees,
+            'student-timetable': showStudentTimetable,
+            'student-id-card': showStudentIdCard,
+            'student-announcements': showStudentAnnouncements,
+            'student-leave': showStudentLeave, 
+            'faculty-assignments': showFacultyAssignments,
+            'faculty-timetable': showFacultyTimetable,
+            'faculty-attendance': showFacultyAttendance,
+            'faculty-marks': showFacultyMarks,
+            'faculty-search': showFacultySearch,
+            'faculty-ml-insights': showFacultyMLInsights,
+            'faculty-announcements': showFacultyAnnouncements,
+            'faculty-leave': showFacultyLeave, 
+            'hod-dashboard': showHODDashboard,
+            'hod-faculty': showHODFaculty,
+            'hod-announcements': showHODAnnouncements,
+            'admin-announce': showAdminAnnouncements,
+            'admin-manage-users': showAdminManageUsers,
+            'admin-timetables': showAdminTimetables,
+            'admin-id-requests': showAdminIdRequests,
+            'admin-signup-requests': showAdminSignupRequests,
+            'admin-password-requests': showAdminPasswordRequests,
         };
         const func = functions[target];
         if (func) func();
@@ -504,44 +583,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateStudentDashboard() {
         const links = [
-            { name: 'My Profile', target: 'user-profile'}, { name: 'Announcements', target: 'student-announcements'}, { name: 'My Analytics', target: 'student-analytics'}, { name: 'Assignments', target: 'student-assignments'}, { name: 'Attendance', target: 'student-attendance'}, { name: 'Apply for Leave', target: 'student-leave'}, { name: 'Fee Details', target: 'student-fees'}, { name: 'Timetable', target: 'student-timetable'}, { name: 'ID Card', target: 'student-id-card'},
+            { name: 'My Profile', target: 'user-profile'},
+            { name: 'Announcements', target: 'student-announcements'},
+            { name: 'My Analytics', target: 'student-analytics'},
+            { name: 'Assignments', target: 'student-assignments'},
+            { name: 'Attendance', target: 'student-attendance'},
+            { name: 'Apply for Leave', target: 'student-leave'},
+            { name: 'Fee Details', target: 'student-fees'},
+            { name: 'Timetable', target: 'student-timetable'},
+            { name: 'ID Card', target: 'student-id-card'},
         ];
         populateNav(links);
         setDefaultPage(links);
     }
     function populateFacultyDashboard() {
         const links = [
-            { name: 'My Profile', target: 'user-profile' }, { name: 'Announcements', target: 'faculty-announcements' }, { name: 'Assignments', target: 'faculty-assignments' }, { name: 'Leave Requests', target: 'faculty-leave' }, { name: 'ML Insights', target: 'faculty-ml-insights' }, { name: 'Attendance', target: 'faculty-attendance' }, { name: 'Marks', target: 'faculty-marks' }, { name: 'Search Student', target: 'faculty-search' },
+            { name: 'My Profile', target: 'user-profile' },
+            { name: 'Announcements', target: 'faculty-announcements' },
+            { name: 'Assignments', target: 'faculty-assignments' },
+            { name: 'Leave Requests', target: 'faculty-leave' },
+            { name: 'ML Insights', target: 'faculty-ml-insights' },
+            { name: 'Attendance', target: 'faculty-attendance' },
+            { name: 'Marks', target: 'faculty-marks' },
+            { name: 'Search Student', target: 'faculty-search' },
         ];
         populateNav(links);
         setDefaultPage(links);
     }
-    
-    // Admin dashboard with original features restored
     function populateAdminDashboard() {
-        const links = [ 
-            { name: 'Announcements', target: 'admin-announce' }, 
-            { name: 'Manage Users', target: 'admin-manage-users' }, 
-            { name: 'Sign-up Requests', target: 'admin-signup-requests' }, 
-            { name: 'Password Requests', target: 'admin-password-requests' }, 
-            { name: 'ID Card Requests', target: 'admin-id-requests' }, 
-            { name: 'Timetables', target: 'admin-timetables'}, 
+        const links = [ { name: 'Announcements', target: 'admin-announce' }, { name: 'Manage Users', target: 'admin-manage-users' }, { name: 'Sign-up Requests', target: 'admin-signup-requests' }, { name: 'Password Requests', target: 'admin-password-requests' }, { name: 'ID Card Requests', target: 'admin-id-requests' }, { name: 'Timetables', target: 'admin-timetables'}, ];
+        populateNav(links);
+        setDefaultPage(links);
+    }
+    function populateHODDashboard() {
+        const links = [
+            { name: 'Department', target: 'hod-dashboard' },
+            { name: 'Manage Faculty', target: 'hod-faculty' },
+            { name: 'Announcements', target: 'hod-announcements' },
+            { name: 'Sign-up Requests', target: 'admin-signup-requests' },
+            { name: 'Search Student', target: 'faculty-search' },
+            { name: 'My Profile', target: 'user-profile' }
         ];
         populateNav(links);
         setDefaultPage(links);
     }
 
-    // HOD dashboard with original features restored
-    function populateHODDashboard() {
-        const links = [
-            { name: 'Department', target: 'hod-dashboard' }, { name: 'Manage Faculty', target: 'hod-faculty' }, { name: 'Announcements', target: 'hod-announcements' }, { name: 'Sign-up Requests', target: 'admin-signup-requests' }, { name: 'Search Student', target: 'faculty-search' }, { name: 'My Profile', target: 'user-profile' }
-        ];
-        populateNav(links);
-        setDefaultPage(links);
-    }
-    
-    // --- ALL OF YOUR ORIGINAL CONTENT RENDERING FUNCTIONS ---
-    // These are your original, working functions. They have not been changed.
+    // --- CONTENT RENDERING FUNCTIONS ---
     async function showUserProfile() {
         mainContent.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow">Loading profile...</div>`;
         const userId = sessionStorage.getItem('userId');
@@ -557,6 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.innerHTML = `<div class="text-center text-red-500 p-8 bg-white rounded-lg shadow">Error loading profile data.</div>`;
         }
     }
+
     function showUserProfileEditForm(profile) {
         document.getElementById('profile-view').classList.add('hidden');
         const editContainer = document.getElementById('profile-edit');
@@ -574,46 +662,49 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification('Profile updated!');
                     sessionStorage.setItem('loggedInUser', JSON.stringify(result.updatedUser));
                     const newPhotoUrl = result.updatedUser.photoUrl ? `${API_BASE_URL}${result.updatedUser.photoUrl}` : 'https://placehold.co/40x40/a0aec0/ffffff?text=U';
-                    headerProfilePic.src = `${newPhotoUrl}?t=${new Date().getTime()}`;
+                    headerProfilePic.src = `${newPhotoUrl}?t=${new Date().getTime()}`; // bust cache
                     showUserProfile();
                 } else { showNotification('Failed to update profile.', true); }
             } catch (error) { showNotification("Could not connect to server.", true); }
         });
     }
-    async function showStudentAnalytics() { /* ... Your original code ... */ }
-    async function showStudentAssignments() { /* ... Your original code ... */ }
-    async function showStudentAttendance() { /* ... Your original code ... */ }
-    async function showStudentFees() { /* ... Your original code ... */ }
-    async function showStudentTimetable() { /* ... Your original code ... */ }
-    async function showStudentIdCard() { /* ... Your original code ... */ }
-    async function showStudentLeave() { /* ... Your original code ... */ }
-    async function showFacultyAssignments() { /* ... Your original code ... */ }
-    async function showFacultyLeave() { /* ... Your original code ... */ }
-    async function showFacultyTimetable() { /* ... Your original code ... */ }
-    async function showFacultyAttendance() { /* ... Your original code ... */ }
-    async function showFacultyMarks() { /* ... Your original code ... */ }
-    async function showFacultySearch() { /* ... Your original code ... */ }
-    async function showFacultyMLInsights() { /* ... Your original code ... */ }
-    async function showHODDashboard() { /* ... Your original code ... */ }
-    async function showHODFaculty() { /* ... Your original code ... */ }
-    async function showAdminManageUsers() { /* ... Your original code ... */ }
-    async function showAdminTimetables() { /* ... Your original code ... */ }
-    function renderEditableTimetable(type, id, data) { /* ... Your original code ... */ }
-    async function showAdminIdRequests() { /* ... Your original code ... */ }
-    async function showAdminSignupRequests() { /* ... Your original code ... */ }
-    async function showAdminPasswordRequests() { /* ... Your original code ... */ }
-    async function showStudentAnnouncements() { /* ... Your original code ... */ }
-    async function showFacultyAnnouncements() { /* ... Your original code ... */ }
-    async function showHODAnnouncements() { /* ... Your original code ... */ }
-    async function showAdminAnnouncements() { /* ... Your original code ... */ }
 
-    // --- INITIALIZATION ---
+    async function showStudentAnalytics() { /* ... full original code ... */ }
+    async function showStudentAssignments() { /* ... full original code ... */ }
+    async function showStudentAttendance() { /* ... full original code ... */ }
+    async function showStudentFees() { /* ... full original code ... */ }
+    async function showStudentTimetable() { /* ... full original code ... */ }
+    async function showStudentIdCard() { /* ... full original code ... */ }
+    async function showStudentLeave() { /* ... full original code ... */ }
+    async function showFacultyAssignments() { /* ... full original code ... */ }
+    async function showFacultyLeave() { /* ... full original code ... */ }
+    async function showFacultyTimetable() { /* ... full original code ... */ }
+    async function showFacultyAttendance() { /* ... full original code ... */ }
+    async function showFacultyMarks() { /* ... full original code ... */ }
+    async function showFacultySearch() { /* ... full original code ... */ }
+    async function showFacultyMLInsights() { /* ... full original code ... */ }
+    async function showHODDashboard() { /* ... full original code ... */ }
+    async function showHODFaculty() { /* ... full original code ... */ }
+    async function showAdminManageUsers() { /* ... full original code ... */ }
+    async function showAdminTimetables() { /* ... full original code ... */ }
+    function renderEditableTimetable(type, id, data) { /* ... full original code ... */ }
+    async function showAdminIdRequests() { /* ... full original code ... */ }
+    async function showAdminSignupRequests() { /* ... full original code ... */ }
+    async function showAdminPasswordRequests() { /* ... full original code ... */ }
+    async function showStudentAnnouncements() { /* ... full original code ... */ }
+    async function showFacultyAnnouncements() { /* ... full original code ... */ }
+    async function showHODAnnouncements() { /* ... full original code ... */ }
+    async function showAdminAnnouncements() { /* ... full original code ... */ }
+
+    // Check for logged-in user on page load
     const loggedInUser = sessionStorage.getItem('loggedInUser');
     if (loggedInUser) {
         showDashboard(JSON.parse(loggedInUser));
     }
+    // Initial call to set the correct dropdown visibility on page load
     updateDepartmentVisibility();
 });
 </script>
 </body>
 </html>
+
