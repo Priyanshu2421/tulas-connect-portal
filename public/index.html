@@ -17,163 +17,38 @@
             <div class="absolute inset-0 bg-black opacity-50"></div>
             
             <div id="login-container" class="relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-                <div class="flex flex-col items-center space-y-2">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" alt="Tula's Institute Logo" class="h-20 w-auto">
-                    <h1 class="text-3xl font-bold text-gray-800">TULA'S CONNECT</h1>
-                    <p class="text-gray-500">Tula's Institute, Dehradun</p>
                 </div>
-                <form id="loginForm" class="space-y-4">
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700">Login Type</label>
-                        <select id="role" name="role" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                            <option>Student</option>
-                            <option>Faculty</option>
-                            <option>Department Login</option>
-                            <option>Admin</option>
-                        </select>
-                    </div>
-                    <div id="department-select-container" class="hidden">
-                        <label for="department" class="block text-sm font-medium text-gray-700">Select Department</label>
-                        <select id="department" name="department" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                           <option>Department of Engineering</option>
-                           <option>Department of Applied Sciences and Humanities</option>
-                           <option>Department of Agriculture</option>
-                           <option>Department of Journalism and Communications</option>
-                           <option>Graduate School of Business</option>
-                           <option>Department of Computer Applications</option>
-                           <option>Tula's Institute of Pharmacy</option>
-                        </select>
-                    </div>
-                    <!-- New Sub-Department Dropdown for Engineering HOD -->
-                    <div id="engineering-dept-select-container" class="hidden">
-                        <label for="engineering-dept" class="block text-sm font-medium text-gray-700">Select Engineering Branch</label>
-                        <select id="engineering-dept" name="engineering-dept" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                           <option value="">-- Select Branch --</option>
-                           <option value="Department of Computer Science & Engineering">Department of Computer Science & Engineering (CSE)</option>
-                           <option value="Department of Electrical & Electronics Engineering">Department of Electrical & Electronics Engineering (EEE)</option>
-                           <option value="Department of Electronics & Communication Engineering">Department of Electronics & Communication Engineering (ECE)</option>
-                           <option value="Department of Mechanical Engineering">Department of Mechanical Engineering (ME)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="userId" class="block text-sm font-medium text-gray-700">User ID / Enrollment No.</label>
-                        <input id="userId" name="userId" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                        <div class="mt-1 relative">
-                            <input id="password" name="password" type="password" required class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                            <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 px-3 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7 .91-2.905 3.012-5.163 5.542-6.275m5.542.488A4.502 4.502 0 0119.5 12a4.5 4.5 0 01-1.375 3.125m-1.5-1.5L6.125 6.125m10.25 10.25L18.875 18.875" /></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="error-message" class="text-red-500 text-sm text-center min-h-[1.25rem]"></div>
-                    <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                            Sign in
-                        </button>
-                    </div>
-                </form>
-                <div class="text-sm text-center">
-                    <a href="#" id="show-forgot-password-link" class="font-medium text-green-600 hover:text-green-500">Forgot your password?</a>
-                </div>
-                <div class="text-center text-sm text-gray-600">
-                    Don't have an account? <a href="#" id="show-signup-link" class="font-medium text-green-600 hover:text-green-500">Sign Up</a>
-                </div>
-            </div>
 
             <div id="signup-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-                <h2 class="text-2xl font-bold text-center text-gray-800">Create Account</h2>
-                <form id="signupForm" class="space-y-4">
-                        <input type="text" name="name" placeholder="Full Name" required class="block w-full px-3 py-2 border rounded-md">
-                        <input type="text" name="userId" placeholder="User ID / Enrollment No." required class="block w-full px-3 py-2 border rounded-md">
-                        <input type="email" name="email" placeholder="Email Address" required class="block w-full px-3 py-2 border rounded-md">
-                        <input type="password" name="pass" placeholder="Password" required class="block w-full px-3 py-2 border rounded-md">
-                        <select name="role" id="signup-role" required class="w-full px-3 py-2 border rounded-md">
-                            <option value="">Select Role</option>
-                            <option>Student</option>
-                            <option>Faculty</option>
-                        </select>
-                        <div id="signup-department-container" class="hidden">
-                            <select name="department" class="w-full px-3 py-2 border rounded-md">
-                                <option value="">Select Department</option>
-                                <option>Department of Engineering</option>
-                                <option>Department of Applied Sciences and Humanities</option>
-                                <option>Department of Agriculture</option>
-                                <option>Department of Journalism and Communications</option>
-                                <option>Graduate School of Business</option>
-                                <option>Department of Computer Applications</option>
-                                <option>Tula's Institute of Pharmacy</option>
-                            </select>
-                        </div>
-                        <div id="signup-course-container" class="hidden">
-                            <select name="course" required class="w-full px-3 py-2 border rounded-md">
-                                <option value="">Select Course</option>
-                            </select>
-                        </div>
-                        <div id="signup-message" class="text-sm text-center min-h-[1.25rem]"></div>
-                        <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Sign Up</button>
-                </form>
-                <p class="text-center text-sm">Already have an account? <a href="#" id="show-login-link-from-signup" class="text-green-600">Log In</a></p>
-            </div>
+                </div>
 
             <div id="forgot-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                  <h2 class="text-2xl font-bold text-center text-gray-800">Reset Password</h2>
+                 <p class="text-center text-sm text-gray-500">Enter your User ID and we'll send a password reset link to your registered email address.</p>
                  <form id="forgotPasswordForm" class="space-y-4">
-                     <input type="text" name="userId" placeholder="Enter your User ID" required class="block w-full px-3 py-2 border rounded-md">
-                     <input type="password" name="newPass" placeholder="Enter New Password" required class="block w-full px-3 py-2 border rounded-md">
-                     <div id="forgot-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
-                     <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Request Reset</button>
+                       <input type="text" name="userId" placeholder="Enter your User ID / Enrollment No." required class="block w-full px-3 py-2 border rounded-md">
+                       <div id="forgot-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
+                       <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Send Reset Link</button>
                  </form>
                  <p class="text-center text-sm">Remembered your password? <a href="#" id="show-login-link-from-forgot" class="text-green-600">Log In</a></p>
             </div>
+
+            <div id="new-password-container" class="hidden relative w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                 <h2 class="text-2xl font-bold text-center text-gray-800">Set a New Password</h2>
+                 <form id="newPasswordForm" class="space-y-4">
+                       <input type="hidden" name="token">
+                       <input type="password" name="newPassword" placeholder="Enter New Password" required class="block w-full px-3 py-2 border rounded-md">
+                       <input type="password" name="confirmPassword" placeholder="Confirm New Password" required class="block w-full px-3 py-2 border rounded-md">
+                       <div id="new-password-message" class="text-sm text-center min-h-[1.25rem]"></div>
+                       <button type="submit" class="w-full py-2 px-4 bg-green-600 text-white rounded-md">Set New Password</button>
+                 </form>
+            </div>
+
         </div>
     </div>
 
     <div id="dashboard-container" class="hidden">
-        <header class="bg-white shadow-lg fixed top-0 left-0 right-0 z-40">
-            <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <img src="https://media.licdn.com/dms/image/v2/C4D0BAQFVB1T5rLzB9w/company-logo_200_200/company-logo_200_200/0/1675242726279/tulas_institute_logo?e=2147483647&v=beta&t=8Dd0QiiO5pwhdM6BCxNb9H6WTxK-jbdfW7yq7R_y8Lk" alt="Tula's Institute Logo" class="h-12 w-auto mr-4">
-                        <div class="hidden sm:block text-gray-800">
-                            <h1 id="welcome-message" class="text-lg font-semibold whitespace-nowrap">Welcome, User</h1>
-                            <p id="user-role" class="text-sm text-gray-600">Role</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <button id="mobile-menu-button" class="md:hidden mr-4 p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
-                             <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                             </svg>
-                        </button>
-                        <img id="header-profile-pic" class="h-10 w-10 rounded-full object-cover" src="" alt="User profile">
-                        <button id="logout-button" class="ml-4 bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700">Logout</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <aside id="sidebar-nav" class="hidden md:flex flex-col w-64 bg-green-800 text-white fixed top-16 left-0 h-full shadow-lg z-30">
-             <div id="sidebar-nav-links-desktop" class="flex flex-col p-2 space-y-1 mt-4">
-             </div>
-        </aside>
-        
-        <div class="md:pl-64 pt-16">
-            <main class="bg-gray-100 p-4 sm:p-6 lg:p-8 min-h-[calc(100vh-4rem)] pb-20 md:pb-8">
-                <div id="main-content" class="max-w-7xl mx-auto">
-               </div>
-            </main>
         </div>
-
-        <footer id="footer-nav-bar" class="md:hidden fixed bottom-0 left-0 right-0 bg-green-800 text-white shadow-[0_-2px_5px_rgba(0,0,0,0.1)] z-50">
-            <div id="footer-nav-links-mobile" class="flex justify-around items-center h-16 overflow-x-auto">
-             </div>
-        </footer>
-    </div>
     
     <div id="notification-toast" class="fixed bottom-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transition-transform duration-300 transform translate-y-24 opacity-0">
         <p id="notification-message"></p>
