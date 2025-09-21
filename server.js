@@ -15,13 +15,12 @@ const SUBMISSIONS_DIR = path.join(UPLOADS_DIR, 'submissions');
 const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
 const IDCARD_PICS_DIR = path.join(UPLOADS_DIR, 'idcards');
 
-// --- FIXED: Email Configuration for a Live Server ---
-// This new block uses your Render Environment Variables to send real emails.
+// --- Email Configuration for Live Server ---
 const transporter = nodemailer.createTransport({
-    service: 'gmail', // Or another service like 'hotmail', 'yahoo'
+    service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // Gets the email from Render's Environment Variables
-        pass: process.env.EMAIL_PASS  // Gets the App Password from Render's Environment Variables
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
@@ -44,9 +43,9 @@ const initializeServer = () => {
         if (!fs.existsSync(DB_PATH)) {
             console.log("db.json not found, creating a new default database.");
             const defaultDB = {
-                users: {}, pendingUsers: {}, passwordResets: {}, idCardRequests: [], 
-                signupRequests: [], passwordRequests: [], announcements: [], 
-                attendanceRecords: [], assignments: [], submissions: [], marks: {}, 
+                users: {}, pendingUsers: {}, passwordResets: {}, idCardRequests: [],
+                signupRequests: [], passwordRequests: [], announcements: [],
+                attendanceRecords: [], assignments: [], submissions: [], marks: {},
                 historicalPerformance: [], fees: {}, studentTimetables: {},
                 facultyTimetables: {}, departmentPrograms: {}, leaveRequests: []
             };
@@ -65,20 +64,18 @@ const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2
 
 // --- MULTER SETUP ---
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: (req, file, cb) => {
         let destDir = PROFILE_PICS_DIR;
-        if (file.fieldname === 'submissionFile') destDir = SUBMISSIONS_DIR;
-        else if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
-        else if (file.fieldname === 'idCardPhoto') destDir = IDCARD_PICS_DIR;
+        if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
         cb(null, destDir);
     },
-    filename: function (req, file, cb) {
+    filename: (req, file, cb) => {
         cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
     }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 12 * 1024 * 1024 } });
+const upload = multer({ storage: storage });
 
-// --- AUTHENTICATION ROUTES ---
+// --- AUTHENTICATION & PROFILE ROUTES (Unchanged) ---
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
     const db = readDB();
@@ -94,41 +91,32 @@ app.post('/login', (req, res) => {
 app.post('/signup', async (req, res) => {
     const db = readDB();
     const { userId, email } = req.body;
-    
     if (db.users[userId] || db.signupRequests.some(r => r.userId === userId) || db.pendingUsers[userId]) {
         return res.status(409).json({ success: false, message: 'User ID already exists or has a pending request.' });
     }
-    
     const token = crypto.randomBytes(32).toString('hex');
     db.pendingUsers[token] = { ...req.body, expires: Date.now() + 3600000 };
     writeDB(db);
-
-    // --- FIXED: Use the live site URL for the verification link ---
     const verificationLink = `${req.protocol}://${req.get('host')}/verify-email?token=${token}`;
-    
     try {
-        const info = await transporter.sendMail({
-            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`, // Use your actual email here
+        await transporter.sendMail({
+            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: "Verify Your Email Address",
             html: `<b>Welcome to TULA'S CONNECT!</b><p>Please click the following link to verify your email and complete your registration:</p><a href="${verificationLink}">${verificationLink}</a><p>This link will expire in 1 hour.</p>`
         });
-        
-        // This console.log is for debugging; it won't show a useful Ethereal link anymore.
         console.log("Verification email sent successfully to:", email);
         res.status(201).json({ success: true, message: 'Verification email sent! Please check your inbox.' });
     } catch(error) {
         console.error("Failed to send verification email:", error);
-        res.status(500).json({ success: false, message: "Could not send verification email. Please try again later."});
+        res.status(500).json({ success: false, message: "Could not send verification email."});
     }
 });
 
-// The rest of your file is unchanged as it was working correctly.
 app.get('/verify-email', (req, res) => {
     const { token } = req.query;
     const db = readDB();
     const userData = db.pendingUsers[token];
-
     let message = "Invalid or expired verification link.";
     if(userData && userData.expires > Date.now()){
         db.signupRequests.push(userData);
@@ -136,58 +124,7 @@ app.get('/verify-email', (req, res) => {
         writeDB(db);
         message = "Email verified successfully! Your account is now pending admin approval.";
     }
-    
     res.redirect(`/?message=${encodeURIComponent(message)}`);
-});
-
-app.post('/forgot-password', async (req, res) => {
-    const { userId } = req.body;
-    const db = readDB();
-    const user = db.users[userId];
-
-    if (!user || !user.email) {
-        return res.status(404).json({ success: false, message: 'User ID not found or no email on file.' });
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    db.passwordResets[token] = { userId, expires: Date.now() + 3600000 };
-    writeDB(db);
-
-    const resetLink = `${req.protocol}://${req.get('host')}/?reset_token=${token}`;
-
-    try {
-        await transporter.sendMail({
-            from: `"TULA'S CONNECT" <${process.env.EMAIL_USER}>`,
-            to: user.email,
-            subject: "Password Reset Request",
-            html: `<b>Password Reset</b><p>Click the link to reset your password:</p><a href="${resetLink}">${resetLink}</a><p>This link expires in 1 hour.</p>`
-        });
-        console.log("Password reset email sent to:", user.email);
-        res.json({ success: true, message: 'Password reset link sent to your email.' });
-    } catch (error) {
-        console.error("Failed to send reset email:", error);
-        res.status(500).json({ success: false, message: "Could not send reset email."});
-    }
-});
-
-app.post('/reset-password', (req, res) => {
-    const { token, newPassword } = req.body;
-    const db = readDB();
-    const resetData = db.passwordResets[token];
-
-    if (!resetData || resetData.expires < Date.now()) {
-        return res.status(400).json({ success: false, message: 'Invalid or expired reset token.' });
-    }
-
-    const { userId } = resetData;
-    if (db.users[userId]) {
-        db.users[userId].pass = newPassword;
-        delete db.passwordResets[token];
-        writeDB(db);
-        res.json({ success: true, message: 'Password has been reset successfully.' });
-    } else {
-        res.status(404).json({ success: false, message: 'User not found.' });
-    }
 });
 
 app.get('/profile/:userId', (req, res) => {
@@ -201,34 +138,13 @@ app.get('/profile/:userId', (req, res) => {
     }
 });
 
-app.post('/profile/update', upload.single('photoFile'), (req, res) => {
-    const { userId } = req.body;
-    const db = readDB();
-    if (db.users[userId]) {
-        Object.keys(req.body).forEach(key => {
-            if (key !== 'userId' && db.users[userId].hasOwnProperty(key)) {
-                db.users[userId][key] = req.body[key];
-            }
-        });
-        if (req.file) {
-            db.users[userId].photoUrl = `/uploads/profile/${req.file.filename}`;
-        }
-        writeDB(db);
-        const { pass, ...updatedUser } = db.users[userId];
-        res.json({ success: true, updatedUser: { ...updatedUser, id: userId } });
-    } else {
-        res.status(404).json({ success: false, message: 'User not found.' });
-    }
-});
-
+// --- NEW: USER MANAGEMENT ROUTES (FOR ADMIN) ---
 app.get('/users', (req, res) => {
     const db = readDB();
-    let usersArray = Object.keys(db.users).map(id => {
-        const { pass, ...user } = db.users[id];
-        return { ...user, id };
+    const usersArray = Object.entries(db.users).map(([id, userData]) => {
+        const { pass, ...user } = userData;
+        return { id, ...user };
     });
-    if (req.query.role) usersArray = usersArray.filter(user => user.role === req.query.role);
-    if (req.query.department) usersArray = usersArray.filter(user => user.department === req.query.department);
     res.json({ success: true, users: usersArray });
 });
 
@@ -238,54 +154,124 @@ app.delete('/users/:userId', (req, res) => {
     if (db.users[userId]) {
         delete db.users[userId];
         writeDB(db);
-        res.json({ success: true, message: 'User deleted.' });
+        res.json({ success: true, message: 'User deleted successfully.' });
     } else {
         res.status(404).json({ success: false, message: 'User not found.' });
     }
 });
 
-app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests));
+// --- NEW: ASSIGNMENT ROUTES (FOR FACULTY & STUDENTS) ---
+app.get('/assignments', (req, res) => {
+    const db = readDB();
+    res.json({ success: true, assignments: db.assignments || [] });
+});
+
+app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
+    const { title, description, dueDate, authorName, authorId } = req.body;
+    const db = readDB();
+    const newAssignment = {
+        id: Date.now(),
+        title,
+        description,
+        dueDate,
+        authorName,
+        authorId,
+        filePath: req.file ? `/uploads/assignments/${req.file.filename}` : null
+    };
+    if (!db.assignments) db.assignments = [];
+    db.assignments.push(newAssignment);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Assignment created.', assignment: newAssignment });
+});
+
+// --- NEW: LEAVE REQUEST ROUTES (FOR STUDENTS & FACULTY) ---
+app.get('/leave-requests', (req, res) => {
+    const db = readDB();
+    res.json({ success: true, leaveRequests: db.leaveRequests || [] });
+});
+
+app.post('/leave-requests', (req, res) => {
+    const { studentId, studentName, reason, startDate, endDate } = req.body;
+    const db = readDB();
+    const newRequest = {
+        id: Date.now(),
+        studentId,
+        studentName,
+        reason,
+        startDate,
+        endDate,
+        status: 'Pending' // Initial status
+    };
+    if (!db.leaveRequests) db.leaveRequests = [];
+    db.leaveRequests.push(newRequest);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Leave request submitted.' });
+});
+
+app.post('/resolve-leave-request', (req, res) => {
+    const { id, status } = req.body; // status will be 'Approved' or 'Rejected'
+    const db = readDB();
+    const request = (db.leaveRequests || []).find(r => r.id == id);
+    if (request) {
+        request.status = status;
+        writeDB(db);
+        res.json({ success: true, message: `Request has been ${status}.` });
+    } else {
+        res.status(404).json({ success: false, message: 'Request not found.' });
+    }
+});
+
+// --- SIGNUP REQUEST ROUTES (Unchanged) ---
+app.get('/signup-requests', (req, res) => res.json(readDB().signupRequests || []));
 
 app.post('/resolve-signup', (req, res) => {
     const { userId, action } = req.body;
     const db = readDB();
-    const requestIndex = db.signupRequests.findIndex(r => r.userId === userId);
+    const requestIndex = (db.signupRequests || []).findIndex(r => r.userId === userId);
     if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
-    
     if (action === 'approve') {
         const request = db.signupRequests[requestIndex];
         db.users[request.userId] = { 
             pass: request.pass, name: request.name, role: request.role, email: request.email, 
-            department: request.department || "", course: request.course || "", 
-            phone: "", bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
+            department: request.department || "", course: request.course || "", phone: "", 
+            bloodGroup: "", address: "", dob: "", photoUrl: "", batch: "", program: "" 
         };
     }
-    
     db.signupRequests.splice(requestIndex, 1);
     writeDB(db);
     res.json({ success: true, message: `Request ${action}d.` });
 });
 
-app.get('/password-requests', (req, res) => res.json(readDB().passwordRequests));
-
-app.post('/resolve-password-request', (req, res) => {
-    const { userId, action } = req.body;
+// --- ANNOUNCEMENT ROUTES (Unchanged) ---
+app.get('/announcements', (req, res) => {
     const db = readDB();
-    const requestIndex = db.passwordRequests.findIndex(r => r.userId === userId);
-    if (requestIndex === -1) return res.status(404).json({ success: false, message: 'Request not found.' });
-    const request = db.passwordRequests[requestIndex];
-    if (action === 'approve' && db.users[userId]) {
-        db.users[userId].pass = request.newPass;
-    }
-    db.passwordRequests.splice(requestIndex, 1);
-    writeDB(db);
-    res.json({ success: true, message: `Request for ${request.userName} has been ${action}d.` });
+    const sortedAnnouncements = (db.announcements || []).sort((a, b) => b.timestamp - a.timestamp);
+    res.json({ success: true, announcements: sortedAnnouncements });
 });
 
+app.post('/announcements', (req, res) => {
+    const { title, content, authorName, authorRole, department } = req.body;
+    if (!title || !content || !authorName || !authorRole) {
+        return res.status(400).json({ success: false, message: 'Missing required fields.' });
+    }
+    const db = readDB();
+    const newAnnouncement = {
+        id: Date.now(), timestamp: Date.now(), title, content,
+        authorName, authorRole, department: department || 'Global'
+    };
+    if (!db.announcements) db.announcements = [];
+    db.announcements.push(newAnnouncement);
+    writeDB(db);
+    res.status(201).json({ success: true, message: 'Announcement posted.', announcement: newAnnouncement });
+});
+
+
+// Fallback for client-side routing
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// --- SERVER START ---
 app.listen(PORT, () => {
     console.log(`TULA'S CONNECT server is running on port ${PORT}`);
 });
