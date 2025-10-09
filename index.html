@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch(error) {
-            mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements data. ${error.message}</div>`;
+            mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements data. Error: ${error.message}</div>`;
         }
     }
 
@@ -935,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch(error) {
-             mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements data.</div>`;
+             mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements data. Error: ${error.message}</div>`;
         }
     }
     
@@ -973,7 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch(error) {
-             mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements.</div>`;
+             mainContent.innerHTML = `<div class="text-red-500 p-6 bg-white rounded-lg shadow">Could not load placements. Error: ${error.message}</div>`;
         }
     }
 
