@@ -74,6 +74,18 @@
   ],
   "assignments": [],
   "leaveRequests": [],
+  "placements": [
+    {
+      "id": 1728345600000,
+      "companyName": "Tech Solutions Inc.",
+      "jobTitle": "Junior Software Developer",
+      "jobDescription": "We are looking for a motivated Junior Software Developer to join our team. \n\nResponsibilities:\n- Write clean, scalable code using .NET framework\n- Test and deploy applications and systems\n- Revise, update, refactor and debug code\n\nRequirements:\n- Familiarity with the ASP.NET framework, SQL Server and design/architectural patterns (e.g. Model-View-Controller (MVC))\n- Knowledge of at least one of the .NET languages (e.g. C#, Visual Basic .NET) and HTML5/CSS3",
+      "department": "Department of Computer Applications",
+      "course": "Bachelor of Computer Applications (BCA)",
+      "postedOn": 1728345600000,
+      "applications": []
+    }
+  ],
   "analytics": {
     "2023012039": {
       "attendance": {
@@ -141,26 +153,67 @@
     "student": {
       "Bachelor of Computer Applications (BCA)": {
         "Monday": [
-          { "time": "09:00 - 10:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" },
-          { "time": "10:00 - 11:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
+          {
+            "time": "09:00 - 10:00",
+            "subject": "Data Structures",
+            "faculty": "Siddharth Sharma"
+          },
+          {
+            "time": "10:00 - 11:00",
+            "subject": "Algorithms",
+            "faculty": "Neha Gupta"
+          }
         ],
         "Tuesday": [
-          { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
-          { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
+          {
+            "time": "09:00 - 10:00",
+            "subject": "Database Management",
+            "faculty": "Rajesh Kumar"
+          },
+          {
+            "time": "11:00 - 12:00",
+            "subject": "Data Structures",
+            "faculty": "Siddharth Sharma"
+          }
         ],
         "Wednesday": [
-          { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" },
-          { "time": "12:00 - 01:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
+          {
+            "time": "10:00 - 11:00",
+            "subject": "Operating Systems",
+            "faculty": "Anjali Verma"
+          },
+          {
+            "time": "12:00 - 01:00",
+            "subject": "Algorithms",
+            "faculty": "Neha Gupta"
+          }
         ],
         "Thursday": [
-          { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
-          { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
+          {
+            "time": "09:00 - 10:00",
+            "subject": "Database Management",
+            "faculty": "Rajesh Kumar"
+          },
+          {
+            "time": "11:00 - 12:00",
+            "subject": "Data Structures",
+            "faculty": "Siddharth Sharma"
+          }
         ],
         "Friday": [
-          { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" },
-          { "time": "12:00 - 01:00", "subject": "Project Work", "faculty": "Siddharth Sharma" }
+          {
+            "time": "10:00 - 11:00",
+            "subject": "Operating Systems",
+            "faculty": "Anjali Verma"
+          },
+          {
+            "time": "12:00 - 01:00",
+            "subject": "Project Work",
+            "faculty": "Siddharth Sharma"
+          }
         ]
       }
     }
   }
 }
+
