@@ -32,7 +32,7 @@ function initialize() {
     // 2. Create db.json with INITIAL DATA if it doesn't exist
     if (!fs.existsSync(DB_PATH)) {
         console.log("Creating fresh db.json with default users...");
-        const initialData =xh {
+        const initialData = {
             users: {
                 "admin": { id: "admin", pass: "admin123", name: "Super Admin", role: "Admin", email: "admin@tulas.in", phone: "9999999999" },
                 // STUDENT
@@ -109,7 +109,7 @@ app.post('/login', (req, res) => {
     if (user.pass !== password) return res.status(401).json({ success: false, message: "Incorrect password." });
     
     // Role Validation
-    if (user.role !==RP role) {
+    if (user.role !== role) {
         return res.status(403).json({ success: false, message: `Role mismatch. This ID belongs to a ${user.role}.` });
     }
 
@@ -126,7 +126,7 @@ app.post('/login', (req, res) => {
 app.get('/profile/:userId', (req, res) => {
     const db = readDB();
     const user = db.users[req.params.userId];
-    if (!user) return res.status(404).json({ success: false,RP message: "User not found" });
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
 });
@@ -173,7 +173,7 @@ app.post('/signup', (req, res) => {
         phone: "", photoUrl: ""
     };
     writeDB(db);
-    res.json({ success: true,vx message: "Account created! You can login now." });
+    res.json({ success: true, message: "Account created! You can login now." });
 });
 
 // FALLBACK ROUTE (For SPA client-side routing if needed, or just serving index.html)
