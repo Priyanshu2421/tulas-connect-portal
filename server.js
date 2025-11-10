@@ -8,8 +8,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- PATHS ---
-const DATA_DIR = path.join(__dirname, 'data');
-const DB_PATH = path.join(DATA_DIR, 'db.json');
+// MODIFIED: Simplified path to look for db.json in the same folder
+const DB_PATH = path.join(__dirname, 'db.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
@@ -17,221 +17,309 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Serve static files (uploaded images, resumes)
 app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve the frontend (index.html)
 app.use(express.static(__dirname));
 
-// --- INITIALIZATION ---
+// --- INITIALIZATION (Run on server start) ---
 function initialize() {
-    [DATA_DIR, PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'assignments')].forEach(dir => {
+    // 1. Create necessary directories
+    [PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'resumes')].forEach(dir => {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
 
+    // 2. Check if db.json exists
     if (!fs.existsSync(DB_PATH)) {
-        console.log("Creating fresh db.json with complete schema...");
-        const initialData = {
-            users: {
-                "admin": { id: "admin", pass: "admin123", name: "Super Admin", role: "Admin", department: "Management" },
-                "2024001": { 
-                    id: "2024001", pass: "pass123", name: "Rahul Student", role: "Student", 
-                    department: "Department of Computer Applications", course: "BCA",
-                    email: "rahul@tulas.in", phone: "9876543210"
-                },
-                "FAC001": {
-                    id: "FAC001", pass: "pass123", name: "Dr. Sharma", role: "Faculty",
-                    department: "Department of Computer Applications", email: "sharma@tulas.in"
-                },
-                "HOD_CA": {
-                    id: "HOD_CA", pass: "pass123", name: "Prof. Verma", role: "HOD",
-                    department: "Department of Computer Applications", email: "hod.ca@tulas.in"
-                }
-            },
-            // NEW: Added missing data structures expected by frontend
-            timetables: {
-                "BCA": {
-                    "Monday": [{ time: "09:00-10:00", subject: "Web Tech", faculty: "Dr. Sharma" }, { time: "10:00-11:00", subject: "DBMS", faculty: "Prof. Verma" }],
-                    "Wednesday": [{ time: "11:00-12:00", subject: "Java", faculty: "FAC001" }]
-                }
-            },
-            attendance: {
-                "2024001": { "Web Tech": { total: 20, present: 18 }, "DBMS": { total: 20, present: 15 } }
-            },
-            marks: [
-                { studentId: "2024001", subject: "Web Tech", exam: "Mid Term", marks: 25, total: 30 },
-                { studentId: "2024001", subject: "DBMS", exam: "Mid Term", marks: 28, total: 30 }
-            ],
-            assignments: [],
-            leaves: [],
-            placements: [
-                {
-                    id: 101, companyName: "TCS", jobTitle: "System Engineer", 
-                    jobDescription: "Open for all CS/IT students.", department: "Department of Engineering",
-                    course: "B.Tech CSE", postedOn: Date.now(), applications: []
-                }
-            ]
-        };
-        fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
+        console.error("FATAL ERROR: db.json not found! Please create it.");
+        // We stop creating a default one because we have the real db.json
+    } else {
+        console.log("db.json found.");
     }
 }
 initialize();
 
-// --- HELPERS ---
+// --- DATABASE HELPERS ---
 const readDB = () => {
-    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); } 
-    catch (e) { return { users: {} }; }
+    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
+    catch (e) {
+        console.error("Error reading db.json:", e);
+        return { users: {}, placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [] }; // Fallback
+    }
 };
-const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+const writeDB = (data) => {
+    try {
+        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    } catch (e) {
+        console.error("Error writing to db.json:", e);
+    }
+};
 
-const upload = multer({ 
-    storage: multer.diskStorage({
-        destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-        filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-    })
+// --- MULTER CONFIG (File Uploads) ---
+// (Your existing multer config was good)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        let uploadPath = UPLOADS_DIR;
+        if (file.fieldname === 'photoFile') uploadPath = path.join(UPLOADS_DIR, 'profiles');
+        else if (file.fieldname === 'assignmentFile') uploadPath = path.join(UPLOADS_DIR, 'assignments');
+        else if (file.fieldname === 'submissionFile') uploadPath = path.join(UPLOADS_DIR, 'submissions');
+        
+        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `${file.fieldname}-${Date.now()}${ext}`);
+    }
 });
+const upload = multer({ storage });
 
-// ================= API ROUTES =================
+// =========================================
+// API ROUTES
+// =========================================
 
-// AUTH
+// 1. LOGIN (Your existing code)
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
+    console.log(`Login attempt: ${userId} as ${role} (${department || 'N/A'})`);
+    
     const db = readDB();
     const user = db.users[userId];
 
-    if (!user || user.pass !== password) return res.json({ success: false, message: "Invalid credentials" });
-    if (user.role !== role) return res.json({ success: false, message: "Role mismatch" });
-    if (role === 'HOD' && user.department !== department) return res.json({ success: false, message: "Department mismatch" });
+    if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
+    if (user.pass !== password) return res.status(401).json({ success: false, message: "Incorrect password." });
+    
+    // Role Validation
+    if (user.role !== role) {
+        // Allow HOD to login with 'Department Login' role
+        if (role === 'HOD' && user.role === 'HOD') {
+             // HOD role matches, now check department
+        } else {
+            return res.status(403).json({ success: false, message: `Role mismatch. This ID belongs to a ${user.role}.` });
+        }
+    }
+
+    // HOD Department Validation
+    if (role === 'HOD' && user.department !== department) {
+         return res.status(403).json({ success: false, message: `Access denied. You are HOD of ${user.department}.` });
+    }
 
     const { pass, ...safeUser } = user;
     res.json({ success: true, user: safeUser });
 });
 
+// 2. SIGNUP (Your existing code)
 app.post('/signup', (req, res) => {
+    const { userId, pass, name, role, department, email, course } = req.body;
     const db = readDB();
-    if (db.users[req.body.userId]) return res.json({ success: false, message: "User ID exists" });
     
-    db.users[req.body.userId] = { ...req.body, photoUrl: "" };
+    if (db.users[userId]) {
+        return res.status(409).json({ success: false, message: "User ID already exists." });
+    }
+
+    db.users[userId] = {
+        id: userId, pass, name, role, department, email,
+        course: course || "", // Add course
+        phone: "", photoUrl: ""
+    };
     writeDB(db);
-    res.json({ success: true });
+    res.json({ success: true, message: "Account created! You can login now." });
 });
 
-// PROFILE
-app.get('/profile/:id', (req, res) => {
-    const user = readDB().users[req.params.id];
-    user ? res.json({ success: true, profile: user }) : res.status(404).json({ success: false });
-});
 
-// TIMETABLE
-app.get('/timetable', (req, res) => {
+// 3. PROFILE
+app.get('/profile/:userId', (req, res) => {
     const db = readDB();
-    const course = req.query.course;
-    res.json({ timetable: db.timetables[course] || {} });
+    const user = db.users[req.params.userId];
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const { pass, ...safeUser } = user;
+    res.json({ success: true, profile: safeUser });
 });
 
-// ATTENDANCE
-app.get('/attendance/:id', (req, res) => {
-    res.json({ attendance: readDB().attendance[req.params.id] || {} });
+// 4. PLACEMENTS (GET & POST) (Your existing code)
+app.get('/placements', (req, res) => {
+    const db = readDB();
+    let results = db.placements || [];
+    if (req.query.department) {
+        results = results.filter(p => p.department === req.query.department);
+    }
+    results.sort((a, b) => (b.postedOn || 0) - (a.postedOn || 0));
+    res.json({ success: true, placements: results });
+});
+
+app.post('/placements', (req, res) => {
+    const db = readDB();
+    const newPlacement = {
+        id: Date.now(),
+        ...req.body,
+        postedOn: Date.now(),
+        applications: []
+    };
+    db.placements = db.placements || [];
+    db.placements.push(newPlacement);
+    writeDB(db);
+    res.json({ success: true, message: "Placement posted" });
+});
+
+
+// --- ALL NEW/FIXED API ENDPOINTS ---
+
+// 5. TIMETABLE
+app.get('/timetable', (req, res) => {
+    const { course } = req.query;
+    const db = readDB();
+    const timetable = db.timetables ? db.timetables[course] : {};
+    res.json({ success: true, timetable: timetable || {} });
+});
+
+// 6. ATTENDANCE
+app.get('/attendance/:userId', (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    const attendance = db.attendance ? db.attendance[userId] : {};
+    res.json({ success: true, attendance: attendance || {} });
 });
 
 app.post('/attendance/mark', (req, res) => {
     const { studentId, subject, status } = req.body;
     const db = readDB();
     if (!db.attendance[studentId]) db.attendance[studentId] = {};
-    if (!db.attendance[studentId][subject]) db.attendance[studentId][subject] = { total: 0, present: 0 };
+    if (!db.attendance[studentId][subject]) db.attendance[studentId][subject] = { present: 0, total: 0 };
     
-    db.attendance[studentId][subject].total++;
-    if (status === 'Present') db.attendance[studentId][subject].present++;
-    
+    db.attendance[studentId][subject].total += 1;
+    if (status === 'Present') {
+        db.attendance[studentId][subject].present += 1;
+    }
     writeDB(db);
-    res.json({ success: true });
+    res.json({ success: true, message: "Attendance marked" });
 });
 
-// MARKS
-app.get('/marks/:id', (req, res) => {
-    const studentMarks = (readDB().marks || []).filter(m => m.studentId === req.params.id);
-    res.json({ marks: studentMarks });
+// 7. MARKS
+app.get('/marks/:userId', (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    const marks = db.marks ? db.marks[userId] : [];
+    res.json({ success: true, marks: marks || [] });
 });
 
-// ASSIGNMENTS
+// 8. ASSIGNMENTS
 app.get('/assignments', (req, res) => {
+    const { course, facultyId } = req.query;
     const db = readDB();
-    let result = db.assignments || [];
-    if (req.query.course) result = result.filter(a => a.course === req.query.course);
-    if (req.query.facultyId) result = result.filter(a => a.facultyId === req.query.facultyId);
-    res.json({ assignments: result });
+    let allAssignments = Object.values(db.assignments || {}).flat();
+    
+    if (course) {
+        allAssignments = allAssignments.filter(a => a.course === course);
+    }
+    if (facultyId) {
+        allAssignments = allAssignments.filter(a => a.facultyId === facultyId);
+    }
+    res.json({ success: true, assignments: allAssignments });
 });
 
+// POST Assignment (Faculty)
 app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
+    const { title, description, course, dueDate, facultyId, facultyName, department } = req.body;
     const db = readDB();
-    const newAssign = {
+    
+    const newAssignment = {
         id: Date.now(),
-        ...req.body,
-        filePath: req.file ? `/uploads/${req.file.filename}` : null,
+        title, description, course, dueDate, facultyId, facultyName, department,
+        filePath: req.file ? `/uploads/assignments/${req.file.filename}` : null,
         submissions: []
     };
-    db.assignments.push(newAssign);
+
+    if (!db.assignments[department]) {
+        db.assignments[department] = [];
+    }
+    db.assignments[department].push(newAssignment);
     writeDB(db);
-    res.json({ success: true });
+    res.json({ success: true, message: "Assignment created" });
 });
 
+// SUBMIT Assignment (Student)
 app.post('/assignments/:id/submit', upload.single('submissionFile'), (req, res) => {
+    const { id } = req.params;
+    const { studentId, studentName } = req.body;
     const db = readDB();
-    const assign = db.assignments.find(a => a.id == req.params.id);
-    if (assign) {
-        assign.submissions.push({
-            studentId: req.body.studentId,
-            studentName: req.body.studentName,
-            submittedOn: new Date(),
-            filePath: req.file ? `/uploads/${req.file.filename}` : null
-        });
+
+    let found = false;
+    for (const dept in db.assignments) {
+        const assignment = db.assignments[dept].find(a => a.id == id);
+        if (assignment) {
+            assignment.submissions.push({
+                studentId, studentName,
+                filePath: req.file ? `/uploads/submissions/${req.file.filename}` : null,
+                submittedOn: new Date()
+            });
+            found = true;
+            break;
+        }
+    }
+    
+    if (found) {
         writeDB(db);
-        res.json({ success: true });
+        res.json({ success: true, message: "Assignment submitted" });
     } else {
-        res.status(404).json({ success: false });
+        res.status(404).json({ success: false, message: "Assignment not found" });
     }
 });
 
-// LEAVES
-app.get('/leaves/:id', (req, res) => {
-    const userLeaves = (readDB().leaves || []).filter(l => l.userId === req.params.id);
-    res.json({ leaves: userLeaves });
+
+// 9. LEAVES
+app.get('/leaves/:userId', (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    const userLeaves = (db.leaveRequests || []).filter(l => l.userId === userId);
+    res.json({ success: true, leaves: userLeaves });
 });
 
-app.get('/leaves/pending/:dept', (req, res) => {
-    const pending = (readDB().leaves || []).filter(l => l.department === req.params.dept && l.status === 'Pending');
-    res.json({ leaves: pending });
+app.get('/leaves/pending/:department', (req, res) => {
+    const { department } = req.params;
+    const db = readDB();
+    const pending = (db.leaveRequests || []).filter(l => l.department === department && l.status === 'Pending');
+    res.json({ success: true, leaves: pending });
 });
 
 app.post('/leaves', (req, res) => {
+    const { userId, department, type, fromDate, toDate, reason } = req.body;
     const db = readDB();
-    db.leaves.push({ id: Date.now(), ...req.body, status: 'Pending', appliedOn: new Date() });
+    
+    const newLeave = {
+        id: Date.now(),
+        userId, department, type, fromDate, toDate, reason,
+        status: 'Pending', // HODs will approve
+        appliedOn: new Date()
+    };
+
+    db.leaveRequests = db.leaveRequests || [];
+    db.leaveRequests.push(newLeave);
     writeDB(db);
-    res.json({ success: true });
+    res.json({ success: true, message: "Leave submitted" });
 });
 
 app.post('/leaves/:id/action', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body; // 'Approved' or 'Rejected'
     const db = readDB();
-    const leave = db.leaves.find(l => l.id == req.params.id);
+    
+    const leave = (db.leaveRequests || []).find(l => l.id == id);
     if (leave) {
-        leave.status = req.body.status;
+        leave.status = status;
         writeDB(db);
-        res.json({ success: true });
+        res.json({ success: true, message: `Leave ${status}` });
     } else {
-        res.status(404).json({ success: false });
+        res.status(404).json({ success: false, message: "Leave request not found" });
     }
 });
 
-// PLACEMENTS
-app.get('/placements', (req, res) => {
-    let result = readDB().placements || [];
-    if (req.query.department) result = result.filter(p => p.department === req.query.department);
-    res.json({ placements: result });
+// --- FALLBACK ROUTE ---
+app.get('*', (req, res) => {
+    // This serves your index.html for any route not matched above
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.post('/placements', (req, res) => {
-    const db = readDB();
-    db.placements.push({ id: Date.now(), ...req.body, postedOn: new Date(), applications: [] });
-    writeDB(db);
-    res.json({QP success: true });
+// START SERVER
+app.listen(PORT, () => {
+    console.log(`Tula's Connect Server running on http://localhost:${PORT}`);
 });
-
-// START
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

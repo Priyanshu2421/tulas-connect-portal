@@ -1,6 +1,7 @@
 {
   "users": {
     "admin.user": {
+      "id": "admin.user",
       "pass": "password",
       "name": "Admin User",
       "role": "Admin",
@@ -13,6 +14,7 @@
       "photoUrl": ""
     },
     "2023012039": {
+      "id": "2023012039",
       "pass": "password",
       "name": "Priyanshu Bisht",
       "role": "Student",
@@ -26,6 +28,7 @@
       "photoUrl": ""
     },
     "siddharth.tulas.in": {
+      "id": "siddharth.tulas.in",
       "pass": "password",
       "name": "Siddharth Sharma",
       "role": "Faculty",
@@ -38,6 +41,7 @@
       "photoUrl": ""
     },
     "hod.ca.tulas.in": {
+      "id": "hod.ca.tulas.in",
       "pass": "password",
       "name": "HOD Computer Applications",
       "role": "HOD",
@@ -50,170 +54,81 @@
       "photoUrl": ""
     }
   },
-  "pendingUsers": {},
-  "passwordResets": {},
-  "idCardRequests": [
-    {
-      "userId": "2023012039",
-      "name": "Priyanshu Bisht",
-      "timestamp": 1726917600000,
-      "status": "Pending"
-    }
-  ],
-  "signupRequests": [],
-  "announcements": [
-    {
-      "id": 1726917600000,
-      "timestamp": 1726917600000,
-      "title": "Welcome to TULA'S CONNECT!",
-      "content": "This is the new and improved ERP portal for all students and faculty. Please explore the features and update your profile information.",
-      "authorName": "Admin User",
-      "authorRole": "Admin",
-      "department": "Global"
-    }
-  ],
-  "assignments": [],
-  "leaveRequests": [],
   "placements": [
     {
       "id": 1728345600000,
       "companyName": "Tech Solutions Inc.",
       "jobTitle": "Junior Software Developer",
-      "jobDescription": "We are looking for a motivated Junior Software Developer to join our team. \n\nResponsibilities:\n- Write clean, scalable code using .NET framework\n- Test and deploy applications and systems\n- Revise, update, refactor and debug code\n\nRequirements:\n- Familiarity with the ASP.NET framework, SQL Server and design/architectural patterns (e.g. Model-View-Controller (MVC))\n- Knowledge of at least one of the .NET languages (e.g. C#, Visual Basic .NET) and HTML5/CSS3",
+      "jobDescription": "We are looking for a motivated Junior Software Developer to join our team... (details)",
       "department": "Department of Computer Applications",
       "course": "Bachelor of Computer Applications (BCA)",
       "postedOn": 1728345600000,
       "applications": []
     }
   ],
-  "analytics": {
+  "attendance": {
     "2023012039": {
-      "attendance": {
-        "total": 120,
-        "present": 105
-      },
-      "marks": {
-        "Data Structures": 85,
-        "Algorithms": 78,
-        "Database Management": 92,
-        "Operating Systems": 81
-      }
+      "Data Structures": { "present": 28, "total": 30 },
+      "Algorithms": { "present": 25, "total": 30 },
+      "Database Management": { "present": 29, "total": 30 },
+      "Operating Systems": { "present": 23, "total": 30 }
     }
   },
-  "attendance": {
+  "marks": {
     "2023012039": [
-      {
-        "subject": "Data Structures",
-        "total": 30,
-        "present": 28,
-        "percentage": 93
-      },
-      {
-        "subject": "Algorithms",
-        "total": 30,
-        "present": 25,
-        "percentage": 83
-      },
-      {
-        "subject": "Database Management",
-        "total": 30,
-        "present": 29,
-        "percentage": 97
-      },
-      {
-        "subject": "Operating Systems",
-        "total": 30,
-        "present": 23,
-        "percentage": 77
-      }
+      { "subject": "Data Structures", "exam": "Sessional 1", "marks": 85, "total": 100 },
+      { "subject": "Algorithms", "exam": "Sessional 1", "marks": 78, "total": 100 },
+      { "subject": "Database Management", "exam": "Sessional 1", "marks": 92, "total": 100 },
+      { "subject": "Operating Systems", "exam": "Sessional 1", "marks": 81, "total": 100 }
     ]
   },
-  "fees": {
-    "2023012039": {
-      "total": 150000,
-      "paid": 125000,
-      "due": 25000,
-      "history": [
-        {
-          "receiptId": "TULAS-001",
-          "date": "2025-07-15T10:00:00Z",
-          "amount": 75000,
-          "description": "1st Installment"
-        },
-        {
-          "receiptId": "TULAS-002",
-          "date": "2025-08-20T11:30:00Z",
-          "amount": 50000,
-          "description": "2nd Installment"
-        }
+  "timetables": {
+    "Bachelor of Computer Applications (BCA)": {
+      "Monday": [
+        { "time": "09:00 - 10:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" },
+        { "time": "10:00 - 11:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
+      ],
+      "Tuesday": [
+        { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
+        { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
+      ],
+      "Wednesday": [
+        { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" }
+      ],
+      "Thursday": [
+        { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" }
+      ],
+      "Friday": [
+        { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" }
       ]
     }
   },
-  "timetables": {
-    "student": {
-      "Bachelor of Computer Applications (BCA)": {
-        "Monday": [
-          {
-            "time": "09:00 - 10:00",
-            "subject": "Data Structures",
-            "faculty": "Siddharth Sharma"
-          },
-          {
-            "time": "10:00 - 11:00",
-            "subject": "Algorithms",
-            "faculty": "Neha Gupta"
-          }
-        ],
-        "Tuesday": [
-          {
-            "time": "09:00 - 10:00",
-            "subject": "Database Management",
-            "faculty": "Rajesh Kumar"
-          },
-          {
-            "time": "11:00 - 12:00",
-            "subject": "Data Structures",
-            "faculty": "Siddharth Sharma"
-          }
-        ],
-        "Wednesday": [
-          {
-            "time": "10:00 - 11:00",
-            "subject": "Operating Systems",
-            "faculty": "Anjali Verma"
-          },
-          {
-            "time": "12:00 - 01:00",
-            "subject": "Algorithms",
-            "faculty": "Neha Gupta"
-          }
-        ],
-        "Thursday": [
-          {
-            "time": "09:00 - 10:00",
-            "subject": "Database Management",
-            "faculty": "Rajesh Kumar"
-          },
-          {
-            "time": "11:00 - 12:00",
-            "subject": "Data Structures",
-            "faculty": "Siddharth Sharma"
-          }
-        ],
-        "Friday": [
-          {
-            "time": "10:00 - 11:00",
-            "subject": "Operating Systems",
-            "faculty": "Anjali Verma"
-          },
-          {
-            "time": "12:00 - 01:00",
-            "subject": "Project Work",
-            "faculty": "Siddharth Sharma"
-          }
-        ]
+  "assignments": {
+    "Department of Computer Applications": [
+      {
+        "id": 1,
+        "title": "Java Polymorphism Lab",
+        "description": "Complete the lab manual exercises for polymorphism.",
+        "filePath": null,
+        "dueDate": "2025-11-20T23:59:00.000Z",
+        "course": "Bachelor of Computer Applications (BCA)",
+        "facultyId": "siddharth.tulas.in",
+        "facultyName": "Siddharth Sharma",
+        "submissions": []
       }
+    ]
+  },
+  "leaveRequests": [
+    {
+      "id": 1,
+      "userId": "2023012039",
+      "department": "Department of Computer Applications",
+      "type": "Sick Leave",
+      "fromDate": "2025-11-05",
+      "toDate": "2025-11-06",
+      "reason": "Fever and cold.",
+      "status": "Approved",
+      "appliedOn": "2025-11-05"
     }
-  }
+  ]
 }
-
