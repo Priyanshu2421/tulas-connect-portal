@@ -15,7 +15,7 @@
         aside::-webkit-scrollbar { width: 5px; }
         aside::-webkit-scrollbar-thumb { background: #166534; border-radius: 5px; }
         /* Captcha Styles */
-        #captcha-canvas {
+        #captcha-canvas, #login-captcha-canvas {
             background-color: #f9fafb;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
@@ -80,6 +80,18 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
                     <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="••••••••">
                     <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600">👁️</button>
+                </div>
+
+                <!-- Login Captcha Section -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
+                    <div class="flex items-center space-x-4">
+                        <canvas id="login-captcha-canvas" width="150" height="50" onclick="generateLoginCaptcha()"></canvas>
+                        <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700" title="Refresh Captcha">
+                            🔄
+                        </button>
+                    </div>
+                    <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
                 </div>
 
                 <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02]">SECURE LOGIN</button>
@@ -194,6 +206,7 @@
 const API_BASE = ''; // Leave empty for Render relative paths
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
+let currentLoginCaptcha = ''; // New state for login captcha
 
 // Course Data Mapping (RESTORED)
 const DEPT_DATA = {
@@ -218,12 +231,23 @@ const DEPT_DATA = {
 // === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
     initAuthDropdowns();
-    generateCaptcha(); // Initialize Captcha
+    generateCaptcha(); // Initialize Signup Captcha
+    generateLoginCaptcha(); // Initialize Login Captcha
     if (currentUser) showDashboard(); else updateAuthUI();
 
     // Login Handler
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
+
+        // Captcha Verification for Login
+        const loginCaptchaInput = document.getElementById('login-captcha-input').value;
+        if (loginCaptchaInput !== currentLoginCaptcha) {
+            showToast('Incorrect Captcha. Please try again.', true);
+            generateLoginCaptcha();
+            document.getElementById('login-captcha-input').value = '';
+            return;
+        }
+
         const role = document.getElementById('login-role').value;
         let dept = null;
         if (role === 'Department Login') {
@@ -333,7 +357,8 @@ function updateSignupUI() {
     }
 }
 
-// === CAPTCHA GENERATOR ===
+// === CAPTCHA GENERATORS ===
+// Original Generator (kept for signup as requested)
 function generateCaptcha() {
     const canvas = document.getElementById('captcha-canvas');
     const ctx = canvas.getContext('2d');
@@ -375,6 +400,43 @@ function generateCaptcha() {
     currentCaptcha = captchaText;
 }
 
+// New Generator for Login (duplicates logic to avoid touching old code structure too much)
+function generateLoginCaptcha() {
+    const canvas = document.getElementById('login-captcha-canvas');
+    const ctx = canvas.getContext('2d');
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let captchaText = '';
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#f9fafb';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < 7; i++) {
+        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.stroke();
+    }
+
+    for (let i = 0; i < 6; i++) {
+        const char = chars.charAt(Math.floor(Math.random() * chars.length));
+        captchaText += char;
+        ctx.font = 'bold 24px Inter';
+        ctx.fillStyle = '#1f2937';
+        ctx.save();
+        const x = 20 + i * 20;
+        const y = 30 + Math.random() * 10;
+        const angle = (Math.random() - 0.5) * 0.4;
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillText(char, 0, 0);
+        ctx.restore();
+    }
+    
+    currentLoginCaptcha = captchaText;
+}
+
 async function handleAuth(endpoint, payload, isSignup = false) {
     try {
         showToast(isSignup ? 'Registering...' : 'Logging in...');
@@ -390,7 +452,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
                 showToast('Registration successful! Please login.', false);
                 toggleAuthScreen('login');
                 document.getElementById('signup-form').reset();
-                generateCaptcha(); // Refresh for next time
+                generateCaptcha(); // Refresh signup captcha
             } else {
                 currentUser = data.user;
                 sessionStorage.setItem('user', JSON.stringify(currentUser));
@@ -398,7 +460,8 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             }
         } else {
             showToast(data.message || 'Action failed', true);
-            if (isSignup) generateCaptcha(); // Refresh on failure too
+            if (isSignup) generateCaptcha();
+            else generateLoginCaptcha(); // Refresh login captcha on failure
         }
     } catch (err) {
         showToast('Connection error. Please try again.', true);
@@ -759,6 +822,8 @@ function toggleAuthScreen(screen) {
     document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
     if (screen === 'signup') {
         generateCaptcha(); // Generate captcha when signup screen is shown
+    } else if (screen === 'login') {
+        generateLoginCaptcha(); // Generate captcha when login screen is shown
     }
 }
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
