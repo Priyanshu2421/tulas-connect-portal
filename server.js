@@ -3,180 +3,191 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = path.join(__dirname, 'db.json');
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
-const PROFILE_PICS_DIR = path.join(UPLOADS_DIR, 'profile');
-const ASSIGNMENTS_DIR = path.join(UPLOADS_DIR, 'assignments');
-const PLACEMENTS_DIR = path.join(UPLOADS_DIR, 'placements');
+
+// --- PATHS ---
+const DATA_DIR = path.join(__dirname, 'data'); // Use a dedicated data directory
+const DB_PATH = path.join(DATA_DIR, 'db.json');
+const PUBLIC_DIR = path.join(__dirname, 'public');
+const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 // --- MIDDLEWARE ---
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+// Serve static files (uploaded images, resumes)
+app.use('/uploads', express.static(UPLOADS_DIR));
+// Serve the frontend (index.html)
+app.use(express.static(__dirname));
 
-// --- INITIALIZE SERVER ---
-const initializeServer = () => {
-    try {
-        if (!fs.existsSync(path.join(__dirname, 'public'))) fs.mkdirSync(path.join(__dirname, 'public'));
-        [UPLOADS_DIR, PROFILE_PICS_DIR, ASSIGNMENTS_DIR, PLACEMENTS_DIR].forEach(dir => {
-            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        });
-        if (!fs.existsSync(DB_PATH)) {
-            console.log("db.json not found, creating a new default database.");
-            const defaultDB = { users: {}, pendingUsers: {}, passwordResets: {}, idCardRequests: [], signupRequests: [], announcements: [], assignments: [], leaveRequests: [], placements: [] };
-            fs.writeFileSync(DB_PATH, JSON.stringify(defaultDB, null, 2));
-        }
-    } catch (error) {
-        console.error("Error during server initialization:", error);
-        process.exit(1);
+// --- INITIALIZATION (Run on server start) ---
+function initialize() {
+    // 1. Create necessary directories
+    [DATA_DIR, PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'resumes')].forEach(dir => {
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    });
+
+    // 2. Create db.json with INITIAL DATA if it doesn't exist
+    if (!fs.existsSync(DB_PATH)) {
+        console.log("Creating fresh db.json with default users...");
+        const initialData =xh {
+            users: {
+                "admin": { id: "admin", pass: "admin123", name: "Super Admin", role: "Admin", email: "admin@tulas.in", phone: "9999999999" },
+                // STUDENT
+                "2024001": { 
+                    id: "2024001", pass: "pass123", name: "Rahul Student", role: "Student", 
+                    department: "Department of Computer Applications", course: "Bachelor of Computer Applications (BCA)",
+                    email: "rahul@student.tulas.in", phone: "9876543210"
+                },
+                // FACULTY
+                "FAC001": {
+                    id: "FAC001", pass: "pass123", name: "Dr. Sharma", role: "Faculty",
+                    department: "Department of Computer Applications", email: "sharma@tulas.in", phone: "8888888888"
+                },
+                 // HOD - Computer Applications
+                "HOD_CA": {
+                    id: "HOD_CA", pass: "pass123", name: "Prof. Verma (HOD)", role: "HOD",
+                    department: "Department of Computer Applications", email: "hod.ca@tulas.in"
+                },
+                // HOD - CSE Engineering
+                "HOD_CSE": {
+                    id: "HOD_CSE", pass: "pass123", name: "Dr. Singh (HOD CSE)", role: "HOD",
+                    department: "Department of Computer Science & Engineering", email: "hod.cse@tulas.in"
+                }
+            },
+            placements: [
+                // Sample Placement Data
+                {
+                    id: 101, companyName: "Wipro", jobTitle: "Project Engineer", 
+                    jobDescription: "Entry level software role.", department: "Department of Computer Applications",
+                    course: "Bachelor of Computer Applications (BCA)", postedOn: Date.now(), applications: []
+                }
+            ],
+            announcements: []
+        };
+        fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
     }
-};
-initializeServer();
+}
+initialize();
 
-// --- DB HELPERS ---
-const readDB = () => JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+// --- DATABASE HELPERS ---
+const readDB = () => {
+    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); } 
+    catch (e) { return { users: {}, placements: [] }; } // Fallback if file is corrupted
+};
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
-// --- MULTER SETUP ---
+// --- MULTER CONFIG (File Uploads) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        let destDir = UPLOADS_DIR;
-        if (file.fieldname === 'photoFile') destDir = PROFILE_PICS_DIR;
-        if (file.fieldname === 'assignmentFile') destDir = ASSIGNMENTS_DIR;
-        if (file.fieldname === 'resume') destDir = PLACEMENTS_DIR;
-        cb(null, destDir);
+        if (file.fieldname === 'photoFile') cb(null, path.join(UPLOADS_DIR, 'profiles'));
+        else if (file.fieldname === 'resume') cb(null, path.join(UPLOADS_DIR, 'resumes'));
+        else cb(null, UPLOADS_DIR);
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
+        const ext = path.extname(file.originalname);
+        cb(null, `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`);
     }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
+// =========================================
+// API ROUTES
+// =========================================
 
-// --- API ROUTES ---
-
-// AUTHENTICATION & PROFILE ROUTES
+// 1. LOGIN
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
+    console.log(`Login attempt: ${userId} as ${role} (${department || 'N/A'})`);
+    
     const db = readDB();
     const user = db.users[userId];
-    if (!user) return res.status(404).json({ success: false, message: `User ID '${userId}' not found.` });
-    if (user.pass !== password) return res.status(401).json({ success: false, message: 'Incorrect password.' });
-    if (user.role !== role) return res.status(401).json({ success: false, message: `Role mismatch. You selected '${role}' but this user is a '${user.role}'.` });
-    if (role === 'HOD' && user.department !== department) return res.status(401).json({ success: false, message: `Access Denied. Expected department: ${user.department}` });
-    const { pass, ...userResponse } = user;
-    res.json({ success: true, user: { ...userResponse, id: userId } });
+
+    if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
+    if (user.pass !== password) return res.status(401).json({ success: false, message: "Incorrect password." });
+    
+    // Role Validation
+    if (user.role !==RP role) {
+        return res.status(403).json({ success: false, message: `Role mismatch. This ID belongs to a ${user.role}.` });
+    }
+
+    // HOD Department Validation
+    if (role === 'HOD' && user.department !== department) {
+         return res.status(403).json({ success: false, message: `Access denied for this department. You are HOD of ${user.department}.` });
+    }
+
+    const { pass, ...safeUser } = user;
+    res.json({ success: true, user: safeUser });
 });
-// ... other auth and profile routes are unchanged but belong here ...
-app.post('/signup', async (req, res) => { /* Unchanged */ });
-app.get('/verify-email', (req, res) => { /* Unchanged */ });
-app.get('/profile/:userId', (req, res) => { /* Unchanged */ });
-app.post('/profile/update', upload.single('photoFile'), (req, res) => { /* Unchanged */ });
 
+// 2. GET PROFILE
+app.get('/profile/:userId', (req, res) => {
+    const db = readDB();
+    const user = db.users[req.params.userId];
+    if (!user) return res.status(404).json({ success: false,RP message: "User not found" });
+    const { pass, ...safeUser } = user;
+    res.json({ success: true, profile: safeUser });
+});
 
-// USER MANAGEMENT ROUTES
-app.get('/users', (req, res) => { /* Unchanged */ });
-app.delete('/users/:userId', (req, res) => { /* Unchanged */ });
-
-// ASSIGNMENT & LEAVE ROUTES
-app.get('/assignments', (req, res) => { /* Unchanged */ });
-app.post('/assignments', upload.single('assignmentFile'), (req, res) => { /* Unchanged */ });
-app.get('/leave-requests', (req, res) => { /* Unchanged */ });
-app.post('/leave-requests', (req, res) => { /* Unchanged */ });
-app.post('/resolve-leave-request', (req, res) => { /* Unchanged */ });
-
-// SIGNUP & ANNOUNCEMENT ROUTES
-app.get('/signup-requests', (req, res) => { /* Unchanged */ });
-app.post('/resolve-signup', (req, res) => { /* Unchanged */ });
-app.get('/announcements', (req, res) => { /* Unchanged */ });
-app.post('/announcements', (req, res) => { /* Unchanged */ });
-
-// OTHER DATA ENDPOINTS
-app.get('/analytics/:userId', (req, res) => { /* Unchanged */ });
-app.get('/attendance/:userId', (req, res) => { /* Unchanged */ });
-app.get('/fees/:userId', (req, res) => { /* Unchanged */ });
-app.get('/timetable/student/:userId', (req, res) => { /* Unchanged */ });
-app.post('/id-card-request', (req, res) => { /* Unchanged */ });
-app.get('/id-card-requests', (req, res) => { /* Unchanged */ });
-
-
-// PLACEMENT ROUTES
+// 3. PLACEMENTS (GET & POST)
 app.get('/placements', (req, res) => {
     const db = readDB();
-    const { department, course } = req.query;
-    let placements = db.placements || [];
-    if (department) {
-        placements = placements.filter(p => p.department === department);
+    let results = db.placements || [];
+    // Optional Filtering
+    if (req.query.department) {
+        results = results.filter(p => p.department === req.query.department);
     }
-    if (course) {
-        placements = placements.filter(p => p.course === course);
-    }
-    res.json({ success: true, placements: placements.sort((a,b) => b.postedOn - a.postedOn) });
+    // Sort newest first
+    results.sort((a, b) => b.postedOn - a.postedOn);
+    res.json({ success: true, placements: results });
 });
 
 app.post('/placements', (req, res) => {
-    const { companyName, jobTitle, jobDescription, department, course } = req.body;
-    if(!companyName || !jobTitle || !department || !course) {
-        return res.status(400).json({ success: false, message: "Missing required fields." });
-    }
+    // Basic validation would go here
     const db = readDB();
     const newPlacement = {
-        id: Date.now(), companyName, jobTitle, jobDescription, department, course,
-        postedOn: Date.now(), applications: []
+        id: Date.now(),
+        ...req.body,
+        postedOn: Date.now(),
+        applications: []
     };
+    db.placements = db.placements || [];
     db.placements.push(newPlacement);
     writeDB(db);
-    res.status(201).json({ success: true, message: "Placement posted successfully." });
+    res.json({ success: true, message: "Placement posted" });
 });
 
-app.post('/placements/:id/apply', upload.single('resume'), (req, res) => {
-    const placementId = parseInt(req.params.id, 10);
-    const studentId = req.headers['x-user-id'];
-    if (!req.file) return res.status(400).json({ success: false, message: "Resume file is required." });
+// 4. SIGNUP (Simplified - Auto-active for demo)
+app.post('/signup', (req, res) => {
+    const { userId, pass, name, role, department, email } = req.body;
     const db = readDB();
-    const student = db.users[studentId];
-    if (!student) return res.status(404).json({ success: false, message: "Student not found." });
-    const placementIndex = db.placements.findIndex(p => p.id === placementId);
-    if (placementIndex === -1) return res.status(404).json({ success: false, message: "Placement not found." });
-    if (db.placements[placementIndex].applications.some(app => app.studentId === studentId)) {
-        return res.status(409).json({ success: false, message: "You have already applied for this position." });
+    
+    if (db.users[userId]) {
+        return res.status(409).json({ success: false, message: "User ID already exists." });
     }
-    const newApplication = {
-        studentId: studentId, studentName: student.name, studentDepartment: student.department,
-        studentCourse: student.course, appliedOn: Date.now(), resumePath: `/uploads/placements/${req.file.filename}`
+
+    db.users[userId] = {
+        id: userId, pass, name, role, department, email,
+        phone: "", photoUrl: ""
     };
-    db.placements[placementIndex].applications.push(newApplication);
     writeDB(db);
-    res.status(201).json({ success: true, message: "Application submitted successfully." });
+    res.json({ success: true,vx message: "Account created! You can login now." });
 });
 
-app.get('/placements/:id/applications', (req, res) => {
-    const placementId = parseInt(req.params.id, 10);
-    const db = readDB();
-    const placement = db.placements.find(p => p.id === placementId);
-    if (placement) {
-        res.json({ success: true, applications: placement.applications, placement });
-    } else {
-        res.status(404).json({ success: false, message: "Placement not found." });
-    }
-});
-
-
-// --- STATIC FILE SERVING & FALLBACK (MUST BE LAST) ---
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
-app.use(express.static(path.join(__dirname))); // Serves index.html from root
-
-// Fallback for client-side routing
+// FALLBACK ROUTE (For SPA client-side routing if needed, or just serving index.html)
 app.get('*', (req, res) => {
+    // If the request is for an API endpoint that doesn't exist, return 404
+    if (req.path.startsWith('/api/')) {
+         return res.status(404).json({ success: false, message: "API endpoint not found" });
+    }
+    // Otherwise serve the frontend
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- SERVER START ---
+// START SERVER
 app.listen(PORT, () => {
-    console.log(`TULA'S CONNECT server is running on port ${PORT}`);
+    console.log(`Tula's Connect Server running on port ${PORT}`);
+    console.log(`Ephemeral storage warning: Data resets on Render restart.`);
 });
-
