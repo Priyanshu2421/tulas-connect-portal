@@ -8,7 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- PATHS ---
-const DATA_DIR = path.join(__dirname, 'data'); // Use a dedicated data directory
+const DATA_DIR = path.join(__dirname, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
@@ -17,177 +17,221 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Serve static files (uploaded images, resumes)
 app.use('/uploads', express.static(UPLOADS_DIR));
-// Serve the frontend (index.html)
 app.use(express.static(__dirname));
 
-// --- INITIALIZATION (Run on server start) ---
+// --- INITIALIZATION ---
 function initialize() {
-    // 1. Create necessary directories
-    [DATA_DIR, PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'resumes')].forEach(dir => {
+    [DATA_DIR, PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'assignments')].forEach(dir => {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
 
-    // 2. Create db.json with INITIAL DATA if it doesn't exist
     if (!fs.existsSync(DB_PATH)) {
-        console.log("Creating fresh db.json with default users...");
+        console.log("Creating fresh db.json with complete schema...");
         const initialData = {
             users: {
-                "admin": { id: "admin", pass: "admin123", name: "Super Admin", role: "Admin", email: "admin@tulas.in", phone: "9999999999" },
-                // STUDENT
+                "admin": { id: "admin", pass: "admin123", name: "Super Admin", role: "Admin", department: "Management" },
                 "2024001": { 
                     id: "2024001", pass: "pass123", name: "Rahul Student", role: "Student", 
-                    department: "Department of Computer Applications", course: "Bachelor of Computer Applications (BCA)",
-                    email: "rahul@student.tulas.in", phone: "9876543210"
+                    department: "Department of Computer Applications", course: "BCA",
+                    email: "rahul@tulas.in", phone: "9876543210"
                 },
-                // FACULTY
                 "FAC001": {
                     id: "FAC001", pass: "pass123", name: "Dr. Sharma", role: "Faculty",
-                    department: "Department of Computer Applications", email: "sharma@tulas.in", phone: "8888888888"
+                    department: "Department of Computer Applications", email: "sharma@tulas.in"
                 },
-                 // HOD - Computer Applications
                 "HOD_CA": {
-                    id: "HOD_CA", pass: "pass123", name: "Prof. Verma (HOD)", role: "HOD",
+                    id: "HOD_CA", pass: "pass123", name: "Prof. Verma", role: "HOD",
                     department: "Department of Computer Applications", email: "hod.ca@tulas.in"
-                },
-                // HOD - CSE Engineering
-                "HOD_CSE": {
-                    id: "HOD_CSE", pass: "pass123", name: "Dr. Singh (HOD CSE)", role: "HOD",
-                    department: "Department of Computer Science & Engineering", email: "hod.cse@tulas.in"
                 }
             },
-            placements: [
-                // Sample Placement Data
-                {
-                    id: 101, companyName: "Wipro", jobTitle: "Project Engineer", 
-                    jobDescription: "Entry level software role.", department: "Department of Computer Applications",
-                    course: "Bachelor of Computer Applications (BCA)", postedOn: Date.now(), applications: []
+            // NEW: Added missing data structures expected by frontend
+            timetables: {
+                "BCA": {
+                    "Monday": [{ time: "09:00-10:00", subject: "Web Tech", faculty: "Dr. Sharma" }, { time: "10:00-11:00", subject: "DBMS", faculty: "Prof. Verma" }],
+                    "Wednesday": [{ time: "11:00-12:00", subject: "Java", faculty: "FAC001" }]
                 }
+            },
+            attendance: {
+                "2024001": { "Web Tech": { total: 20, present: 18 }, "DBMS": { total: 20, present: 15 } }
+            },
+            marks: [
+                { studentId: "2024001", subject: "Web Tech", exam: "Mid Term", marks: 25, total: 30 },
+                { studentId: "2024001", subject: "DBMS", exam: "Mid Term", marks: 28, total: 30 }
             ],
-            announcements: []
+            assignments: [],
+            leaves: [],
+            placements: [
+                {
+                    id: 101, companyName: "TCS", jobTitle: "System Engineer", 
+                    jobDescription: "Open for all CS/IT students.", department: "Department of Engineering",
+                    course: "B.Tech CSE", postedOn: Date.now(), applications: []
+                }
+            ]
         };
         fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
     }
 }
 initialize();
 
-// --- DATABASE HELPERS ---
+// --- HELPERS ---
 const readDB = () => {
     try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); } 
-    catch (e) { return { users: {}, placements: [] }; } // Fallback if file is corrupted
+    catch (e) { return { users: {} }; }
 };
 const writeDB = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
 
-// --- MULTER CONFIG (File Uploads) ---
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        if (file.fieldname === 'photoFile') cb(null, path.join(UPLOADS_DIR, 'profiles'));
-        else if (file.fieldname === 'resume') cb(null, path.join(UPLOADS_DIR, 'resumes'));
-        else cb(null, UPLOADS_DIR);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname);
-        cb(null, `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`);
-    }
+const upload = multer({ 
+    storage: multer.diskStorage({
+        destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+        filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+    })
 });
-const upload = multer({ storage });
 
-// =========================================
-// API ROUTES
-// =========================================
+// ================= API ROUTES =================
 
-// 1. LOGIN
+// AUTH
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
-    console.log(`Login attempt: ${userId} as ${role} (${department || 'N/A'})`);
-    
     const db = readDB();
     const user = db.users[userId];
 
-    if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
-    if (user.pass !== password) return res.status(401).json({ success: false, message: "Incorrect password." });
-    
-    // Role Validation
-    if (user.role !== role) {
-        return res.status(403).json({ success: false, message: `Role mismatch. This ID belongs to a ${user.role}.` });
-    }
-
-    // HOD Department Validation
-    if (role === 'HOD' && user.department !== department) {
-         return res.status(403).json({ success: false, message: `Access denied for this department. You are HOD of ${user.department}.` });
-    }
+    if (!user || user.pass !== password) return res.json({ success: false, message: "Invalid credentials" });
+    if (user.role !== role) return res.json({ success: false, message: "Role mismatch" });
+    if (role === 'HOD' && user.department !== department) return res.json({ success: false, message: "Department mismatch" });
 
     const { pass, ...safeUser } = user;
     res.json({ success: true, user: safeUser });
 });
 
-// 2. GET PROFILE
-app.get('/profile/:userId', (req, res) => {
+app.post('/signup', (req, res) => {
     const db = readDB();
-    const user = db.users[req.params.userId];
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
-    const { pass, ...safeUser } = user;
-    res.json({ success: true, profile: safeUser });
+    if (db.users[req.body.userId]) return res.json({ success: false, message: "User ID exists" });
+    
+    db.users[req.body.userId] = { ...req.body, photoUrl: "" };
+    writeDB(db);
+    res.json({ success: true });
 });
 
-// 3. PLACEMENTS (GET & POST)
-app.get('/placements', (req, res) => {
+// PROFILE
+app.get('/profile/:id', (req, res) => {
+    const user = readDB().users[req.params.id];
+    user ? res.json({ success: true, profile: user }) : res.status(404).json({ success: false });
+});
+
+// TIMETABLE
+app.get('/timetable', (req, res) => {
     const db = readDB();
-    let results = db.placements || [];
-    // Optional Filtering
-    if (req.query.department) {
-        results = results.filter(p => p.department === req.query.department);
+    const course = req.query.course;
+    res.json({ timetable: db.timetables[course] || {} });
+});
+
+// ATTENDANCE
+app.get('/attendance/:id', (req, res) => {
+    res.json({ attendance: readDB().attendance[req.params.id] || {} });
+});
+
+app.post('/attendance/mark', (req, res) => {
+    const { studentId, subject, status } = req.body;
+    const db = readDB();
+    if (!db.attendance[studentId]) db.attendance[studentId] = {};
+    if (!db.attendance[studentId][subject]) db.attendance[studentId][subject] = { total: 0, present: 0 };
+    
+    db.attendance[studentId][subject].total++;
+    if (status === 'Present') db.attendance[studentId][subject].present++;
+    
+    writeDB(db);
+    res.json({ success: true });
+});
+
+// MARKS
+app.get('/marks/:id', (req, res) => {
+    const studentMarks = (readDB().marks || []).filter(m => m.studentId === req.params.id);
+    res.json({ marks: studentMarks });
+});
+
+// ASSIGNMENTS
+app.get('/assignments', (req, res) => {
+    const db = readDB();
+    let result = db.assignments || [];
+    if (req.query.course) result = result.filter(a => a.course === req.query.course);
+    if (req.query.facultyId) result = result.filter(a => a.facultyId === req.query.facultyId);
+    res.json({ assignments: result });
+});
+
+app.post('/assignments', upload.single('assignmentFile'), (req, res) => {
+    const db = readDB();
+    const newAssign = {
+        id: Date.now(),
+        ...req.body,
+        filePath: req.file ? `/uploads/${req.file.filename}` : null,
+        submissions: []
+    };
+    db.assignments.push(newAssign);
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.post('/assignments/:id/submit', upload.single('submissionFile'), (req, res) => {
+    const db = readDB();
+    const assign = db.assignments.find(a => a.id == req.params.id);
+    if (assign) {
+        assign.submissions.push({
+            studentId: req.body.studentId,
+            studentName: req.body.studentName,
+            submittedOn: new Date(),
+            filePath: req.file ? `/uploads/${req.file.filename}` : null
+        });
+        writeDB(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ success: false });
     }
-    // Sort newest first
-    results.sort((a, b) => b.postedOn - a.postedOn);
-    res.json({ success: true, placements: results });
+});
+
+// LEAVES
+app.get('/leaves/:id', (req, res) => {
+    const userLeaves = (readDB().leaves || []).filter(l => l.userId === req.params.id);
+    res.json({ leaves: userLeaves });
+});
+
+app.get('/leaves/pending/:dept', (req, res) => {
+    const pending = (readDB().leaves || []).filter(l => l.department === req.params.dept && l.status === 'Pending');
+    res.json({ leaves: pending });
+});
+
+app.post('/leaves', (req, res) => {
+    const db = readDB();
+    db.leaves.push({ id: Date.now(), ...req.body, status: 'Pending', appliedOn: new Date() });
+    writeDB(db);
+    res.json({ success: true });
+});
+
+app.post('/leaves/:id/action', (req, res) => {
+    const db = readDB();
+    const leave = db.leaves.find(l => l.id == req.params.id);
+    if (leave) {
+        leave.status = req.body.status;
+        writeDB(db);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ success: false });
+    }
+});
+
+// PLACEMENTS
+app.get('/placements', (req, res) => {
+    let result = readDB().placements || [];
+    if (req.query.department) result = result.filter(p => p.department === req.query.department);
+    res.json({ placements: result });
 });
 
 app.post('/placements', (req, res) => {
-    // Basic validation would go here
     const db = readDB();
-    const newPlacement = {
-        id: Date.now(),
-        ...req.body,
-        postedOn: Date.now(),
-        applications: []
-    };
-    db.placements = db.placements || [];
-    db.placements.push(newPlacement);
+    db.placements.push({ id: Date.now(), ...req.body, postedOn: new Date(), applications: [] });
     writeDB(db);
-    res.json({ success: true, message: "Placement posted" });
+    res.json({QP success: true });
 });
 
-// 4. SIGNUP (Simplified - Auto-active for demo)
-app.post('/signup', (req, res) => {
-    const { userId, pass, name, role, department, email } = req.body;
-    const db = readDB();
-    
-    if (db.users[userId]) {
-        return res.status(409).json({ success: false, message: "User ID already exists." });
-    }
-
-    db.users[userId] = {
-        id: userId, pass, name, role, department, email,
-        phone: "", photoUrl: ""
-    };
-    writeDB(db);
-    res.json({ success: true, message: "Account created! You can login now." });
-});
-
-// FALLBACK ROUTE (For SPA client-side routing if needed, or just serving index.html)
-app.get('*', (req, res) => {
-    // If the request is for an API endpoint that doesn't exist, return 404
-    if (req.path.startsWith('/api/')) {
-         return res.status(404).json({ success: false, message: "API endpoint not found" });
-    }
-    // Otherwise serve the frontend
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// START SERVER
-app.listen(PORT, () => {
-    console.log(`Tula's Connect Server running on port ${PORT}`);
-    console.log(`Ephemeral storage warning: Data resets on Render restart.`);
-});
+// START
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

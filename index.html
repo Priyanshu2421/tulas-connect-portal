@@ -11,7 +11,6 @@
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link.active { background-color: #15803d; color: white; border-left: 4px solid #22c55e; }
-        /* Custom Scrollbar for sidebar */
         aside::-webkit-scrollbar { width: 5px; }
         aside::-webkit-scrollbar-thumb { background: #166534; border-radius: 5px; }
     </style>
@@ -45,7 +44,7 @@
                     <select id="login-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" onchange="updateAuthUI()">
                         <option>Student</option>
                         <option>Faculty</option>
-                        <option value="Department Login">Department Head (HOD)</option>
+                        <option value="HOD">Department Head (HOD)</option>
                         <option>Admin</option>
                     </select>
                 </div>
@@ -57,6 +56,7 @@
                             <!-- Populated by JS -->
                         </select>
                     </div>
+                    <!-- NEW: Engineering Branch Dropdown -->
                     <div id="login-eng-branch-wrapper" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Engineering Branch</label>
                         <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
@@ -158,107 +158,82 @@
     </div>
 
 <script>
-// === CONFIGURATION & DATA ===
-const API_BASE = ''; // Leave empty for Render relative paths
+const API_BASE = ''; 
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 
-// Course Data Mapping (RESTORED)
 const DEPT_DATA = {
-    "Department of Engineering": {
-        branches: [
-            "Computer Science & Engineering", "Civil Engineering", "Mechanical Engineering",
-            "Electronics & Communication Engineering", "Electrical & Electronics Engineering"
-        ],
-        courses: [
-            "B.Tech CSE", "B.Tech Civil", "B.Tech Mechanical", "B.Tech ECE", "B.Tech EEE",
-            "M.Tech CSE", "M.Tech Civil", "M.Tech Thermal Engg"
-        ]
+    "Department of Engineering": { 
+        branches: ["CSE", "Civil", "ME", "ECE", "EEE"],
+        courses: ["B.Tech CSE", "B.Tech Civil", "B.Tech ME", "B.Tech ECE", "M.Tech"]
     },
-    "Department of Computer Applications": { courses: ["BCA", "MCA"] },
+    "Department of Computer Applications": { courses: ["BCA", "MCA", "B.Sc IT"] },
     "Graduate School of Business": { courses: ["BBA", "MBA", "B.Com (Hons)"] },
     "Department of Agriculture": { courses: ["B.Sc Agriculture"] },
-    "Department of Applied Sciences and Humanities": { courses: ["B.Sc Physics", "B.Sc Chemistry", "B.A. English"] },
-    "Department of Journalism and Communications": { courses: ["BA (Hons) Journalism & Mass Comm", "MA JMC"] },
-    "Tula's Institute of Pharmacy": { courses: ["B.Pharm", "D.Pharm"] }
+    "Department of Journalism": { courses: ["BA (JMC)", "MA (JMC)"] }
 };
 
-// === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
     initAuthDropdowns();
     if (currentUser) showDashboard(); else updateAuthUI();
 
-    // Login Handler
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
-        const role = document.getElementById('login-role').value;
-        let dept = null;
-        if (role === 'Department Login') {
-            dept = document.getElementById('login-dept').value;
-            if (dept === 'Department of Engineering') {
-                dept = document.getElementById('login-eng-branch').value;
-            }
+        let role = document.getElementById('login-role').value;
+        let dept = document.getElementById('login-dept').value;
+        
+        // If Engineering HOD, use branch as department
+        if (role === 'HOD' && dept === 'Department of Engineering') {
+            dept = document.getElementById('login-eng-branch').value;
         }
+
         await handleAuth('/login', {
             userId: document.getElementById('login-id').value.trim(),
             password: document.getElementById('login-pass').value,
-            role: role === 'Department Login' ? 'HOD' : role,
+            role: role,
             department: dept
         });
     };
 
-    // Signup Handler
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
         await handleAuth('/signup', Object.fromEntries(new FormData(e.target)), true);
     };
 });
 
-// === AUTHENTICATION LOGIC ===
 function initAuthDropdowns() {
-    const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
     const depts = Object.keys(DEPT_DATA);
-    deptSelects.forEach(sel => {
-        sel.innerHTML = '<option value="">Select Department</option>' + 
-            depts.map(d => `<option value="${d}">${d}</option>`).join('');
-    });
+    const opts = '<option value="">Select Department</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
+    document.getElementById('login-dept').innerHTML = opts;
+    document.getElementById('signup-dept').innerHTML = opts;
 }
 
 function updateAuthUI() {
     const role = document.getElementById('login-role').value;
-    const isHOD = role === 'Department Login';
-    const deptWrapper = document.getElementById('login-dept-wrapper');
-    const branchSelect = document.getElementById('login-eng-branch');
-    const branchWrapper = document.getElementById('login-eng-branch-wrapper');
-    
-    deptWrapper.classList.toggle('hidden', !isHOD);
-    
-    if (isHOD && document.getElementById('login-dept').value === 'Department of Engineering') {
-        branchWrapper.classList.remove('hidden');
-        branchSelect.innerHTML = '<option value="">Select Branch</option>' + 
-            DEPT_DATA['Department of Engineering'].branches.map(b => `<option>${b}</option>`).join('');
-    } else {
-        branchWrapper.classList.add('hidden');
+    const dept = document.getElementById('login-dept').value;
+    const isHOD = role === 'HOD';
+    const isEng = dept === 'Department of Engineering';
+
+    document.getElementById('login-dept-wrapper').classList.toggle('hidden', !isHOD);
+    document.getElementById('login-eng-branch-wrapper').classList.toggle('hidden', !(isHOD && isEng));
+
+    if (isHOD && isEng) {
+        const branches = DEPT_DATA["Department of Engineering"].branches;
+        document.getElementById('login-eng-branch').innerHTML = '<option value="">Select Branch</option>' +
+            branches.map(b => `<option value="${b}">${b}</option>`).join('');
     }
 }
 
 function updateSignupUI() {
     const role = document.getElementById('signup-role').value;
     const dept = document.getElementById('signup-dept').value;
-    const deptWrapper = document.getElementById('signup-dept-wrapper');
-    const courseWrapper = document.getElementById('signup-course-wrapper');
-    const courseSelect = document.getElementById('signup-course');
-
-    deptWrapper.classList.toggle('hidden', !['Student', 'Faculty'].includes(role));
+    document.getElementById('signup-dept-wrapper').classList.toggle('hidden', !['Student', 'Faculty'].includes(role));
     
-    // Show courses ONLY if Student AND Department is selected
-    if (role === 'Student' && dept && DEPT_DATA[dept]?.courses) {
-        courseWrapper.classList.remove('hidden');
-        courseSelect.required = true;
-        courseSelect.innerHTML = '<option value="">Select Course</option>' + 
+    if (role === 'Student' && dept && DEPT_DATA[dept]) {
+        document.getElementById('signup-course').innerHTML = '<option value="">Select Course</option>' + 
             DEPT_DATA[dept].courses.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('signup-course-wrapper').classList.remove('hidden');
     } else {
-        courseWrapper.classList.add('hidden');
-        courseSelect.required = false;
+        document.getElementById('signup-course-wrapper').classList.add('hidden');
     }
 }
 
@@ -274,7 +249,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
         
         if (data.success) {
             if (isSignup) {
-                showToast('Registration successful! Please login.', false);
+                showToast('Success! Please login.', false);
                 toggleAuthScreen('login');
                 document.getElementById('signup-form').reset();
             } else {
@@ -286,11 +261,10 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             showToast(data.message || 'Action failed', true);
         }
     } catch (err) {
-        showToast('Connection error. Please try again.', true);
+        showToast('Connection failed. Is server running?', true);
     }
 }
 
-// === DASHBOARD & NAVIGATION ===
 function showDashboard() {
     document.getElementById('auth-wrapper').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
@@ -301,61 +275,52 @@ function showDashboard() {
 function renderNavigation() {
     const nav = document.getElementById('nav-links');
     nav.innerHTML = '';
-
-    const MENU_ITEMS = {
+    const MENU = {
         'Student': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'timetable', label: 'Class Timetable', icon: '📅' },
-            { id: 'attendance', label: 'My Attendance', icon: '📊' },
+            { id: 'profile', label: 'Profile', icon: '👤' },
+            { id: 'timetable', label: 'Timetable', icon: '📅' },
+            { id: 'attendance', label: 'Attendance', icon: '📊' },
+            { id: 'marks', label: 'Results', icon: '📝' },
             { id: 'assignments', label: 'Assignments', icon: '📁' },
-            { id: 'marks', label: 'Exam Results', icon: '📝' },
-            { id: 'leaves', label: 'Leave Application', icon: '📨' },
+            { id: 'leaves', label: 'Leaves', icon: '📨' },
             { id: 'placements', label: 'Placements', icon: '💼' }
         ],
         'Faculty': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'profile', label: 'Profile', icon: '👤' },
             { id: 'fac-attendance', label: 'Mark Attendance', icon: '✅' },
-            { id: 'fac-assignments', label: 'Manage Assignments', icon: '📚' },
-            { id: 'fac-leaves', label: 'Student Leaves', icon: '📫' },
-            { id: 'leaves', label: 'My Leave Req', icon: '📨' },
-            { id: 'placements', label: 'Dept Placements', icon: '💼' }
+            { id: 'fac-assignments', label: 'Assignments', icon: '📚' },
+            { id: 'placements', label: 'Placements', icon: '💼' }
         ],
         'HOD': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'profile', label: 'Profile', icon: '👤' },
             { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
-            { id: 'placements', label: 'Manage Placements', icon: '💼' }
+            { id: 'placements', label: 'Placements', icon: '💼' }
         ],
         'Admin': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'placements', label: 'All Placements', icon: '🌍' }
+            { id: 'profile', label: 'Profile', icon: '👤' },
+            { id: 'placements', label: 'Manage Placements', icon: '🌍' }
         ]
     };
 
-    (MENU_ITEMS[currentUser.role] || []).forEach(item => {
+    (MENU[currentUser.role] || []).forEach(item => {
         const btn = document.createElement('button');
         btn.className = 'nav-link w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-green-800 hover:text-white rounded-xl transition-all duration-200';
         btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="font-medium">${item.label}</span>`;
         btn.onclick = () => loadContent(item.id, btn);
         nav.appendChild(btn);
     });
-
-    // Auto-load first page
     if (nav.firstChild) nav.firstChild.click();
 }
 
 async function loadContent(pageId, activeBtn) {
-    // Update active state
     document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-800', 'text-white'));
     if (activeBtn) activeBtn.classList.add('active', 'bg-green-800', 'text-white');
-    
-    // Mobile sidebar close
     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
-
+    
     const container = document.getElementById('content-area');
     container.innerHTML = '<div class="loader"></div>';
 
     try {
-        // --- ROUTER ---
         switch (pageId) {
             case 'profile': await loadProfile(container); break;
             case 'timetable': await loadTimetable(container); break;
@@ -367,330 +332,133 @@ async function loadContent(pageId, activeBtn) {
             case 'fac-assignments': await loadFacultyAssignments(container); break;
             case 'fac-leaves': await loadFacultyLeaves(container); break;
             case 'placements': await loadPlacements(container); break;
-            default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
         }
     } catch (err) {
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}</div>`;
+        container.innerHTML = `<div class="text-red-600 p-4">Error loading content: ${err.message}</div>`;
     }
 }
 
-// === PAGE LOADERS ===
-
-// 1. PROFILE (RESTORED DETAILED VIEW)
-async function loadProfile(container) {
+// --- LOADERS ---
+async function loadProfile(c) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
-    if (!data.success) throw new Error("Failed to load profile");
+    if (!data.success) throw new Error("Profile not found");
     const p = data.profile;
-
-    container.innerHTML = `
-        <div class="flex flex-col md:flex-row gap-8 items-start">
-            <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center">
-                <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">${p.name}</h2>
-                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">${p.role}</span>
-                <p class="text-gray-500 mt-4">${p.id}</p>
+    c.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-8 bg-gray-50 p-8 rounded-2xl">
+            <div class="text-center md:w-1/3">
+                 <img src="${p.photoUrl||'https://placehold.co/150'}" class="w-32 h-32 mx-auto rounded-full border-4 border-green-500 shadow-lg mb-4">
+                 <h2 class="text-2xl font-bold">${p.name}</h2>
+                 <p class="text-green-700 font-medium">${p.role}</p>
+                 <p class="text-gray-500">${p.id}</p>
             </div>
-            <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full">
-                <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                    <span class="bg-green-600 w-2 h-6 mr-3 rounded-full"></span> Personal Details
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    ${detailItem('Email', p.email)}
-                    ${detailItem('Phone', p.phone || 'Not set')}
-                    ${detailItem('Department', p.department)}
-                    ${p.course ? detailItem('Course', p.course) : ''}
-                </div>
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                ${detail('Email', p.email)} ${detail('Phone', p.phone)}
+                ${detail('Department', p.department)} ${p.course ? detail('Course', p.course) : ''}
             </div>
-        </div>
-    `;
+        </div>`;
 }
 
-// 2. STUDENT ACADEMICS (Timetable, Attendance, Marks)
-async function loadTimetable(container) {
+async function loadTimetable(c) {
     const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course)}`);
     const data = await res.json();
-    const tt = data.timetable || {};
-    
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Weekly Schedule <span class="text-gray-400 text-lg">(${currentUser.course})</span></h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${Object.entries(tt).map(([day, slots]) => `
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    <div class="bg-green-600 text-white p-3 font-bold">${day}</div>
-                    <div class="p-4 space-y-3">
-                        ${slots.map(s => `
-                            <div class="flex items-start p-3 bg-gray-50 rounded-lg">
-                                <div class="text-sm font-semibold text-green-700 w-24">${s.time}</div>
-                                <div>
-                                    <div class="font-medium text-gray-900">${s.subject}</div>
-                                    <div class="text-xs text-gray-500">${s.faculty}</div>
-                                </div>
-                            </div>
-                        `).join('') || '<p class="text-gray-400">No classes</p>'}
-                    </div>
-                </div>
-            `).join('')}
-        </div>`;
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">Timetable (${currentUser.course})</h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">${Object.entries(data.timetable||{}).map(([day, slots]) => `
+            <div class="bg-white border rounded-xl overflow-hidden"><div class="bg-green-700 text-white p-3 font-bold">${day}</div>
+            <div class="p-4 space-y-3">${slots.map(s => `<div class="flex bg-gray-50 p-2 rounded"><span class="text-green-700 font-bold w-24">${s.time}</span><div><div class="font-medium">${s.subject}</div><div class="text-xs text-gray-500">${s.faculty}</div></div></div>`).join('')}</div></div>
+        `).join('') || 'No timetable found.'}</div>`;
 }
 
-async function loadAttendance(container) {
+async function loadAttendance(c) {
     const res = await fetch(`${API_BASE}/attendance/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Attendance Record</h2>
-        <div class="overflow-hidden rounded-xl border border-gray-200">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 text-gray-700">
-                    <tr><th class="p-4">Subject</th><th class="p-4">Attended / Total</th><th class="p-4">Percentage</th></tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    ${Object.entries(data.attendance).map(([sub, stats]) => {
-                        const pct = (stats.present / stats.total * 100) || 0;
-                        return `<tr>
-                            <td class="p-4 font-medium">${sub}</td>
-                            <td class="p-4">${stats.present} / ${stats.total}</td>
-                            <td class="p-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${pct < 75 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pct.toFixed(1)}%</span></td>
-                        </tr>`;
-                    }).join('') || '<tr><td colspan="3" class="p-4 text-center text-gray-500">No attendance data found.</td></tr>'}
-                </tbody>
-            </table>
-        </div>`;
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">My Attendance</h2>
+        <table class="w-full text-left bg-white rounded-xl overflow-hidden shadow-sm"><thead class="bg-gray-100"><tr><th class="p-4">Subject</th><th class="p-4">Stats</th><th class="p-4">%</th></tr></thead>
+        <tbody>${Object.entries(data.attendance||{}).map(([sub, stat]) => {
+            const pct = (stat.present/stat.total*100)||0;
+            return `<tr class="border-t"><td class="p-4 font-medium">${sub}</td><td class="p-4">${stat.present}/${stat.total}</td><td class="p-4"><span class="px-2 py-1 rounded ${pct<75?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}">${pct.toFixed(1)}%</span></td></tr>`;
+        }).join('') || '<tr><td colspan="3" class="p-4 text-center">No records found</td></tr>'}</tbody></table>`;
 }
 
-async function loadMarks(container) {
+async function loadMarks(c) {
     const res = await fetch(`${API_BASE}/marks/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Examination Results</h2>
-        <div class="grid gap-4 md:grid-cols-2">
-            ${data.marks.map(m => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center">
-                    <div>
-                        <h4 class="font-bold text-gray-800">${m.subject}</h4>
-                        <p class="text-sm text-gray-500">${m.exam}</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-2xl font-bold text-green-700">${m.marks}</span>
-                        <span class="text-gray-400">/ ${m.total}</span>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 col-span-2 text-center py-10">No marks available yet.</p>'}
-        </div>`;
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">Exam Results</h2><div class="grid gap-4 md:grid-cols-2">
+        ${data.marks.map(m => `<div class="bg-white p-5 rounded-xl border flex justify-between"><div><h4 class="font-bold">${m.subject}</h4><p class="text-sm text-gray-500">${m.exam}</p></div><div class="text-right"><span class="text-2xl font-bold text-green-700">${m.marks}</span><span class="text-gray-400">/${m.total}</span></div></div>`).join('') || 'No marks found.'}</div>`;
 }
 
-// 3. ASSIGNMENTS
-async function loadAssignmentsStudent(container) {
+async function loadAssignmentsStudent(c) {
     const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course)}`);
     const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Course Assignments</h2>
-        <div class="space-y-4">
-            ${data.assignments.map(a => {
-                const isSubmitted = a.submissions.some(s => s.studentId === currentUser.id);
-                return `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900">${a.title}</h3>
-                             <p class="text-sm text-green-700 font-medium">By: ${a.facultyName}</p>
-                        </div>
-                        <span class="text-xs font-medium px-3 py-1 rounded-full ${isSubmitted ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${isSubmitted ? 'Submitted' : 'Pending'}
-                        </span>
-                    </div>
-                    <p class="text-gray-600 mb-4">${a.description}</p>
-                    ${a.filePath ? `<a href="${a.filePath}" target="_blank" class="text-green-600 hover:underline text-sm flex items-center mb-4">📎 Download Attachment</a>` : ''}
-                    <div class="flex justify-between items-center border-t pt-4">
-                        <span class="text-sm text-gray-500">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
-                        ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition">Submit Work</button>` : ''}
-                    </div>
-                </div>`;
-            }).join('') || '<div class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</div>'}
-        </div>`;
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">Assignments</h2><div class="space-y-4">
+        ${data.assignments.map(a => {
+            const done = (a.submissions||[]).some(s => s.studentId === currentUser.id);
+            return `<div class="p-5 border rounded-xl bg-white"><div class="flex justify-between mb-2"><h3 class="font-bold text-lg">${a.title}</h3><span class="px-3 py-1 rounded-full text-xs ${done?'bg-green-100 text-green-800':'bg-yellow-100 text-yellow-800'}">${done?'Submitted':'Pending'}</span></div><p class="text-gray-600 mb-4">${a.description}</p>${!done?`<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-4 py-2 rounded-lg">Submit</button>`:''}</div>`;
+        }).join('') || 'No assignments.'}</div>`;
 }
 
-// 4. LEAVES (Common for Student/Faculty)
-async function loadLeavesCommon(container) {
+async function loadLeavesCommon(c) {
     const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">My Leave Applications</h2>
-            <button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
-                <span class="text-xl mr-2">+</span> Apply New
-            </button>
-        </div>
-        <div class="space-y-4">
-            ${data.leaves.map(l => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-gray-800">${l.type}</div>
-                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
-                        <p class="text-gray-600 mt-1">${l.reason}</p>
-                    </div>
-                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
-                        ${l.status}
-                    </span>
-                </div>
-            `).join('') || '<p class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
-        </div>`;
+    c.innerHTML = `<div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">My Leaves</h2><button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg">+ Apply</button></div>
+        <div class="space-y-3">${data.leaves.map(l => `<div class="p-4 border rounded-xl flex justify-between items-center"><div><div class="font-bold">${l.type}</div><div class="text-sm">${l.reason}</div></div><span class="px-3 py-1 rounded-full text-sm ${l.status==='Approved'?'bg-green-100 text-green-800':l.status==='Rejected'?'bg-red-100 text-red-800':'bg-yellow-100 text-yellow-800'}">${l.status}</span></div>`).join('')||'No leave history.'}</div>`;
 }
 
-// 5. FACULTY/HOD FEATURES
-function loadFacultyAttendance(container) {
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
-        <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-lg">
-            <form onsubmit="submitAttendance(event)" class="space-y-4">
-                <div><label class="block text-sm font-medium mb-1">Student ID</label><input id="att-sid" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. 2024001"></div>
-                <div><label class="block text-sm font-medium mb-1">Subject</label><input id="att-sub" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. Java Programming"></div>
-                <div><label class="block text-sm font-medium mb-1">Status</label>
-                    <div class="flex space-x-4 mt-2">
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Present" checked class="text-green-600 w-5 h-5"><span>Present</span></label>
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Absent" class="text-red-600 w-5 h-5"><span>Absent</span></label>
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4">SUBMIT RECORD</button>
-            </form>
-        </div>`;
+function loadFacultyAttendance(c) {
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">Mark Attendance</h2><form onsubmit="submitAttendance(event)" class="bg-white p-6 border rounded-xl max-w-md space-y-4">
+        <input id="att-sid" placeholder="Student ID" required class="w-full p-3 border rounded-xl">
+        <input id="att-sub" placeholder="Subject" required class="w-full p-3 border rounded-xl">
+        <select id="att-status" class="w-full p-3 border rounded-xl"><option>Present</option><option>Absent</option></select>
+        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">Submit</button></form>`;
 }
 
-async function loadFacultyAssignments(container) {
+async function loadFacultyAssignments(c) {
     const res = await fetch(`${API_BASE}/assignments?facultyId=${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Manage Assignments</h2>
-            <button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Create New</button>
-        </div>
-        <div class="grid gap-4">
-            ${data.assignments.map(a => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200">
-                    <div class="flex justify-between">
-                        <h3 class="font-bold text-lg">${a.title}</h3>
-                        <span class="text-sm bg-gray-100 px-3 py-1 rounded-full">${a.course}</span>
-                    </div>
-                    <p class="text-gray-500 text-sm mt-1">Due: ${new Date(a.dueDate).toLocaleDateString()}</p>
-                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
-                        <span class="font-medium text-green-700">${a.submissions.length} Submissions</span>
-                        <button class="text-blue-600 hover:underline text-sm">View All</button>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">You haven\'t created any assignments yet.</p>'}
-        </div>`;
+    c.innerHTML = `<div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">My Assignments</h2><button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg">+ Create</button></div>
+        <div class="grid gap-4">${data.assignments.map(a => `<div class="p-5 border rounded-xl"><h3 class="font-bold">${a.title}</h3><p class="text-sm text-gray-500">${a.course} | ${a.submissions.length} submissions</p></div>`).join('')||'None created.'}</div>`;
 }
 
-async function loadFacultyLeaves(container) {
+async function loadFacultyLeaves(c) {
     const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}`);
     const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Leave Requests <span class="text-green-600">(${currentUser.department})</span></h2>
-        <div class="space-y-4">
-            ${data.leaves.map(l => `
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId}</h4>
-                            <p class="text-sm text-gray-500">${l.type} | Applied: ${new Date(l.appliedOn).toLocaleDateString()}</p>
-                        </div>
-                        <div class="text-right text-sm font-medium bg-green-50 text-green-800 px-3 py-1 rounded-lg">
-                            ${new Date(l.fromDate).toLocaleDateString()} ➔ ${new Date(l.toDate).toLocaleDateString()}
-                        </div>
-                    </div>
-                    <p class="bg-gray-50 p-4 rounded-lg text-gray-700 mb-4 italic">"${l.reason}"</p>
-                    <div class="flex space-x-3 justify-end">
-                        <button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
-                        <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md">Approve Request</button>
-                    </div>
-                </div>
-            `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
-        </div>`;
+    c.innerHTML = `<h2 class="text-2xl font-bold mb-6">Pending Leaves (${currentUser.department})</h2><div class="space-y-4">
+        ${data.leaves.map(l => `<div class="p-5 border rounded-xl bg-white"><div class="flex justify-between mb-2"><h4 class="font-bold">${l.userId} - ${l.type}</h4><span class="text-sm text-gray-500">${new Date(l.appliedOn).toLocaleDateString()}</span></div><p class="bg-gray-50 p-3 rounded mb-4">${l.reason}</p><div class="flex justify-end gap-3"><button onclick="leaveAction(${l.id},'Rejected')" class="text-red-600 border border-red-200 px-4 py-2 rounded">Reject</button><button onclick="leaveAction(${l.id},'Approved')" class="bg-green-600 text-white px-4 py-2 rounded">Approve</button></div></div>`).join('') || 'No pending requests.'}</div>`;
 }
 
-// 6. PLACEMENTS (COMMON)
-async function loadPlacements(container) {
+async function loadPlacements(c) {
     let url = `${API_BASE}/placements`;
     if (currentUser.role !== 'Admin') url += `?department=${encodeURIComponent(currentUser.department)}`;
     const res = await fetch(url);
     const data = await res.json();
-    
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">${currentUser.role === 'Admin' ? 'All' : 'Department'} Placements</h2>
-            ${['Admin', 'HOD'].includes(currentUser.role) ? `<button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Post New</button>` : ''}
-        </div>
-        <div class="grid gap-6">
-            ${data.placements.map(p => `
-                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-sm hover:shadow-md transition">
-                    <h3 class="text-xl font-bold text-gray-900">${p.jobTitle} <span class="text-gray-400 font-normal">at</span> ${p.companyName}</h3>
-                    <p class="text-sm text-green-700 font-medium mt-1">${p.course} | ${p.department}</p>
-                    <p class="text-gray-600 my-4 line-clamp-2">${p.jobDescription}</p>
-                    <div class="flex justify-between items-center text-sm text-gray-500">
-                        <span>Posted: ${new Date(p.postedOn).toLocaleDateString()}</span>
-                        ${currentUser.role === 'Student' ? '<button class="text-green-600 font-bold hover:underline">View Details & Apply →</button>' : `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">${p.applications.length} Applicants</span>`}
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 text-center py-10">No active placement drives.</p>'}
-        </div>`;
+    c.innerHTML = `<div class="flex justify-between mb-6"><h2 class="text-2xl font-bold">Placements</h2>${['Admin','HOD'].includes(currentUser.role)?'<button onclick="openPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg">+ Post</button>':''}</div>
+        <div class="grid gap-4">${data.placements.map(p => `<div class="p-5 border-l-4 border-green-500 bg-white rounded-xl shadow-sm"><h3 class="font-bold text-lg">${p.companyName} - ${p.jobTitle}</h3><p class="text-green-700 text-sm mb-2">${p.course}</p><p class="text-gray-600">${p.jobDescription}</p></div>`).join('') || 'No active drives.'}</div>`;
 }
 
-// === HELPER FUNCTIONS ===
-function detailItem(label, value) {
-    return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
-}
+// --- UTILS & ACTIONS ---
+function detail(l, v) { return `<div><p class="text-xs text-gray-500 uppercase font-bold">${l}</p><p class="font-medium">${v||'-'}</p></div>`; }
 function togglePass(id) { const i = document.getElementById(id); i.type = i.type==='password'?'text':'password'; }
-function toggleAuthScreen(screen) { document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); }
+function toggleAuthScreen(s) { document.getElementById('login-box').classList.toggle('hidden', s!=='login'); document.getElementById('signup-box').classList.toggle('hidden', s!=='signup'); }
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 function logout() { sessionStorage.clear(); window.location.reload(); }
-function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
+function showModal(h) { document.getElementById('modal-content').innerHTML = h; document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function showToast(msg, isErr=false) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); }
+function showToast(m, e=false) { const t = document.getElementById('toast'); t.textContent = m; t.className = `fixed bottom-5 right-5 z-50 px-6 py-3 rounded-lg shadow-xl text-white transition-all duration-300 ${e?'bg-red-600':'bg-green-600'}`; setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); }
 
-// === MODAL HANDLERS ===
-window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply for Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl"><input type="date" name="toDate" required class="p-3 border rounded-xl"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32"></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">SUBMIT APPLICATION</button></form>`);
-window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create Assignment</h3><form onsubmit="submitCreateAssign(event)" class="space-y-4"><input name="title" placeholder="Assignment Title" required class="w-full p-3 border rounded-xl"><textarea name="description" placeholder="Instructions..." class="w-full p-3 border rounded-xl h-24"></textarea><input name="course" placeholder="Target Course (e.g. BCA)" required class="w-full p-3 border rounded-xl"><div class="grid grid-cols-2 gap-4"><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Due Date</label><input type="date" name="dueDate" required class="p-3 border rounded-xl"></div><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Attachment (Optional)</label><input type="file" name="assignmentFile" class="p-2 border rounded-xl bg-gray-50"></div></div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">POST ASSIGNMENT</button></form>`);
-window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Assignment</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><div class="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-4">Ensure your file is in PDF or DOCX format and under 5MB.</div><input type="file" name="submissionFile" required class="w-full p-3 border rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">UPLOAD & TURN IN</button></form>`);
-window.openPostPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Placement Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company Name" required class="w-full p-3 border rounded-xl"><input name="jobTitle" placeholder="Job Role/Title" required class="w-full p-3 border rounded-xl"><textarea name="jobDescription" placeholder="Job Description & Requirements..." required class="w-full p-3 border rounded-xl h-32"></textarea><select name="department" required class="w-full p-3 border rounded-xl"><option value="">Target Department</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><input name="course" placeholder="Target Course (e.g. B.Tech CSE)" required class="w-full p-3 border rounded-xl"><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">PUBLISH DRIVE</button></form>`);
+// MODALS
+window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-2 border rounded"><option>Sick</option><option>Casual</option></select><textarea name="reason" placeholder="Reason" required class="w-full p-2 border rounded"></textarea><button class="w-full bg-green-600 text-white py-2 rounded">Submit</button></form>`);
+window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">New Assignment</h3><form onsubmit="submitAssign(event)" class="space-y-4"><input name="title" placeholder="Title" required class="w-full p-2 border rounded"><textarea name="description" placeholder="Description" class="w-full p-2 border rounded"></textarea><input name="course" placeholder="Course (e.g. BCA)" required class="w-full p-2 border rounded"><button class="w-full bg-green-600 text-white py-2 rounded">Create</button></form>`);
+window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Work</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><input type="file" name="submissionFile" required class="w-full p-2 border rounded"><button class="w-full bg-blue-600 text-white py-2 rounded">Upload</button></form>`);
+window.openPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company" required class="w-full p-2 border rounded"><input name="jobTitle" placeholder="Job Title" required class="w-full p-2 border rounded"><textarea name="jobDescription" placeholder="Details" required class="w-full p-2 border rounded"></textarea><input name="department" placeholder="Department" required class="w-full p-2 border rounded"><input name="course" placeholder="Course" required class="w-full p-2 border rounded"><button class="w-full bg-green-600 text-white py-2 rounded">Post</button></form>`);
 
-// === FORM SUBMISSION HANDLERS ===
-async function submitLeave(e) {
-    e.preventDefault();
-    await postData('/leaves', Object.fromEntries(new FormData(e.target)), { userId: currentUser.id, department: currentUser.department });
-    closeModal(); loadContent('leaves'); showToast('Leave application submitted');
-}
-async function submitAttendance(e) {
-    e.preventDefault();
-    const status = document.querySelector('input[name="att-status"]:checked').value;
-    await postData('/attendance/mark', { studentId: document.getElementById('att-sid').value, subject: document.getElementById('att-sub').value, status });
-    e.target.reset(); showToast('Attendance marked successfully');
-}
-async function submitCreateAssign(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fd.append('facultyId', currentUser.id); fd.append('facultyName', currentUser.name); fd.append('department', currentUser.department);
-    await fetch(API_BASE+'/assignments', {method:'POST', body:fd});
-    closeModal(); loadContent('fac-assignments'); showToast('Assignment created');
-}
-async function submitWork(e, id) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
-    await fetch(API_BASE+`/assignments/${id}/submit`, {method:'POST', body:fd});
-    closeModal(); loadContent('assignments'); showToast('Work submitted successfully!');
-}
-async function updateLeaveStatus(id, status) {
-    await postData(`/leaves/${id}/action`, {status});
-    loadContent('fac-leaves'); showToast(`Leave ${status.toLowerCase()}`);
-}
-async function submitPlacement(e) {
-    e.preventDefault();
-    await postData('/placements', Object.fromEntries(new FormData(e.target)));
-    closeModal(); loadContent('placements'); showToast('Placement drive published');
-}
-
-async function postData(url, data, extra={}) {
-    await fetch(API_BASE+url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, ...extra}) });
-}
+// SUBMITS
+async function submitLeave(e) { e.preventDefault(); await post('/leaves', {...Object.fromEntries(new FormData(e.target)), userId: currentUser.id, department: currentUser.department}); closeModal(); loadContent('leaves'); }
+async function submitAttendance(e) { e.preventDefault(); await post('/attendance/mark', { studentId: document.getElementById('att-sid').value, subject: document.getElementById('att-sub').value, status: document.getElementById('att-status').value }); e.target.reset(); showToast('Marked!'); }
+async function submitAssign(e) { e.preventDefault(); await post('/assignments', {...Object.fromEntries(new FormData(e.target)), facultyId: currentUser.id}); closeModal(); loadContent('fac-assignments'); }
+async function submitWork(e, id) { e.preventDefault(); const fd = new FormData(e.target); fd.append('studentId', currentUser.id); await fetch(`${API_BASE}/assignments/${id}/submit`, {method:'POST', body:fd}); closeModal(); loadContent('assignments'); showToast('Submitted!'); }
+async function leaveAction(id, status) { await post(`/leaves/${id}/action`, {status}); loadContent('fac-leaves'); }
+async function submitPlacement(e) { e.preventDefault(); await post('/placements', Object.fromEntries(new FormData(e.target))); closeModal(); loadContent('placements'); }
+async function post(url, data) { await fetch(API_BASE+url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)}); }
 </script>
 </body>
 </html>
