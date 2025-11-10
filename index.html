@@ -129,23 +129,42 @@
                 </div>
             </div>
 
-            <!-- SIGNUP CONTAINER (Simplified for brevity) -->
+            <!-- SIGNUP CONTAINER -->
             <div id="signup-container" class="hidden relative w-full max-w-md p-8 bg-white/95 backdrop-blur-sm rounded-xl shadow-2xl">
                 <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Create Account</h2>
                 <form id="signupForm" class="space-y-4">
-                    <input type="text" name="name" placeholder="Full Name" required class="w-full px-4 py-2 border rounded-lg">
-                    <input type="text" name="userId" placeholder="User ID / Roll No." required class="w-full px-4 py-2 border rounded-lg">
-                    <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-2 border rounded-lg">
-                    <input type="password" name="pass" placeholder="Create Password" required class="w-full px-4 py-2 border rounded-lg">
-                    <select name="role" id="signup-role" required class="w-full px-4 py-2 border rounded-lg">
+                    <input type="text" name="name" placeholder="Full Name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <input type="text" name="userId" placeholder="User ID / Roll No." required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <input type="email" name="email" placeholder="Email Address" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    <input type="password" name="pass" placeholder="Create Password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    
+                    <!-- Role Selection -->
+                    <select name="role" id="signup-role" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                         <option value="">Select Role</option>
                         <option value="Student">Student</option>
                         <option value="Faculty">Faculty</option>
                     </select>
-                    <!-- Dynamic Dept/Course dropdowns would go here similar to Login -->
-                    <button type="submit" class="w-full py-3 bg-green-600 text-white font-bold rounded-lg">Register</button>
+
+                    <!-- Department Selection (Dynamic) -->
+                    <div id="signup-dept-container" class="hidden">
+                         <select name="department" id="signup-department" required disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-gray-50 disabled:opacity-50">
+                            <option value="">Select Department</option>
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Course Selection (Dynamic, primarily for students) -->
+                    <div id="signup-course-container" class="hidden">
+                         <select name="course" id="signup-course" required disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-gray-50 disabled:opacity-50">
+                            <option value="">Select Course</option>
+                            <!-- Populated via JS based on Department -->
+                        </select>
+                    </div>
+
+                    <div id="signup-error-message" class="text-red-600 text-sm text-center font-medium min-h-[1.5rem]"></div>
+                    <button type="submit" class="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition">Register</button>
                 </form>
-                <p class="text-center mt-4"><a href="#" id="show-login-link" class="text-green-700 font-semibold">Back to Login</a></p>
+                <p class="text-center mt-4 text-sm text-gray-600"><a href="#" id="show-login-link" class="text-green-700 font-semibold hover:underline">Back to Login</a></p>
             </div>
         </div>
     </div>
@@ -209,6 +228,50 @@ const renderLoader = (el) => el.innerHTML = '<div class="loader"></div>';
 // --- GLOBAL STATE ---
 let currentUser = JSON.parse(sessionStorage.getItem('loggedInUser')) || null;
 
+// --- DEPARTMENT & COURSE DATA ---
+const instituteData = {
+    "Department of Engineering": [
+        "B.Tech - Civil Engineering",
+        "B.Tech - Computer Science & Engineering",
+        "B.Tech - CSE (AI & ML)",
+        "B.Tech - CSE (Cyber Security)",
+        "B.Tech - CSE (Data Science)",
+        "B.Tech - Electronics & Communication Engineering",
+        "B.Tech - Electrical & Electronics Engineering",
+        "B.Tech - Mechanical Engineering",
+        "M.Tech - Civil Engineering",
+        "M.Tech - Computer Science & Engineering",
+        "M.Tech - Thermal Engineering"
+    ],
+    "Department of Computer Applications": [
+        "BCA (Bachelor of Computer Applications)",
+        "MCA (Master of Computer Applications)"
+    ],
+    "Graduate School of Business": [
+        "BBA (Bachelor of Business Administration)",
+        "MBA (Master of Business Administration)",
+        "B.Com (Honors)"
+    ],
+    "Department of Agriculture": [
+        "B.Sc - Agriculture",
+        "M.Sc - Agronomy",
+        "M.Sc - Horticulture"
+    ],
+    "Department of Applied Sciences and Humanities": [
+        "B.Sc (Hons) - Physics",
+        "B.Sc (Hons) - Chemistry",
+        "B.Sc (Hons) - Mathematics"
+    ],
+    "Department of Journalism and Communications": [
+        "BA (Hons) - Journalism & Mass Comm",
+        "MA - Journalism & Mass Comm"
+    ],
+    "Tula's Institute of Pharmacy": [
+        "D.Pharm (Diploma in Pharmacy)",
+        "B.Pharm (Bachelor of Pharmacy)"
+    ]
+};
+
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', () => {
     checkAuthState();
@@ -225,102 +288,89 @@ function checkAuthState() {
 }
 
 function initEventListeners() {
-    // Login Role Toggle
+    // --- LOGIN LISTENERS ---
     const roleSelect = document.getElementById('role');
     const deptContainer = document.getElementById('department-select-container');
     const engContainer = document.getElementById('engineering-dept-select-container');
     const deptSelect = document.getElementById('department');
 
-    // CRITICAL FIX: Ensure department shows up instantly on selection
     function updateLoginUI() {
         const isHOD = roleSelect.value === 'Department Login';
         deptContainer.classList.toggle('hidden', !isHOD);
-        
-        // Only show engineering sub-select if HOD AND Dept is Engineering
         const isEng = isHOD && deptSelect.value === 'Department of Engineering';
         engContainer.classList.toggle('hidden', !isEng);
     }
     roleSelect.addEventListener('change', updateLoginUI);
     deptSelect.addEventListener('change', updateLoginUI);
-    // Run once on load in case browser cached values
-    updateLoginUI();
+    updateLoginUI(); // Init on load
 
-    // Login Submit
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errorEl = document.getElementById('error-message');
-        errorEl.textContent = '';
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+    // --- SIGNUP LISTENERS (New Functionality) ---
+    const signupRole = document.getElementById('signup-role');
+    const signupDeptCont = document.getElementById('signup-dept-container');
+    const signupDept = document.getElementById('signup-department');
+    const signupCourseCont = document.getElementById('signup-course-container');
+    const signupCourse = document.getElementById('signup-course');
+
+    // Populate Department Dropdown once
+    if (signupDept.options.length === 1) {
+        Object.keys(instituteData).forEach(dept => {
+            signupDept.add(new Option(dept, dept));
+        });
+    }
+
+    // 1. Role Change Handler
+    signupRole.addEventListener('change', () => {
+        const role = signupRole.value;
+        const needsDept = (role === 'Student' || role === 'Faculty');
         
-        const role = roleSelect.value;
-        let finalRole = role === 'Department Login' ? 'HOD' : role;
-        let dept = null;
+        // Show/Hide Department
+        signupDeptCont.classList.toggle('hidden', !needsDept);
+        signupDept.disabled = !needsDept;
+        if (!needsDept) signupDept.value = "";
 
-        if (role === 'Department Login') {
-            dept = deptSelect.value;
-            if (dept === 'Department of Engineering') {
-                dept = document.getElementById('engineering-dept').value;
-                if (!dept) return errorEl.textContent = 'Please select Engineering Branch';
-            }
-        }
+        // Reset Course when role changes
+        signupCourseCont.classList.add('hidden');
+        signupCourse.disabled = true;
+        signupCourse.value = "";
+    });
 
-        const payload = {
-            userId: document.getElementById('userId').value.trim(),
-            password: document.getElementById('password').value,
-            role: finalRole,
-            department: dept
-        };
+    // 2. Department Change Handler
+    signupDept.addEventListener('change', () => {
+        const role = signupRole.value;
+        const dept = signupDept.value;
+        const needsCourse = (role === 'Student' && dept);
 
-        try {
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.textContent = 'Logging in...'; btn.disabled = true;
-            
-            const res = await fetch(`${API_BASE_URL}/login`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                sessionStorage.setItem('loggedInUser', JSON.stringify(data.user));
-                currentUser = data.user;
-                showDashboard(data.user);
-            } else {
-                errorEl.textContent = data.message || 'Login failed';
-            }
-        } catch (err) {
-            errorEl.textContent = 'Server connection failed. Try again.';
-        } finally {
-            e.target.querySelector('button[type="submit"]').textContent = 'Secure Login';
-            e.target.querySelector('button[type="submit"]').disabled = false;
+        // Show/Hide Course
+        signupCourseCont.classList.toggle('hidden', !needsCourse);
+        signupCourse.disabled = !needsCourse;
+        
+        // Populate Courses if needed
+        signupCourse.innerHTML = '<option value="">Select Course</option>';
+        if (needsCourse && instituteData[dept]) {
+             instituteData[dept].forEach(course => {
+                 signupCourse.add(new Option(course, course));
+             });
         }
     });
 
-    // Auth Switchers
+    document.getElementById('signupForm').addEventListener('submit', handleSignup);
+
+    // --- GLOBAL LISTENERS ---
     document.getElementById('show-signup-link').onclick = (e) => { e.preventDefault(); toggleAuth('signup'); };
     document.getElementById('show-login-link').onclick = (e) => { e.preventDefault(); toggleAuth('login'); };
-    
-    // Logout
-    document.getElementById('logout-button').onclick = () => {
-        sessionStorage.clear();
-        window.location.reload();
-    };
+    document.getElementById('logout-button').onclick = () => { sessionStorage.clear(); window.location.reload(); };
+    document.getElementById('mobile-menu-btn').onclick = () => { document.getElementById('sidebar').classList.toggle('-translate-x-full'); };
+    document.getElementById('toggle-password').onclick = togglePasswordVisibility;
+}
 
-    // Mobile Menu Toggle
-    document.getElementById('mobile-menu-btn').onclick = () => {
-        document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    };
-
-    // Password visibility toggle
-    document.getElementById('toggle-password').onclick = () => {
-        const passInput = document.getElementById('password');
-        const eyeIcon = document.getElementById('eye-icon');
-        const eyeOffIcon = document.getElementById('eye-off-icon');
-        
-        const isPassword = passInput.type === 'password';
-        passInput.type = isPassword ? 'text' : 'password';
-        eyeIcon.classList.toggle('hidden', isPassword);
-        eyeOffIcon.classList.toggle('hidden', !isPassword);
-    };
+function togglePasswordVisibility() {
+    const passInput = document.getElementById('password');
+    const isPassword = passInput.type === 'password';
+    passInput.type = isPassword ? 'text' : 'password';
+    document.getElementById('eye-icon').classList.toggle('hidden', isPassword);
+    document.getElementById('eye-off-icon').classList.toggle('hidden', !isPassword);
 }
 
 function toggleAuth(view) {
@@ -328,15 +378,90 @@ function toggleAuth(view) {
     document.getElementById('signup-container').classList.toggle('hidden', view !== 'signup');
 }
 
+// --- AUTH HANDLERS ---
+async function handleLogin(e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('error-message'); errorEl.textContent = '';
+    const roleSelect = document.getElementById('role');
+    const role = roleSelect.value;
+    let finalRole = role === 'Department Login' ? 'HOD' : role;
+    let dept = null;
+
+    if (role === 'Department Login') {
+        dept = document.getElementById('department').value;
+        if (dept === 'Department of Engineering') {
+            dept = document.getElementById('engineering-dept').value;
+            if (!dept) return errorEl.textContent = 'Please select Engineering Branch';
+        }
+    }
+
+    const payload = {
+        userId: document.getElementById('userId').value.trim(),
+        password: document.getElementById('password').value,
+        role: finalRole,
+        department: dept
+    };
+
+    try {
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.textContent = 'Logging in...'; btn.disabled = true;
+        const res = await fetch(`${API_BASE_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.success) {
+            sessionStorage.setItem('loggedInUser', JSON.stringify(data.user));
+            currentUser = data.user;
+            showDashboard(data.user);
+        } else {
+            errorEl.textContent = data.message || 'Login failed';
+        }
+    } catch (err) { errorEl.textContent = 'Server connection failed.'; } 
+    finally { 
+        e.target.querySelector('button[type="submit"]').textContent = 'Secure Login';
+        e.target.querySelector('button[type="submit"]').disabled = false;
+    }
+}
+
+async function handleSignup(e) {
+    e.preventDefault();
+    const errorEl = document.getElementById('signup-error-message'); errorEl.textContent = '';
+    
+    const payload = {
+        name: e.target.name.value.trim(),
+        userId: e.target.userId.value.trim(),
+        email: e.target.email.value.trim(),
+        pass: e.target.pass.value,
+        role: e.target.role.value,
+        department: e.target.department.value || null,
+        course: e.target.course.value || null
+    };
+
+    try {
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.textContent = 'Registering...'; btn.disabled = true;
+        const res = await fetch(`${API_BASE_URL}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast('Registration successful! Please login.');
+            toggleAuth('login');
+            e.target.reset();
+        } else {
+            errorEl.textContent = data.message || 'Registration failed';
+        }
+    } catch (err) { errorEl.textContent = 'Server connection failed.'; }
+    finally {
+         e.target.querySelector('button[type="submit"]').textContent = 'Register';
+         e.target.querySelector('button[type="submit"]').disabled = false;
+    }
+}
+
 // --- DASHBOARD LOGIC ---
 function showDashboard(user) {
     document.getElementById('login-signup-wrapper').classList.add('hidden');
     document.getElementById('dashboard-container').classList.remove('hidden');
-    
     document.getElementById('welcome-message').textContent = `Welcome, ${user.name.split(' ')[0]}`;
     document.getElementById('user-role').textContent = user.role + (user.department ? ` (${user.department})` : '');
     document.getElementById('header-profile-pic').src = user.photoUrl ? `${API_BASE_URL}${user.photoUrl}` : 'https://placehold.co/100?text=User';
-
     generateNavLinks(user.role);
 }
 
@@ -344,68 +469,26 @@ function generateNavLinks(role) {
     const desktopNav = document.getElementById('desktop-nav-links');
     const mobileNav = document.getElementById('mobile-nav-links');
     desktopNav.innerHTML = ''; mobileNav.innerHTML = '';
-
-    // Define menus based on role
     const menus = {
-        'Student': [
-            { name: 'Profile', id: 'profile', icon: '👤' },
-            { name: 'Placements', id: 'placements', icon: '💼' },
-            { name: 'Timetable', id: 'timetable', icon: '📅' },
-            // Add more student links here
-        ],
-        'Faculty': [
-             { name: 'Profile', id: 'profile', icon: '👤' },
-             { name: 'Placements', id: 'faculty-placements', icon: 'hj' },
-             // Add Faculty links
-        ],
-        'HOD': [
-             { name: 'Dashboard', id: 'hod-dash', icon: '📊' },
-             { name: 'Placements', id: 'faculty-placements', icon: '💼' },
-             { name: 'Profile', id: 'profile', icon: '👤' },
-        ],
-        'Admin': [
-            { name: 'Manage Users', id: 'admin-users', icon: '👥' },
-            { name: 'Placements', id: 'admin-placements', icon: '💼' },
-        ]
+        'Student': [ { name: 'Profile', id: 'profile', icon: '👤' }, { name: 'Placements', id: 'placements', icon: '💼' }, { name: 'Timetable', id: 'timetable', icon: '📅' } ],
+        'Faculty': [ { name: 'Profile', id: 'profile', icon: '👤' }, { name: 'Placements', id: 'faculty-placements', icon: '💼' } ],
+        'HOD': [ { name: 'Dashboard', id: 'hod-dash', icon: '📊' }, { name: 'Placements', id: 'faculty-placements', icon: '💼' }, { name: 'Profile', id: 'profile', icon: '👤' } ],
+        'Admin': [ { name: 'Manage Users', id: 'admin-users', icon: '👥' }, { name: 'Placements', id: 'admin-placements', icon: '💼' } ]
     };
-
-    const links = menus[role] || menus['Student']; // Default fallback
-
-    links.forEach(link => {
-        // Desktop Link
-        const dLink = document.createElement('button');
-        dLink.className = 'nav-link w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left';
-        dLink.innerHTML = `<span class="text-xl">${link.icon}</span><span class="font-medium">${link.name}</span>`;
-        dLink.onclick = () => loadPage(link.id, dLink);
-        desktopNav.appendChild(dLink);
-
-        // Mobile Link
-        const mLink = document.createElement('button');
-        mLink.className = 'flex flex-col items-center min-w-[4rem] py-1 px-2 rounded-lg text-gray-600';
-        mLink.innerHTML = `<span class="text-2xl">${link.icon}</span><span class="text-xs">${link.name}</span>`;
-        mLink.onclick = () => loadPage(link.id, null, mLink);
-        mobileNav.appendChild(mLink);
+    (menus[role] || menus['Student']).forEach(link => {
+        const dLink = document.createElement('button'); dLink.className = 'nav-link w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left'; dLink.innerHTML = `<span class="text-xl">${link.icon}</span><span class="font-medium">${link.name}</span>`; dLink.onclick = () => loadPage(link.id, dLink); desktopNav.appendChild(dLink);
+        const mLink = document.createElement('button'); mLink.className = 'flex flex-col items-center min-w-[4rem] py-1 px-2 rounded-lg text-gray-600'; mLink.innerHTML = `<span class="text-2xl">${link.icon}</span><span class="text-xs">${link.name}</span>`; mLink.onclick = () => loadPage(link.id, null, mLink); mobileNav.appendChild(mLink);
     });
-
-    // Load first page automatically
     if (desktopNav.firstChild) desktopNav.firstChild.click();
 }
 
 function loadPage(pageId, activeDLink, activeMLink) {
-    // Update Active States
     document.querySelectorAll('#desktop-nav-links .nav-link').forEach(el => el.classList.remove('active', 'bg-green-800'));
     if(activeDLink) activeDLink.classList.add('active', 'bg-green-800');
-    
     document.querySelectorAll('#mobile-nav-links button').forEach(el => el.classList.remove('text-green-700', 'font-bold'));
     if(activeMLink) activeMLink.classList.add('text-green-700', 'font-bold');
-
-    // Close mobile sidebar if open
     document.getElementById('sidebar').classList.add('-translate-x-full');
-
-    const contentEl = document.getElementById('main-content');
-    renderLoader(contentEl);
-
-    // --- PAGE ROUTER ---
+    const contentEl = document.getElementById('main-content'); renderLoader(contentEl);
     switch(pageId) {
         case 'profile': loadProfile(contentEl); break;
         case 'admin-placements': loadAdminPlacements(contentEl); break;
@@ -415,118 +498,42 @@ function loadPage(pageId, activeDLink, activeMLink) {
     }
 }
 
-// --- PAGE FUNCTIONS (Simplified Examples) ---
+// --- PAGE FUNCTIONS ---
 async function loadProfile(container) {
     try {
         const res = await fetch(`${API_BASE_URL}/profile/${currentUser.id}`);
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
         const p = data.profile;
-        container.innerHTML = `
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <div class="bg-green-600 h-32"></div>
-                <div class="px-6 md:px-8 pb-8 relative">
-                    <img src="${p.photoUrl ? API_BASE_URL+p.photoUrl : 'https://placehold.co/150?text=User'}" class="w-32 h-32 rounded-full border-4 border-white absolute -top-16 shadow-md object-cover">
-                    <div class="mt-20 md:flex justify-between items-start">
-                        <div>
-                            <h1 class="text-3xl font-bold text-gray-900">${p.name}</h1>
-                            <p class="text-green-700 font-medium">${p.role} ${p.id}</p>
-                            <p class="text-gray-500">${p.department || ''}</p>
-                        </div>
-                        <button class="mt-4 md:mt-0 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition">Edit Profile</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                         <div class="p-4 bg-gray-50 rounded-xl"><p class="text-xs text-gray-500 uppercase font-semibold">Email</p><p class="text-lg">${p.email}</p></div>
-                         <div class="p-4 bg-gray-50 rounded-xl"><p class="text-xs text-gray-500 uppercase font-semibold">Phone</p><p class="text-lg">${p.phone}</p></div>
-                         <!-- Add other fields -->
-                    </div>
-                </div>
-            </div>
-        `;
-    } catch (e) {
-        container.innerHTML = `<div class="text-red-500 bg-white p-6 rounded-xl">Failed to load profile: ${e.message}</div>`;
-    }
+        container.innerHTML = `<div class="bg-white rounded-2xl shadow-sm overflow-hidden"><div class="bg-green-600 h-32"></div><div class="px-6 md:px-8 pb-8 relative"><img src="${p.photoUrl ? API_BASE_URL+p.photoUrl : 'https://placehold.co/150?text=User'}" class="w-32 h-32 rounded-full border-4 border-white absolute -top-16 shadow-md object-cover"><div class="mt-20 md:flex justify-between items-start"><div><h1 class="text-3xl font-bold text-gray-900">${p.name}</h1><p class="text-green-700 font-medium">${p.role} ${p.id}</p><p class="text-gray-500">${p.department || ''}</p>${p.course ? `<p class="text-gray-400 text-sm">${p.course}</p>` : ''}</div><button class="mt-4 md:mt-0 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition">Edit Profile</button></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8"><div class="p-4 bg-gray-50 rounded-xl"><p class="text-xs text-gray-500 uppercase font-semibold">Email</p><p class="text-lg">${p.email}</p></div><div class="p-4 bg-gray-50 rounded-xl"><p class="text-xs text-gray-500 uppercase font-semibold">Phone</p><p class="text-lg">${p.phone || 'Not set'}</p></div></div></div></div>`;
+    } catch (e) { container.innerHTML = `<div class="text-red-500 bg-white p-6 rounded-xl">Failed to load profile: ${e.message}</div>`; }
 }
 
-// --- PLACEMENT PAGES (Admin/Student/Faculty) ---
 async function loadAdminPlacements(container) {
-    // Simplified Admin Placement View
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Placement Drives</h2>
-            <button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Post New Drive</button>
-        </div>
-        <div id="admin-placement-list" class="grid gap-4">Loading...</div>
-    `;
+    container.innerHTML = `<div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Placement Drives</h2><button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Post New Drive</button></div><div id="admin-placement-list" class="grid gap-4">Loading...</div>`;
     loadPlacementsList('admin-placement-list', true);
 }
-
 async function loadStudentPlacements(container) {
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Available Opportunities</h2>
-        <div id="student-placement-list" class="grid gap-4">Loading...</div>
-    `;
+    container.innerHTML = `<h2 class="text-2xl font-bold text-gray-800 mb-6">Available Opportunities</h2><div id="student-placement-list" class="grid gap-4">Loading...</div>`;
     loadPlacementsList('student-placement-list', false, true);
 }
-
 async function loadFacultyPlacements(container) {
-     container.innerHTML = `
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Department Placements</h2>
-        <div id="faculty-placement-list" class="grid gap-4">Loading...</div>
-    `;
-    // Load placements filtered by faculty's department
+     container.innerHTML = `<h2 class="text-2xl font-bold text-gray-800 mb-6">Department Placements</h2><div id="faculty-placement-list" class="grid gap-4">Loading...</div>`;
     loadPlacementsList('faculty-placement-list', true, false, currentUser.department);
 }
-
 async function loadPlacementsList(elementId, isAdmin, isStudent = false, deptFilter = null) {
     try {
         let url = `${API_BASE_URL}/placements`;
         if (isStudent) url += `?department=${encodeURIComponent(currentUser.department)}&course=${encodeURIComponent(currentUser.course || '')}`;
         if (deptFilter) url += `?department=${encodeURIComponent(deptFilter)}`;
-
-        const res = await fetch(url);
-        const data = await res.json();
-        const listEl = document.getElementById(elementId);
-        
-        if (!data.placements || data.placements.length === 0) {
-            listEl.innerHTML = `<div class="p-8 bg-white rounded-xl text-center text-gray-500">No placement drives found.</div>`;
-            return;
-        }
-
-        listEl.innerHTML = data.placements.map(p => `
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 flex flex-col md:flex-row justify-between">
-                <div>
-                    <h3 class="text-xl font-bold text-gray-900">${p.jobTitle}</h3>
-                    <p class="text-green-700 font-medium">${p.companyName}</p>
-                    <p class="text-sm text-gray-500 mt-2">${p.department} | ${p.course}</p>
-                    <p class="text-xs text-gray-400 mt-1">Posted: ${new Date(p.postedOn).toLocaleDateString()}</p>
-                </div>
-                <div class="mt-4 md:mt-0 flex items-center">
-                    ${isAdmin ? `<button class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">View Applicants (${p.applications.length})</button>` : ''}
-                    ${isStudent ? (p.applications.some(a => a.studentId === currentUser.id) ? 
-                        `<span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">Applied ✅</span>` : 
-                        `<button onclick="applyForPlacement(${p.id})" class="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">Apply Now</button>`
-                    ) : ''}
-                </div>
-            </div>
-        `).join('');
-    } catch (e) {
-        document.getElementById(elementId).innerHTML = `<div class="text-red-500">Error loading data.</div>`;
-    }
+        const res = await fetch(url); const data = await res.json(); const listEl = document.getElementById(elementId);
+        if (!data.placements || data.placements.length === 0) { listEl.innerHTML = `<div class="p-8 bg-white rounded-xl text-center text-gray-500">No placement drives found.</div>`; return; }
+        listEl.innerHTML = data.placements.map(p => `<div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 flex flex-col md:flex-row justify-between"><div><h3 class="text-xl font-bold text-gray-900">${p.jobTitle}</h3><p class="text-green-700 font-medium">${p.companyName}</p><p class="text-sm text-gray-500 mt-2">${p.department} | ${p.course}</p><p class="text-xs text-gray-400 mt-1">Posted: ${new Date(p.postedOn).toLocaleDateString()}</p></div><div class="mt-4 md:mt-0 flex items-center">${isAdmin ? `<button class="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-medium">View Applicants (${p.applications.length})</button>` : ''}${isStudent ? (p.applications.some(a => a.studentId === currentUser.id) ? `<span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium">Applied ✅</span>` : `<button onclick="applyForPlacement(${p.id})" class="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">Apply Now</button>`) : ''}</div></div>`).join('');
+    } catch (e) { document.getElementById(elementId).innerHTML = `<div class="text-red-500">Error loading data.</div>`; }
 }
 
-// Global function for applying (simplified)
-window.applyForPlacement = async (id) => {
-    if (!confirm('Apply for this position? (Ensure you have a resume uploaded in profile)')) return;
-    // Actual implementation needs file upload modal
-    showToast('Application feature requires Resume upload implementation.', true);
-};
-
-// Admin Modal (Stub)
-window.openPostPlacementModal = () => {
-    alert("Post placement modal would open here.");
-};
-
+window.applyForPlacement = async (id) => { if (!confirm('Apply for this position? (Ensure you have a resume uploaded in profile)')) return; showToast('Application feature requires Resume upload implementation.', true); };
+window.openPostPlacementModal = () => { alert("Post placement modal would open here."); };
 </script>
 </body>
 </html>
