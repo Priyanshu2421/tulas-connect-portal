@@ -21,15 +21,17 @@ const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // Enforced Institutional Domain
 const otpStore = {}; 
 
 // --- NODEMAILER CONFIGURATION (CRUCIAL: REPLACE WITH YOUR CREDENTIALS) ---
-// **ACTION REQUIRED:** Replace 'smtp.example.com', 'your_email@example.com' and 'your_email_password' 
-// with your actual SMTP server details (e.g., Gmail App Password).
+// **ACTION REQUIRED:** Replace these values with your actual SMTP details to fix the EDNS error.
 const transporter = nodemailer.createTransport({
-    host: 'smtp.example.com', // e.g., 'smtp.gmail.com' for Gmail
+    // Line 35: REPLACE 'smtp.example.com' with your actual host (e.g., 'smtp.gmail.com')
+    host: 'smtp.example.com', 
     port: 587,
     secure: false, // Use true for port 465, false for 587 (TLS)
     auth: {
-        user: 'your_email@example.com', // Your actual sending email address
-        pass: 'your_email_password'  // Your actual password or App Password
+        // Line 38: REPLACE 'your_email@example.com' with your actual sending email address
+        user: 'your_email@example.com', 
+        // Line 39: REPLACE 'your_email_password' with your actual App Password or email password
+        pass: 'your_email_password'  
     }
 });
 
