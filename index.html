@@ -7,19 +7,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; 
+            overflow-x: hidden; /* Prevent horizontal scroll on mobile menu */
+        }
+        /* Loading Spinner */
         .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Navigation Styles */
         .nav-link.active { background-color: #15803d; color: white; border-left: 4px solid #22c55e; }
+        .nav-link { transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; }
+        .nav-link:hover { background-color: #16a34a; }
+
         /* Custom Scrollbar for sidebar */
         aside::-webkit-scrollbar { width: 5px; }
         aside::-webkit-scrollbar-thumb { background: #166534; border-radius: 5px; }
+
         /* Captcha Styles */
         #captcha-canvas, #login-captcha-canvas {
             background-color: #f9fafb;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             cursor: pointer;
+        }
+
+        /* --- New Animations --- */
+        /* Login/Signup Box Animation */
+        #login-box, #signup-box {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+        /* Content Area Fade-In */
+        #content-area > div:not(.loader-wrapper) {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Chatbot Bubble Animation */
+        .chat-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        /* Small loader for chat */
+        .loader-small { 
+            border: 2px solid #f3f3f3; 
+            border-top: 2px solid #16a34a; 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            animation: spin 1s linear infinite; 
+            display: inline-block; 
+        }
+        /* Transition for toast */
+        #toast {
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
         }
     </style>
 </head>
@@ -40,9 +88,9 @@
     <div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
         
         <!-- LOGIN FORM -->
-        <div id="login-box" class="w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl">
+        <div id="login-box" class="w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl transform">
             <div class="text-center mb-8">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" alt="Logo" class="h-16 mx-auto mb-2">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="h-16 mx-auto mb-2">
                 <h1 class="text-2xl font-bold text-gray-900">Welcome Back</h1>
                 <p class="text-gray-500">Sign in to Tula's Connect</p>
             </div>
@@ -74,12 +122,12 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                    <input type="text" id="login-id" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="e.g. 2024001 or email">
+                    <input type="text" id="login-id" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
                 </div>
                 <div class="relative">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" placeholder="••••••••">
-                    <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600">👁️</button>
+                    <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
+                    <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600 transition">👁️</button>
                 </div>
 
                 <!-- Login Captcha Section -->
@@ -87,29 +135,29 @@
                     <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
                     <div class="flex items-center space-x-4">
                         <canvas id="login-captcha-canvas" width="150" height="50" onclick="generateLoginCaptcha()"></canvas>
-                        <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700" title="Refresh Captcha">
+                        <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
                             🔄
                         </button>
                     </div>
-                    <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                    <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02]">SECURE LOGIN</button>
+                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
             </form>
             <div class="mt-6 text-center text-sm text-gray-600">
-                New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline">Create an Account</button>
+                New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
             </div>
         </div>
 
         <!-- SIGNUP FORM -->
-        <div id="signup-box" class="hidden w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div id="signup-box" class="hidden w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transform">
             <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Create Account</h2>
             <form id="signup-form" class="space-y-4">
                 
                 <!-- Role Selection First -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">I am a...</label>
-                    <select name="role" id="signup-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" required onchange="updateSignupUI()">
+                    <select name="role" id="signup-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
                         <option value="">Select Role</option>
                         <option value="Student">Student</option>
                         <option value="Faculty">Faculty</option>
@@ -117,48 +165,48 @@
                 </div>
 
                 <!-- Common Fields -->
-                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
+                <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
+                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
 
                 <!-- Student Specific Fields -->
                 <div id="student-fields" class="hidden space-y-4">
-                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 </div>
 
                 <!-- Department & Course Selection -->
                 <div id="signup-dept-wrapper" class="hidden space-y-4">
-                    <select name="department" id="signup-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" required onchange="updateSignupUI()">
+                    <select name="department" id="signup-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
                         <option value="">Select Department</option>
                         <!-- Populated by JS -->
                     </select>
                 </div>
 
                 <div id="signup-course-wrapper" class="hidden">
-                    <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                    <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                         <option value="">Select Course</option>
                         <!-- Populated by JS -->
                     </select>
                 </div>
 
-                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 
                 <!-- Captcha Section -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
                     <div class="flex items-center space-x-4">
                         <canvas id="captcha-canvas" width="150" height="50" onclick="generateCaptcha()"></canvas>
-                        <button type="button" onclick="generateCaptcha()" class="text-gray-500 hover:text-gray-700" title="Refresh Captcha">
+                        <button type="button" onclick="generateCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
                             🔄
                         </button>
                     </div>
-                    <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                    <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all">REGISTER</button>
+                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg">REGISTER</button>
             </form>
             <div class="mt-6 text-center text-sm">
-                <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline">← Back to Login</button>
+                <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline transition">← Back to Login</button>
             </div>
         </div>
     </div>
@@ -168,7 +216,7 @@
         <!-- SIDEBAR NAV -->
         <aside id="sidebar" class="bg-green-900 text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
             <div class="p-6 flex items-center space-x-3 border-b border-green-800">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" class="h-10 w-10 rounded-full bg-white p-1">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/40x40/22c55e/ffffff?text=TL'" class="h-10 w-10 rounded-full bg-white p-1">
                 <div>
                     <h1 class="font-bold text-lg leading-tight">TULA'S CONNECT</h1>
                     <p id="nav-role-badge" class="text-xs text-green-300">Portal</p>
@@ -176,7 +224,7 @@
             </div>
             <nav id="nav-links" class="flex-1 overflow-y-auto p-4 space-y-2"></nav>
             <div class="p-4 border-t border-green-800">
-                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-green-800 hover:text-red-200 rounded-xl transition">
+                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-green-800 hover:text-red-200 rounded-xl transition transform hover:scale-[1.01]">
                     <span>🚪</span><span>Sign Out</span>
                 </button>
             </div>
@@ -187,18 +235,60 @@
             <!-- MOBILE HEADER -->
             <header class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
                 <div class="flex items-center space-x-3">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" class="h-8">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/32x32/22c55e/ffffff?text=TL'" class="h-8">
                     <span class="font-bold text-green-800">TULA'S</span>
                 </div>
-                <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg">☰</button>
+                <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">☰</button>
             </header>
 
             <main class="p-4 md:p-8 flex-1 overflow-y-auto">
-                <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+                <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
                     <!-- Dynamic Content Loads Here -->
                 </div>
             </main>
         </div>
+    </div>
+
+    <!-- CHATBOT BUTTON -->
+    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-3xl">
+        🤖
+    </button>
+
+    <!-- CHATBOT MODAL -->
+    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[80vh] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all duration-300">
+        <!-- Chat Header -->
+        <div class="p-4 bg-green-700 text-white flex justify-between items-center shadow-md">
+            <h3 class="font-bold text-lg">Tula's AI Helper</h3>
+            <button onclick="toggleChatbot()" class="text-white hover:text-green-200 transition">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+        
+        <!-- Chat History Display -->
+        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <!-- Initial Message -->
+            <div class="flex justify-start">
+                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-[80%] chat-bubble">
+                    Hello! I'm your Tula's AI Portal Assistant. I can help you with general queries or provide up-to-date information using Google Search. Try asking me about new admissions or institute news!
+                </div>
+            </div>
+            <!-- Loading Indicator for AI Response -->
+            <div id="chat-loading-indicator" class="hidden flex justify-start">
+                <div class="p-3 rounded-xl bg-gray-200 chat-bubble">
+                    <div class="loader-small"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <form id="chat-form" class="p-4 border-t border-gray-200 bg-white">
+            <div class="flex space-x-2">
+                <input type="text" id="chat-input" placeholder="Ask me anything..." required class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 outline-none">
+                <button type="submit" id="chat-submit-btn" class="bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition disabled:bg-green-400">
+                    Send
+                </button>
+            </div>
+        </form>
     </div>
 
 <script>
@@ -208,7 +298,7 @@ let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
 let currentLoginCaptcha = ''; // New state for login captcha
 
-// Course Data Mapping (RESTORED)
+// Course Data Mapping
 const DEPT_DATA = {
     "Department of Engineering": {
         branches: [
@@ -228,6 +318,10 @@ const DEPT_DATA = {
     "Tula's Institute of Pharmacy": { courses: ["B.Pharm", "D.Pharm"] }
 };
 
+// --- CHATBOT CONFIG ---
+const CHAT_MODEL = 'gemini-2.5-flash-preview-09-2025';
+const API_KEY = ""; // Kept empty as per instruction
+
 // === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
     initAuthDropdowns();
@@ -240,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         // Captcha Verification for Login
-        const loginCaptchaInput = document.getElementById('login-captcha-input').value;
+        const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
         if (loginCaptchaInput !== currentLoginCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
             generateLoginCaptcha();
@@ -267,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Signup Handler
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
-        const captchaInput = document.getElementById('captcha-input').value;
+        const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
         if (captchaInput !== currentCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
             generateCaptcha();
@@ -285,6 +379,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         await handleAuth('/signup', payload, true);
     };
+
+    // --- CHATBOT FORM LISTENER ---
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const chatInput = document.getElementById('chat-input');
+            const chatSubmitBtn = document.getElementById('chat-submit-btn');
+            const loadingIndicator = document.getElementById('chat-loading-indicator');
+            const userQuery = chatInput.value.trim();
+
+            if (!userQuery) return;
+
+            // 1. Display user message
+            addMessageToChat(userQuery, true);
+            chatInput.value = '';
+            
+            // 2. Show loading indicator and disable input/button
+            loadingIndicator.classList.remove('hidden');
+            chatInput.disabled = true;
+            chatSubmitBtn.disabled = true;
+
+            // 3. Get AI response
+            const { text, sources } = await getGeminiResponse(userQuery);
+            
+            // 4. Hide loading indicator and re-enable input/button
+            loadingIndicator.classList.add('hidden');
+            chatInput.disabled = false;
+            chatSubmitBtn.disabled = false;
+            chatInput.focus();
+
+            // 5. Display AI response
+            addMessageToChat(text, false, sources);
+        };
+    }
 });
 
 // === AUTHENTICATION LOGIC ===
@@ -358,19 +487,18 @@ function updateSignupUI() {
 }
 
 // === CAPTCHA GENERATORS ===
-// Original Generator (kept for signup as requested)
-function generateCaptcha() {
-    const canvas = document.getElementById('captcha-canvas');
+function generateCaptcha(canvasId = 'captcha-canvas', setState) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
     const ctx = canvas.getContext('2d');
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let captchaText = '';
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#f9fafb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Add noise (lines)
     for (let i = 0; i < 7; i++) {
         ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
         ctx.beginPath();
@@ -379,14 +507,12 @@ function generateCaptcha() {
         ctx.stroke();
     }
 
-    // Generate text
     for (let i = 0; i < 6; i++) {
         const char = chars.charAt(Math.floor(Math.random() * chars.length));
         captchaText += char;
         ctx.font = 'bold 24px Inter';
         ctx.fillStyle = '#1f2937';
         
-        // Rotate and place character
         ctx.save();
         const x = 20 + i * 20;
         const y = 30 + Math.random() * 10;
@@ -397,45 +523,12 @@ function generateCaptcha() {
         ctx.restore();
     }
     
-    currentCaptcha = captchaText;
+    // Set the global state variable
+    if (canvasId === 'captcha-canvas') currentCaptcha = captchaText;
+    else if (canvasId === 'login-captcha-canvas') currentLoginCaptcha = captchaText;
 }
 
-// New Generator for Login (duplicates logic to avoid touching old code structure too much)
-function generateLoginCaptcha() {
-    const canvas = document.getElementById('login-captcha-canvas');
-    const ctx = canvas.getContext('2d');
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let captchaText = '';
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f9fafb';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < 7; i++) {
-        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.stroke();
-    }
-
-    for (let i = 0; i < 6; i++) {
-        const char = chars.charAt(Math.floor(Math.random() * chars.length));
-        captchaText += char;
-        ctx.font = 'bold 24px Inter';
-        ctx.fillStyle = '#1f2937';
-        ctx.save();
-        const x = 20 + i * 20;
-        const y = 30 + Math.random() * 10;
-        const angle = (Math.random() - 0.5) * 0.4;
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.fillText(char, 0, 0);
-        ctx.restore();
-    }
-    
-    currentLoginCaptcha = captchaText;
-}
+function generateLoginCaptcha() { generateCaptcha('login-captcha-canvas'); }
 
 async function handleAuth(endpoint, payload, isSignup = false) {
     try {
@@ -457,6 +550,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
                 currentUser = data.user;
                 sessionStorage.setItem('user', JSON.stringify(currentUser));
                 showDashboard();
+                showToast(`Welcome, ${currentUser.name}!`);
             }
         } else {
             showToast(data.message || 'Action failed', true);
@@ -505,6 +599,9 @@ function renderNavigation() {
         ],
         'Admin': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-users', label: 'Manage Users', icon: '👥' },
+            { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
+            { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
             { id: 'placements', label: 'All Placements', icon: '🌍' }
         ]
     };
@@ -530,7 +627,8 @@ async function loadContent(pageId, activeBtn) {
     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
 
     const container = document.getElementById('content-area');
-    container.innerHTML = '<div class="loader"></div>';
+    // Wrap loader for animation consistency
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
 
     try {
         // --- ROUTER ---
@@ -545,6 +643,9 @@ async function loadContent(pageId, activeBtn) {
             case 'fac-assignments': await loadFacultyAssignments(container); break;
             case 'fac-leaves': await loadFacultyLeaves(container); break;
             case 'placements': await loadPlacements(container); break;
+            case 'admin-users': await loadAdminUsers(container); break;
+            case 'admin-id-cards': await loadAdminIdCards(container); break;
+            case 'admin-announcements': await loadAdminAnnouncements(container); break;
             default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
         }
     } catch (err) {
@@ -563,13 +664,13 @@ async function loadProfile(container) {
 
     container.innerHTML = `
         <div class="flex flex-col md:flex-row gap-8 items-start">
-            <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center">
+            <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center shadow-lg">
                 <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">${p.name}</h2>
                 <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">${p.role}</span>
-                <p class="text-gray-500 mt-4">${p.id}</p>
+                <p class="text-gray-500 mt-4 font-mono">${p.id}</p>
             </div>
-            <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full">
+            <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full shadow-lg">
                 <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                     <span class="bg-green-600 w-2 h-6 mr-3 rounded-full"></span> Personal Details
                 </h3>
@@ -578,6 +679,8 @@ async function loadProfile(container) {
                     ${detailItem('Phone', p.phone || 'Not set')}
                     ${detailItem('Department', p.department)}
                     ${p.course ? detailItem('Course', p.course) : ''}
+                    ${detailItem('Date of Birth', p.dob || 'Not set')}
+                    ${detailItem('Address', p.address || 'Not set')}
                 </div>
             </div>
         </div>
@@ -594,11 +697,11 @@ async function loadTimetable(container) {
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Weekly Schedule <span class="text-gray-400 text-lg">(${currentUser.course})</span></h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             ${Object.entries(tt).map(([day, slots]) => `
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md transition-shadow hover:shadow-lg">
                     <div class="bg-green-600 text-white p-3 font-bold">${day}</div>
                     <div class="p-4 space-y-3">
                         ${slots.map(s => `
-                            <div class="flex items-start p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                                 <div class="text-sm font-semibold text-green-700 w-24">${s.time}</div>
                                 <div>
                                     <div class="font-medium text-gray-900">${s.subject}</div>
@@ -617,7 +720,7 @@ async function loadAttendance(container) {
     const data = await res.json();
     container.innerHTML = `
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Attendance Record</h2>
-        <div class="overflow-hidden rounded-xl border border-gray-200">
+        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-gray-700">
                     <tr><th class="p-4">Subject</th><th class="p-4">Attended / Total</th><th class="p-4">Percentage</th></tr>
@@ -625,7 +728,7 @@ async function loadAttendance(container) {
                 <tbody class="divide-y divide-gray-100">
                     ${Object.entries(data.attendance).map(([sub, stats]) => {
                         const pct = (stats.present / stats.total * 100) || 0;
-                        return `<tr>
+                        return `<tr class="hover:bg-gray-50 transition">
                             <td class="p-4 font-medium">${sub}</td>
                             <td class="p-4">${stats.present} / ${stats.total}</td>
                             <td class="p-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${pct < 75 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pct.toFixed(1)}%</span></td>
@@ -643,7 +746,7 @@ async function loadMarks(container) {
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Examination Results</h2>
         <div class="grid gap-4 md:grid-cols-2">
             ${data.marks.map(m => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center">
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md flex justify-between items-center transition-transform hover:scale-[1.01]">
                     <div>
                         <h4 class="font-bold text-gray-800">${m.subject}</h4>
                         <p class="text-sm text-gray-500">${m.exam}</p>
@@ -653,7 +756,7 @@ async function loadMarks(container) {
                         <span class="text-gray-400">/ ${m.total}</span>
                     </div>
                 </div>
-            `).join('') || '<p class="text-gray-500 col-span-2 text-center py-10">No marks available yet.</p>'}
+            `).join('') || '<p class="text-gray-500 col-span-2 text-center py-10 bg-gray-50 rounded-xl">No marks available yet.</p>'}
         </div>`;
 }
 
@@ -666,21 +769,21 @@ async function loadAssignmentsStudent(container) {
         <div class="space-y-4">
             ${data.assignments.map(a => {
                 const isSubmitted = a.submissions.some(s => s.studentId === currentUser.id);
-                return `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                return `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-xl font-bold text-gray-900">${a.title}</h3>
-                             <p class="text-sm text-green-700 font-medium">By: ${a.facultyName}</p>
+                           <p class="text-sm text-green-700 font-medium">By: ${a.facultyName}</p>
                         </div>
                         <span class="text-xs font-medium px-3 py-1 rounded-full ${isSubmitted ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
                             ${isSubmitted ? 'Submitted' : 'Pending'}
                         </span>
                     </div>
                     <p class="text-gray-600 mb-4">${a.description}</p>
-                    ${a.filePath ? `<a href="${a.filePath}" target="_blank" class="text-green-600 hover:underline text-sm flex items-center mb-4">📎 Download Attachment</a>` : ''}
+                    ${a.filePath ? `<a href="${a.filePath}" target="_blank" class="text-green-600 hover:underline text-sm flex items-center mb-4 transition">📎 Download Attachment</a>` : ''}
                     <div class="flex justify-between items-center border-t pt-4">
                         <span class="text-sm text-gray-500">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
-                        ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition">Submit Work</button>` : ''}
+                        ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.01]">Submit Work</button>` : ''}
                     </div>
                 </div>`;
             }).join('') || '<div class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</div>'}
@@ -694,13 +797,13 @@ async function loadLeavesCommon(container) {
     container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">My Leave Applications</h2>
-            <button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center">
+            <button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center transition transform hover:scale-[1.02]">
                 <span class="text-xl mr-2">+</span> Apply New
             </button>
         </div>
         <div class="space-y-4">
             ${data.leaves.map(l => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center">
+                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
                     <div>
                         <div class="font-bold text-gray-800">${l.type}</div>
                         <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
@@ -718,7 +821,7 @@ async function loadLeavesCommon(container) {
 function loadFacultyAttendance(container) {
     container.innerHTML = `
         <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
-        <div class="bg-white p-8 rounded-2xl border shadow-sm max-w-lg">
+        <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
             <form onsubmit="submitAttendance(event)" class="space-y-4">
                 <div><label class="block text-sm font-medium mb-1">Student ID</label><input id="att-sid" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. 2024001"></div>
                 <div><label class="block text-sm font-medium mb-1">Subject</label><input id="att-sub" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. Java Programming"></div>
@@ -728,7 +831,7 @@ function loadFacultyAttendance(container) {
                         <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Absent" class="text-red-600 w-5 h-5"><span>Absent</span></label>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4">SUBMIT RECORD</button>
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4 transition transform hover:scale-[1.01]">SUBMIT RECORD</button>
             </form>
         </div>`;
 }
@@ -739,11 +842,11 @@ async function loadFacultyAssignments(container) {
     container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">Manage Assignments</h2>
-            <button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Create New</button>
+            <button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create New</button>
         </div>
         <div class="grid gap-4">
             ${data.assignments.map(a => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200">
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
                     <div class="flex justify-between">
                         <h3 class="font-bold text-lg">${a.title}</h3>
                         <span class="text-sm bg-gray-100 px-3 py-1 rounded-full">${a.course}</span>
@@ -751,7 +854,7 @@ async function loadFacultyAssignments(container) {
                     <p class="text-gray-500 text-sm mt-1">Due: ${new Date(a.dueDate).toLocaleDateString()}</p>
                     <div class="mt-4 pt-4 border-t flex justify-between items-center">
                         <span class="font-medium text-green-700">${a.submissions.length} Submissions</span>
-                        <button class="text-blue-600 hover:underline text-sm">View All</button>
+                        <button class="text-blue-600 hover:underline text-sm transition">View All</button>
                     </div>
                 </div>
             `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">You haven\'t created any assignments yet.</p>'}
@@ -765,7 +868,7 @@ async function loadFacultyLeaves(container) {
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Leave Requests <span class="text-green-600">(${currentUser.department})</span></h2>
         <div class="space-y-4">
             ${data.leaves.map(l => `
-                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId}</h4>
@@ -777,8 +880,8 @@ async function loadFacultyLeaves(container) {
                     </div>
                     <p class="bg-gray-50 p-4 rounded-lg text-gray-700 mb-4 italic">"${l.reason}"</p>
                     <div class="flex space-x-3 justify-end">
-                        <button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
-                        <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md">Approve Request</button>
+                        <button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition transform hover:scale-[1.01]">Reject</button>
+                        <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md transform hover:scale-[1.01]">Approve Request</button>
                     </div>
                 </div>
             `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
@@ -795,21 +898,105 @@ async function loadPlacements(container) {
     container.innerHTML = `
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-800">${currentUser.role === 'Admin' ? 'All' : 'Department'} Placements</h2>
-            ${['Admin', 'HOD'].includes(currentUser.role) ? `<button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">+ Post New</button>` : ''}
+            ${['Admin', 'HOD'].includes(currentUser.role) ? `<button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Post New</button>` : ''}
         </div>
         <div class="grid gap-6">
             ${data.placements.map(p => `
-                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-sm hover:shadow-md transition">
+                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition">
                     <h3 class="text-xl font-bold text-gray-900">${p.jobTitle} <span class="text-gray-400 font-normal">at</span> ${p.companyName}</h3>
                     <p class="text-sm text-green-700 font-medium mt-1">${p.course} | ${p.department}</p>
                     <p class="text-gray-600 my-4 line-clamp-2">${p.jobDescription}</p>
                     <div class="flex justify-between items-center text-sm text-gray-500">
                         <span>Posted: ${new Date(p.postedOn).toLocaleDateString()}</span>
-                        ${currentUser.role === 'Student' ? '<button class="text-green-600 font-bold hover:underline">View Details & Apply →</button>' : `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">${p.applications.length} Applicants</span>`}
+                        ${currentUser.role === 'Student' ? '<button class="text-green-600 font-bold hover:underline transition">View Details & Apply →</button>' : `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">${p.applications.length} Applicants</span>`}
                     </div>
                 </div>
-            `).join('') || '<p class="text-gray-500 text-center py-10">No active placement drives.</p>'}
+            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No active placement drives.</p>'}
         </div>`;
+}
+
+// 7. ADMIN FEATURES (NEW)
+async function loadAdminUsers(container) {
+    const res = await fetch(`${API_BASE}/users`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Manage Users (${data.users.length} Total)</h2>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-700">
+                    <tr><th class="p-4">Name/ID</th><th class="p-4">Role</th><th class="p-4">Department</th><th class="p-4">Email</th><th class="p-4">Action</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    ${data.users.map(u => `<tr class="hover:bg-gray-50 transition">
+                        <td class="p-4">${u.name}<br><span class="text-xs text-gray-500 font-mono">${u.id}</span></td>
+                        <td class="p-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">${u.role}</span></td>
+                        <td class="p-4 text-sm">${u.department || 'N/A'}</td>
+                        <td class="p-4 text-sm">${u.email}</td>
+                        <td class="p-4"><button onclick="deleteUser('${u.id}')" class="text-red-600 hover:text-red-800 transition">🗑️</button></td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function deleteUser(userId) {
+    if (confirm(`Are you sure you want to delete user ${userId}?`)) {
+        await fetch(`${API_BASE}/users/${userId}`, { method: 'DELETE' });
+        showToast(`User ${userId} deleted.`, false);
+        loadContent('admin-users'); // Reload the list
+    }
+}
+
+async function loadAdminAnnouncements(container) {
+    const res = await fetch(`${API_BASE}/announcements?role=${currentUser.role}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Institute Announcements</h2>
+            <button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ New Announcement</button>
+        </div>
+        <div class="space-y-4">
+            ${data.announcements.map(a => `<div class="bg-white p-5 rounded-xl border-l-4 border-blue-500 shadow-md">
+                <h3 class="font-bold text-lg text-gray-900">${a.title}</h3>
+                <p class="text-gray-600 mt-1">${a.body}</p>
+                <div class="mt-2 text-xs text-gray-500 flex justify-between">
+                    <span>Target: ${a.target} (${a.department || 'All Depts'})</span>
+                    <span>Posted: ${new Date(a.date).toLocaleDateString()}</span>
+                </div>
+            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No announcements posted yet.</p>'}
+        </div>
+    `;
+}
+
+async function loadAdminIdCards(container) {
+    const res = await fetch(`${API_BASE}/id-cards/pending`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending ID Card Requests</h2>
+        <div class="space-y-4">
+            ${data.requests.map(r => `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                <div class="flex items-center space-x-4">
+                    <img src="${API_BASE}${r.photoUrl}" class="w-16 h-16 object-cover rounded-full border border-gray-200">
+                    <div>
+                        <h4 class="font-bold text-lg">${r.name} (${r.userId})</h4>
+                        <p class="text-sm text-gray-500">${r.course} - ${r.department}</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-gray-700">Applied On: ${new Date(r.appliedOn).toLocaleDateString()}</p>
+                <div class="flex space-x-3 mt-4 justify-end">
+                    <button onclick="updateIdCardStatus(${r.id}, 'Rejected')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
+                    <button onclick="updateIdCardStatus(${r.id}, 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
+                </div>
+            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending ID card requests.</p>'}
+        </div>
+    `;
+}
+
+async function updateIdCardStatus(id, status) {
+    await postData(`/id-cards/${id}/action`, { status });
+    loadContent('admin-id-cards');
+    showToast(`ID Card request ${status.toLowerCase()}`, false);
 }
 
 // === HELPER FUNCTIONS ===
@@ -830,19 +1017,28 @@ function toggleSidebar() { document.getElementById('sidebar').classList.toggle('
 function logout() { sessionStorage.clear(); window.location.reload(); }
 function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function showToast(msg, isErr=false) { const t = document.getElementById('toast'); t.textContent = msg; t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); }
+function showToast(msg, isErr=false) { 
+    const t = document.getElementById('toast'); 
+    t.textContent = msg; 
+    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; 
+    setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
+}
 
 // === MODAL HANDLERS ===
-window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply for Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl"><input type="date" name="toDate" required class="p-3 border rounded-xl"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32"></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">SUBMIT APPLICATION</button></form>`);
-window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create Assignment</h3><form onsubmit="submitCreateAssign(event)" class="space-y-4"><input name="title" placeholder="Assignment Title" required class="w-full p-3 border rounded-xl"><textarea name="description" placeholder="Instructions..." class="w-full p-3 border rounded-xl h-24"></textarea><input name="course" placeholder="Target Course (e.g. BCA)" required class="w-full p-3 border rounded-xl"><div class="grid grid-cols-2 gap-4"><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Due Date</label><input type="date" name="dueDate" required class="p-3 border rounded-xl"></div><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Attachment (Optional)</label><input type="file" name="assignmentFile" class="p-2 border rounded-xl bg-gray-50"></div></div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">POST ASSIGNMENT</button></form>`);
-window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Assignment</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><div class="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-4">Ensure your file is in PDF or DOCX format and under 5MB.</div><input type="file" name="submissionFile" required class="w-full p-3 border rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">UPLOAD & TURN IN</button></form>`);
-window.openPostPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Placement Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company Name" required class="w-full p-3 border rounded-xl"><input name="jobTitle" placeholder="Job Role/Title" required class="w-full p-3 border rounded-xl"><textarea name="jobDescription" placeholder="Job Description & Requirements..." required class="w-full p-3 border rounded-xl h-32"></textarea><select name="department" required class="w-full p-3 border rounded-xl"><option value="">Target Department</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><input name="course" placeholder="Target Course (e.g. B.Tech CSE)" required class="w-full p-3 border rounded-xl"><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold">PUBLISH DRIVE</button></form>`);
+window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply for Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl"><input type="date" name="toDate" required class="p-3 border rounded-xl"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32"></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SUBMIT APPLICATION</button></form>`);
+window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create Assignment</h3><form onsubmit="submitCreateAssign(event)" class="space-y-4"><input name="title" placeholder="Assignment Title" required class="w-full p-3 border rounded-xl"><textarea name="description" placeholder="Instructions..." class="w-full p-3 border rounded-xl h-24"></textarea><input name="course" placeholder="Target Course (e.g. BCA)" required class="w-full p-3 border rounded-xl"><div class="grid grid-cols-2 gap-4"><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Due Date</label><input type="date" name="dueDate" required class="p-3 border rounded-xl"></div><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Attachment (Optional)</label><input type="file" name="assignmentFile" class="p-2 border rounded-xl bg-gray-50"></div></div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">POST ASSIGNMENT</button></form>`);
+window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Assignment</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><div class="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-4">Ensure your file is in PDF or DOCX format.</div><input type="file" name="submissionFile" required class="w-full p-3 border rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold transition">UPLOAD & TURN IN</button></form>`);
+window.openPostPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Placement Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company Name" required class="w-full p-3 border rounded-xl"><input name="jobTitle" placeholder="Job Role/Title" required class="w-full p-3 border rounded-xl"><textarea name="jobDescription" placeholder="Job Description & Requirements..." required class="w-full p-3 border rounded-xl h-32"></textarea><select name="department" required class="w-full p-3 border rounded-xl"><option value="">Target Department</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><input name="course" placeholder="Target Course (e.g. B.Tech CSE)" required class="w-full p-3 border rounded-xl"><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH DRIVE</button></form>`);
+window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create New Announcement</h3><form onsubmit="submitAnnouncement(event)" class="space-y-4"><input name="title" placeholder="Title" required class="w-full p-3 border rounded-xl"><textarea name="body" placeholder="Announcement Details..." required class="w-full p-3 border rounded-xl h-24"></textarea><select name="target" required class="w-full p-3 border rounded-xl"><option value="All">All Users</option><option value="Student">Students Only</option><option value="Faculty">Faculty Only</option></select><select name="department" class="w-full p-3 border rounded-xl mt-2"><option value="">All Departments (or select one)</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH ANNOUNCEMENT</button></form>`);
 
 // === FORM SUBMISSION HANDLERS ===
 async function submitLeave(e) {
     e.preventDefault();
     await postData('/leaves', Object.fromEntries(new FormData(e.target)), { userId: currentUser.id, department: currentUser.department });
-    closeModal(); loadContent('leaves'); showToast('Leave application submitted');
+    closeModal(); 
+    // Wait slightly to ensure post is done before reloading
+    setTimeout(() => loadContent('leaves'), 100); 
+    showToast('Leave application submitted');
 }
 async function submitAttendance(e) {
     e.preventDefault();
@@ -855,28 +1051,165 @@ async function submitCreateAssign(e) {
     const fd = new FormData(e.target);
     fd.append('facultyId', currentUser.id); fd.append('facultyName', currentUser.name); fd.append('department', currentUser.department);
     await fetch(API_BASE+'/assignments', {method:'POST', body:fd});
-    closeModal(); loadContent('fac-assignments'); showToast('Assignment created');
+    closeModal(); 
+    setTimeout(() => loadContent('fac-assignments'), 100); 
+    showToast('Assignment created');
 }
 async function submitWork(e, id) {
     e.preventDefault();
     const fd = new FormData(e.target);
     fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
     await fetch(API_BASE+`/assignments/${id}/submit`, {method:'POST', body:fd});
-    closeModal(); loadContent('assignments'); showToast('Work submitted successfully!');
+    closeModal(); 
+    setTimeout(() => loadContent('assignments'), 100); 
+    showToast('Work submitted successfully!');
 }
 async function updateLeaveStatus(id, status) {
     await postData(`/leaves/${id}/action`, {status});
-    loadContent('fac-leaves'); showToast(`Leave ${status.toLowerCase()}`);
+    setTimeout(() => loadContent('fac-leaves'), 100); 
+    showToast(`Leave ${status.toLowerCase()}`);
 }
 async function submitPlacement(e) {
     e.preventDefault();
     await postData('/placements', Object.fromEntries(new FormData(e.target)));
-    closeModal(); loadContent('placements'); showToast('Placement drive published');
+    closeModal(); 
+    setTimeout(() => loadContent('placements'), 100); 
+    showToast('Placement drive published');
 }
+async function submitAnnouncement(e) {
+    e.preventDefault();
+    await postData('/announcements', Object.fromEntries(new FormData(e.target)));
+    closeModal();
+    setTimeout(() => loadContent('admin-announcements'), 100);
+    showToast('Announcement posted');
+}
+
 
 async function postData(url, data, extra={}) {
     await fetch(API_BASE+url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, ...extra}) });
 }
+
+// === CHATBOT LOGIC ===
+
+// Helper to add message to the chat history UI
+function addMessageToChat(text, isUser, sources = []) {
+    const historyDiv = document.getElementById('chat-history');
+    const messageWrapper = document.createElement('div');
+    messageWrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+    
+    let messageContent = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    let finalHtml = '';
+    if (isUser) {
+        finalHtml = `<div class="p-3 max-w-[80%] rounded-xl shadow-sm chat-bubble bg-green-500 text-white rounded-br-none">${messageContent}</div>`;
+    } else {
+        let sourcesHtml = '';
+        if (sources.length > 0) {
+            sourcesHtml = sources.map((s, i) => 
+                `<a href="${s.uri}" target="_blank" class="text-xs text-green-700 hover:underline block mt-1 transition">Source ${i + 1}: ${s.title}</a>`
+            ).join('');
+            
+            finalHtml = `<div class="p-3 max-w-[80%] rounded-xl shadow-sm chat-bubble bg-gray-200 text-gray-800 rounded-bl-none">
+                            ${messageContent}
+                            <div class="mt-2 pt-2 border-t border-gray-300 text-xs">
+                                <p class="font-semibold text-gray-600 mb-1">Grounding Sources:</p>
+                                ${sourcesHtml}
+                            </div>
+                         </div>`;
+        } else {
+            finalHtml = `<div class="p-3 max-w-[80%] rounded-xl shadow-sm chat-bubble bg-gray-200 text-gray-800 rounded-bl-none">${messageContent}</div>`;
+        }
+    }
+
+    messageWrapper.innerHTML = finalHtml;
+    historyDiv.appendChild(messageWrapper);
+    historyDiv.scrollTop = historyDiv.scrollHeight;
+}
+
+// Helper for exponential backoff
+async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) {
+                return response;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        } catch (error) {
+            if (i < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; 
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
+// Calls the Gemini API with search grounding
+async function getGeminiResponse(userQuery) {
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${API_KEY}`;
+    
+    const systemInstruction = "You are Tula's AI Portal Assistant, a helpful and professional helper for students, faculty, and administration at Tula's Institute. Answer questions concisely and focus on providing grounded, factual information.";
+
+    const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        tools: [{ "google_search": {} }],
+        systemInstruction: {
+            parts: [{ text: systemInstruction }]
+        },
+    };
+
+    const options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    };
+
+    try {
+        const response = await fetchWithBackoff(apiUrl, options);
+        const result = await response.json();
+        
+        const candidate = result.candidates?.[0];
+        const text = candidate?.content?.parts?.[0]?.text;
+
+        if (text) {
+            let sources = [];
+            const groundingMetadata = candidate.groundingMetadata;
+            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                sources = groundingMetadata.groundingAttributions
+                    .map(attribution => ({
+                        uri: attribution.web?.uri,
+                        title: attribution.web?.title,
+                    }))
+                    .filter(source => source.uri && source.title);
+            }
+            return { text, sources };
+        } else if (result.error) {
+            return { text: `AI Error: ${result.error.message}`, sources: [] };
+        } else {
+            return { text: "Sorry, I couldn't process that request.", sources: [] };
+        }
+
+    } catch (error) {
+        return { text: `A connection error occurred. Please check your network.`, sources: [] };
+    }
+}
+
+// Chatbot button toggle function
+window.toggleChatbot = () => {
+    const modal = document.getElementById('chatbot-modal');
+    const button = document.getElementById('chatbot-open-btn');
+    const isHidden = modal.classList.contains('hidden');
+
+    modal.classList.toggle('hidden', !isHidden);
+    button.innerHTML = isHidden ? '❌' : '🤖';
+    
+    if (isHidden) {
+        document.getElementById('chat-history').scrollTop = document.getElementById('chat-history').scrollHeight;
+    }
+};
+
 </script>
 </body>
 </html>
