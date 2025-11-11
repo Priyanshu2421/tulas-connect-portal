@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const nodemailer = require('nodemailer'); // <-- NEW: Import Nodemailer
+const nodemailer = require('nodemailer'); 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,11 +13,15 @@ const DB_PATH = path.join(__dirname, 'db.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
+// --- CONSTANTS ---
+const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // <-- Enforced Institutional Domain
+
 // --- IN-MEMORY OTP STORE ---
 // Stores OTPs: { userId: { otp: '123456', expires: timestamp } }
 const otpStore = {}; 
 
 // --- NODEMAILER CONFIGURATION (CRUCIAL: REPLACE WITH YOUR CREDENTIALS) ---
+// Note: This needs to be configured with your SMTP provider credentials for emails to send.
 const transporter = nodemailer.createTransport({
     host: 'smtp.example.com', // e.g., 'smtp.gmail.com'
     port: 587,
@@ -74,14 +78,22 @@ const upload = multer({
 // API ROUTES
 // =========================================
 
-// --- NEW OTP GENERATION ENDPOINT ---
+// --- OTP GENERATION ENDPOINT (With Domain Check) ---
 app.post('/generate-otp', async (req, res) => {
     const { userId } = req.body;
     const db = readDB();
     const user = db.users[userId];
 
     if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
-    if (!user.email) return res.status(400).json({ success: false, message: "User email is not registered for OTP." });
+    
+    // --- DOMAIN CHECK START: Server-side validation ---
+    if (!user.email || !user.email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: `OTP delivery requires a valid institutional email (${REQUIRED_EMAIL_DOMAIN}).` 
+        });
+    }
+    // --- DOMAIN CHECK END ---
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     const expirationTime = Date.now() + 5 * 60 * 1000; // 5 minutes
@@ -103,9 +115,9 @@ app.post('/generate-otp', async (req, res) => {
 });
 
 
-// --- AUTH ---
+// --- AUTH (Checks OTP) ---
 app.post('/login', (req, res) => {
-    const { userId, password, role, department, otp } = req.body; // <-- NEW: Receive OTP
+    const { userId, password, role, department, otp } = req.body; 
     const db = readDB();
     const user = db.users[userId];
     
@@ -115,7 +127,7 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ success: false, message: "Invalid or expired OTP." });
     }
     
-    // Clear OTP after successful check (even if login fails later, for security)
+    // Clear OTP after successful check
     delete otpStore[userId]; 
 
     // 2. Original Login Check (password, role, department)
@@ -129,11 +141,22 @@ app.post('/login', (req, res) => {
     res.json({ success: true, user: safeUser });
 });
 
+// --- SIGNUP (With Domain Check) ---
 app.post('/signup', (req, res) => {
     const { userId, pass, name, role, department, email, course, phone } = req.body;
     const db = readDB();
+
+    // --- DOMAIN CHECK START: Server-side validation during signup ---
+    if (!email || !email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
+        return res.status(400).json({ 
+            success: false, 
+            message: `Registration requires an email ending in ${REQUIRED_EMAIL_DOMAIN}.` 
+        });
+    }
+    // --- DOMAIN CHECK END ---
+
     if (db.users[userId]) return res.status(409).json({ success: false, message: "User ID exists." });
-    // Note: The signup is kept without OTP as it typically requires Admin/HOD approval later.
+    
     db.users[userId] = { id: userId, pass, name, role, department, email, course: course || "", phone: phone || "", photoUrl: "" };
     writeDB(db);
     res.json({ success: true, message: "Account created." });

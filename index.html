@@ -124,25 +124,42 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
                     <input type="text" id="login-id" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
                 </div>
-                <div class="relative">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
-                    <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600 transition">👁️</button>
+
+                <!-- OTP & SUBMIT BUTTON (STAGE 1) -->
+                <div id="otp-send-wrapper" class="space-y-4">
+                    <button type="button" onclick="sendOtpHandler()" id="send-otp-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SEND LOGIN OTP</button>
                 </div>
 
-                <!-- Login Captcha Section -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
-                    <div class="flex items-center space-x-4">
-                        <canvas id="login-captcha-canvas" width="150" height="50" onclick="generateLoginCaptcha()"></canvas>
-                        <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
-                            🔄
-                        </button>
+                <!-- VERIFICATION FIELDS (STAGE 2) -->
+                <div id="otp-verification-wrapper" class="hidden space-y-4">
+                    
+                    <div class="relative">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
+                        <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600 transition">👁️</button>
                     </div>
-                    <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                </div>
 
-                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">OTP (Check your email)</label>
+                        <input type="text" id="login-otp-input" required maxlength="6" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="6-digit code">
+                    </div>
+
+                    <!-- Login Captcha Section -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
+                        <div class="flex items-center space-x-4">
+                            <canvas id="login-captcha-canvas" width="150" height="50" onclick="generateLoginCaptcha()"></canvas>
+                            <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
+                                🔄
+                            </button>
+                        </div>
+                        <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
+                    </div>
+
+                    <button type="submit" id="secure-login-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
+                    
+                    <button type="button" onclick="resetLoginStage()" class="w-full text-sm text-gray-500 hover:text-red-500 transition mt-2">← Change ID or Resend OTP</button>
+                </div>
             </form>
             <div class="mt-6 text-center text-sm text-gray-600">
                 New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
@@ -166,7 +183,7 @@
 
                 <!-- Common Fields -->
                 <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
+                <input type="email" name="email" placeholder="Email Address (Must use @tulas.edu.in)" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
 
                 <!-- Student Specific Fields -->
@@ -293,12 +310,14 @@
 
 <script>
 // === CONFIGURATION & DATA ===
-const API_BASE = ''; // Leave empty for Render relative paths
+const API_BASE = ''; 
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
-let currentLoginCaptcha = ''; // New state for login captcha
+let currentLoginCaptcha = ''; 
+let isOtpSent = false; 
+const REQUIRED_DOMAIN = '@tulas.edu.in'; // <-- NEW: Enforced domain
 
-// Course Data Mapping
+// Course Data Mapping (UNCHANGED)
 const DEPT_DATA = {
     "Department of Engineering": {
         branches: [
@@ -320,20 +339,23 @@ const DEPT_DATA = {
 
 // --- CHATBOT CONFIG ---
 const CHAT_MODEL = 'gemini-2.5-flash-preview-09-2025';
-const API_KEY = ""; // Kept empty as per instruction
+const API_KEY = ""; 
 
 // === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
     initAuthDropdowns();
-    generateCaptcha(); // Initialize Signup Captcha
-    generateLoginCaptcha(); // Initialize Login Captcha
+    generateCaptcha(); 
+    generateLoginCaptcha(); 
     if (currentUser) showDashboard(); else updateAuthUI();
 
-    // Login Handler
+    // Login Handler: Only handles final submission after OTP is sent
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
 
-        // Captcha Verification for Login
+        if (!isOtpSent) { 
+            return; 
+        }
+
         const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
         if (loginCaptchaInput !== currentLoginCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
@@ -350,15 +372,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 dept = document.getElementById('login-eng-branch').value;
             }
         }
+        
         await handleAuth('/login', {
             userId: document.getElementById('login-id').value.trim(),
             password: document.getElementById('login-pass').value,
             role: role === 'Department Login' ? 'HOD' : role,
-            department: dept
+            department: dept,
+            otp: document.getElementById('login-otp-input').value 
         });
     };
 
-    // Signup Handler
+    // Signup Handler: ADDED DOMAIN CHECK HERE
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
@@ -372,7 +396,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(e.target);
         const payload = Object.fromEntries(formData);
         
-        // If faculty, use email as userId since they don't enter a Roll No.
+        // --- DOMAIN CHECK START ---
+        if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
+            showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
+            return;
+        }
+        // --- DOMAIN CHECK END ---
+
         if (payload.role === 'Faculty') {
             payload.userId = payload.email;
         }
@@ -380,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await handleAuth('/signup', payload, true);
     };
 
-    // --- CHATBOT FORM LISTENER ---
+    // --- CHATBOT FORM LISTENER (UNCHANGED) ---
     const chatForm = document.getElementById('chat-form');
     if (chatForm) {
         chatForm.onsubmit = async (e) => {
@@ -392,31 +422,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!userQuery) return;
 
-            // 1. Display user message
             addMessageToChat(userQuery, true);
             chatInput.value = '';
             
-            // 2. Show loading indicator and disable input/button
             loadingIndicator.classList.remove('hidden');
             chatInput.disabled = true;
             chatSubmitBtn.disabled = true;
 
-            // 3. Get AI response
             const { text, sources } = await getGeminiResponse(userQuery);
             
-            // 4. Hide loading indicator and re-enable input/button
             loadingIndicator.classList.add('hidden');
             chatInput.disabled = false;
             chatSubmitBtn.disabled = false;
             chatInput.focus();
 
-            // 5. Display AI response
             addMessageToChat(text, false, sources);
         };
     }
 });
 
-// === AUTHENTICATION LOGIC ===
+
+// === NEW OTP HANDLERS ===
+
+function setLoginFieldsDisabled(isDisabled) {
+    document.getElementById('login-role').disabled = isDisabled;
+    document.getElementById('login-dept').disabled = isDisabled;
+    document.getElementById('login-eng-branch').disabled = isDisabled;
+    document.getElementById('login-id').disabled = isDisabled;
+}
+
+function resetLoginStage() {
+    isOtpSent = false;
+    setLoginFieldsDisabled(false);
+    document.getElementById('otp-send-wrapper').classList.remove('hidden');
+    document.getElementById('otp-verification-wrapper').classList.add('hidden');
+    document.getElementById('login-otp-input').value = '';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-captcha-input').value = '';
+    showToast('Login reset. Please re-enter ID and send OTP.', false);
+}
+
+window.sendOtpHandler = async () => {
+    const userId = document.getElementById('login-id').value.trim();
+    if (!userId) {
+        showToast('Please enter your User ID first.', true);
+        return;
+    }
+    
+    // Disable inputs while sending OTP
+    setLoginFieldsDisabled(true);
+    document.getElementById('send-otp-btn').disabled = true;
+    document.getElementById('send-otp-btn').textContent = 'Sending...';
+
+    try {
+        const res = await fetch(API_BASE + '/generate-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            isOtpSent = true;
+            document.getElementById('otp-send-wrapper').classList.add('hidden');
+            document.getElementById('otp-verification-wrapper').classList.remove('hidden');
+            showToast(data.message || 'OTP sent successfully! Check your email.', false);
+        } else {
+            showToast(data.message || 'Failed to send OTP.', true);
+            setLoginFieldsDisabled(false);
+        }
+    } catch (err) {
+        showToast('Connection error during OTP request.', true);
+        setLoginFieldsDisabled(false);
+    } finally {
+        document.getElementById('send-otp-btn').disabled = false;
+        document.getElementById('send-otp-btn').textContent = 'SEND LOGIN OTP';
+    }
+};
+
+
+// === AUTHENTICATION LOGIC (Modified to call resetLoginStage on failure) ===
 function initAuthDropdowns() {
     const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
     const depts = Object.keys(DEPT_DATA);
@@ -486,7 +571,7 @@ function updateSignupUI() {
     }
 }
 
-// === CAPTCHA GENERATORS ===
+// === CAPTCHA GENERATORS (UNCHANGED) ===
 function generateCaptcha(canvasId = 'captcha-canvas', setState) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -523,7 +608,6 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
         ctx.restore();
     }
     
-    // Set the global state variable
     if (canvasId === 'captcha-canvas') currentCaptcha = captchaText;
     else if (canvasId === 'login-captcha-canvas') currentLoginCaptcha = captchaText;
 }
@@ -545,7 +629,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
                 showToast('Registration successful! Please login.', false);
                 toggleAuthScreen('login');
                 document.getElementById('signup-form').reset();
-                generateCaptcha(); // Refresh signup captcha
+                generateCaptcha();
             } else {
                 currentUser = data.user;
                 sessionStorage.setItem('user', JSON.stringify(currentUser));
@@ -555,14 +639,19 @@ async function handleAuth(endpoint, payload, isSignup = false) {
         } else {
             showToast(data.message || 'Action failed', true);
             if (isSignup) generateCaptcha();
-            else generateLoginCaptcha(); // Refresh login captcha on failure
+            else {
+                // If login fails (due to wrong OTP/Password/Captcha), reset login stage
+                resetLoginStage(); 
+                generateLoginCaptcha();
+            }
         }
     } catch (err) {
         showToast('Connection error. Please try again.', true);
+        if (!isSignup) resetLoginStage();
     }
 }
 
-// === DASHBOARD & NAVIGATION ===
+// === DASHBOARD & NAVIGATION (UNCHANGED) ===
 function showDashboard() {
     document.getElementById('auth-wrapper').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
@@ -614,24 +703,19 @@ function renderNavigation() {
         nav.appendChild(btn);
     });
 
-    // Auto-load first page
     if (nav.firstChild) nav.firstChild.click();
 }
 
 async function loadContent(pageId, activeBtn) {
-    // Update active state
     document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-800', 'text-white'));
     if (activeBtn) activeBtn.classList.add('active', 'bg-green-800', 'text-white');
     
-    // Mobile sidebar close
     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
 
     const container = document.getElementById('content-area');
-    // Wrap loader for animation consistency
     container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
 
     try {
-        // --- ROUTER ---
         switch (pageId) {
             case 'profile': await loadProfile(container); break;
             case 'timetable': await loadTimetable(container); break;
@@ -653,9 +737,7 @@ async function loadContent(pageId, activeBtn) {
     }
 }
 
-// === PAGE LOADERS ===
-
-// 1. PROFILE (RESTORED DETAILED VIEW)
+// === PAGE LOADERS (UNCHANGED) ===
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
@@ -686,8 +768,6 @@ async function loadProfile(container) {
         </div>
     `;
 }
-
-// 2. STUDENT ACADEMICS (Timetable, Attendance, Marks)
 async function loadTimetable(container) {
     const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course)}`);
     const data = await res.json();
@@ -760,7 +840,6 @@ async function loadMarks(container) {
         </div>`;
 }
 
-// 3. ASSIGNMENTS
 async function loadAssignmentsStudent(container) {
     const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course)}`);
     const data = await res.json();
@@ -790,7 +869,6 @@ async function loadAssignmentsStudent(container) {
         </div>`;
 }
 
-// 4. LEAVES (Common for Student/Faculty)
 async function loadLeavesCommon(container) {
     const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
     const data = await res.json();
@@ -817,7 +895,6 @@ async function loadLeavesCommon(container) {
         </div>`;
 }
 
-// 5. FACULTY/HOD FEATURES
 function loadFacultyAttendance(container) {
     container.innerHTML = `
         <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
@@ -888,7 +965,6 @@ async function loadFacultyLeaves(container) {
         </div>`;
 }
 
-// 6. PLACEMENTS (COMMON)
 async function loadPlacements(container) {
     let url = `${API_BASE}/placements`;
     if (currentUser.role !== 'Admin') url += `?department=${encodeURIComponent(currentUser.department)}`;
@@ -915,7 +991,6 @@ async function loadPlacements(container) {
         </div>`;
 }
 
-// 7. ADMIN FEATURES (NEW)
 async function loadAdminUsers(container) {
     const res = await fetch(`${API_BASE}/users`);
     const data = await res.json();
@@ -944,7 +1019,7 @@ async function deleteUser(userId) {
     if (confirm(`Are you sure you want to delete user ${userId}?`)) {
         await fetch(`${API_BASE}/users/${userId}`, { method: 'DELETE' });
         showToast(`User ${userId} deleted.`, false);
-        loadContent('admin-users'); // Reload the list
+        loadContent('admin-users'); 
     }
 }
 
@@ -999,7 +1074,8 @@ async function updateIdCardStatus(id, status) {
     showToast(`ID Card request ${status.toLowerCase()}`, false);
 }
 
-// === HELPER FUNCTIONS ===
+
+// === HELPER FUNCTIONS (Modified toggleAuthScreen) ===
 function detailItem(label, value) {
     return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
 }
@@ -1008,9 +1084,10 @@ function toggleAuthScreen(screen) {
     document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); 
     document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
     if (screen === 'signup') {
-        generateCaptcha(); // Generate captcha when signup screen is shown
+        generateCaptcha(); 
     } else if (screen === 'login') {
-        generateLoginCaptcha(); // Generate captcha when login screen is shown
+        resetLoginStage(); 
+        generateLoginCaptcha(); 
     }
 }
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
@@ -1024,19 +1101,18 @@ function showToast(msg, isErr=false) {
     setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
 }
 
-// === MODAL HANDLERS ===
+// === MODAL HANDLERS (UNCHANGED) ===
 window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply for Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl"><input type="date" name="toDate" required class="p-3 border rounded-xl"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32"></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SUBMIT APPLICATION</button></form>`);
 window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create Assignment</h3><form onsubmit="submitCreateAssign(event)" class="space-y-4"><input name="title" placeholder="Assignment Title" required class="w-full p-3 border rounded-xl"><textarea name="description" placeholder="Instructions..." class="w-full p-3 border rounded-xl h-24"></textarea><input name="course" placeholder="Target Course (e.g. BCA)" required class="w-full p-3 border rounded-xl"><div class="grid grid-cols-2 gap-4"><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Due Date</label><input type="date" name="dueDate" required class="p-3 border rounded-xl"></div><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Attachment (Optional)</label><input type="file" name="assignmentFile" class="p-2 border rounded-xl bg-gray-50"></div></div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">POST ASSIGNMENT</button></form>`);
 window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Assignment</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><div class="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-4">Ensure your file is in PDF or DOCX format.</div><input type="file" name="submissionFile" required class="w-full p-3 border rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold transition">UPLOAD & TURN IN</button></form>`);
 window.openPostPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Placement Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company Name" required class="w-full p-3 border rounded-xl"><input name="jobTitle" placeholder="Job Role/Title" required class="w-full p-3 border rounded-xl"><textarea name="jobDescription" placeholder="Job Description & Requirements..." required class="w-full p-3 border rounded-xl h-32"></textarea><select name="department" required class="w-full p-3 border rounded-xl"><option value="">Target Department</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><input name="course" placeholder="Target Course (e.g. B.Tech CSE)" required class="w-full p-3 border rounded-xl"><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH DRIVE</button></form>`);
 window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create New Announcement</h3><form onsubmit="submitAnnouncement(event)" class="space-y-4"><input name="title" placeholder="Title" required class="w-full p-3 border rounded-xl"><textarea name="body" placeholder="Announcement Details..." required class="w-full p-3 border rounded-xl h-24"></textarea><select name="target" required class="w-full p-3 border rounded-xl"><option value="All">All Users</option><option value="Student">Students Only</option><option value="Faculty">Faculty Only</option></select><select name="department" class="w-full p-3 border rounded-xl mt-2"><option value="">All Departments (or select one)</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH ANNOUNCEMENT</button></form>`);
 
-// === FORM SUBMISSION HANDLERS ===
+// === FORM SUBMISSION HANDLERS (UNCHANGED) ===
 async function submitLeave(e) {
     e.preventDefault();
     await postData('/leaves', Object.fromEntries(new FormData(e.target)), { userId: currentUser.id, department: currentUser.department });
     closeModal(); 
-    // Wait slightly to ensure post is done before reloading
     setTimeout(() => loadContent('leaves'), 100); 
     showToast('Leave application submitted');
 }
@@ -1089,9 +1165,8 @@ async function postData(url, data, extra={}) {
     await fetch(API_BASE+url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, ...extra}) });
 }
 
-// === CHATBOT LOGIC ===
+// === CHATBOT LOGIC (UNCHANGED) ===
 
-// Helper to add message to the chat history UI
 function addMessageToChat(text, isUser, sources = []) {
     const historyDiv = document.getElementById('chat-history');
     const messageWrapper = document.createElement('div');
@@ -1126,7 +1201,6 @@ function addMessageToChat(text, isUser, sources = []) {
     historyDiv.scrollTop = historyDiv.scrollHeight;
 }
 
-// Helper for exponential backoff
 async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -1146,7 +1220,6 @@ async function fetchWithBackoff(url, options, retries = 3, delay = 1000) {
     }
 }
 
-// Calls the Gemini API with search grounding
 async function getGeminiResponse(userQuery) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${API_KEY}`;
     
@@ -1196,7 +1269,6 @@ async function getGeminiResponse(userQuery) {
     }
 }
 
-// Chatbot button toggle function
 window.toggleChatbot = () => {
     const modal = document.getElementById('chatbot-modal');
     const button = document.getElementById('chatbot-open-btn');
