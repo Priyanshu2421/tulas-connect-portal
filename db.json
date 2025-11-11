@@ -1,134 +1,25 @@
 {
   "users": {
-    "admin.user": {
-      "id": "admin.user",
-      "pass": "password",
-      "name": "Admin User",
+    "admin.tulas.in": {
+      "id": "admin.tulas.in",
+      "pass": "admin123",
+      "name": "Institute Administrator",
       "role": "Admin",
       "department": "Administration",
-      "email": "admin@tulas.com",
+      "email": "admin@tulas.edu.in",
       "phone": "1234567890",
       "bloodGroup": "O+",
       "address": "Tula's Institute, Dehradun",
       "dob": "1990-01-01",
       "photoUrl": ""
-    },
-    "2023012039": {
-      "id": "2023012039",
-      "pass": "password",
-      "name": "Priyanshu Bisht",
-      "role": "Student",
-      "department": "Department of Computer Applications",
-      "course": "Bachelor of Computer Applications (BCA)",
-      "email": "priyanshu@example.com",
-      "phone": "9876543210",
-      "bloodGroup": "B+",
-      "address": "123 Student Lane, Dehradun",
-      "dob": "2004-05-10",
-      "photoUrl": ""
-    },
-    "siddharth.tulas.in": {
-      "id": "siddharth.tulas.in",
-      "pass": "password",
-      "name": "Siddharth Sharma",
-      "role": "Faculty",
-      "department": "Department of Computer Applications",
-      "email": "siddharth.sharma@tulas.com",
-      "phone": "8765432109",
-      "bloodGroup": "A+",
-      "address": "456 Faculty Quarters, Dehradun",
-      "dob": "1985-11-20",
-      "photoUrl": ""
-    },
-    "hod.ca.tulas.in": {
-      "id": "hod.ca.tulas.in",
-      "pass": "password",
-      "name": "HOD Computer Applications",
-      "role": "HOD",
-      "department": "Department of Computer Applications",
-      "email": "hod.ca@tulas.com",
-      "phone": "7654321098",
-      "bloodGroup": "AB+",
-      "address": "789 HOD Residence, Dehradun",
-      "dob": "1978-03-15",
-      "photoUrl": ""
     }
   },
-  "placements": [
-    {
-      "id": 1728345600000,
-      "companyName": "Tech Solutions Inc.",
-      "jobTitle": "Junior Software Developer",
-      "jobDescription": "We are looking for a motivated Junior Software Developer to join our team... (details)",
-      "department": "Department of Computer Applications",
-      "course": "Bachelor of Computer Applications (BCA)",
-      "postedOn": 1728345600000,
-      "applications": []
-    }
-  ],
-  "attendance": {
-    "2023012039": {
-      "Data Structures": { "present": 28, "total": 30 },
-      "Algorithms": { "present": 25, "total": 30 },
-      "Database Management": { "present": 29, "total": 30 },
-      "Operating Systems": { "present": 23, "total": 30 }
-    }
-  },
-  "marks": {
-    "2023012039": [
-      { "subject": "Data Structures", "exam": "Sessional 1", "marks": 85, "total": 100 },
-      { "subject": "Algorithms", "exam": "Sessional 1", "marks": 78, "total": 100 },
-      { "subject": "Database Management", "exam": "Sessional 1", "marks": 92, "total": 100 },
-      { "subject": "Operating Systems", "exam": "Sessional 1", "marks": 81, "total": 100 }
-    ]
-  },
-  "timetables": {
-    "Bachelor of Computer Applications (BCA)": {
-      "Monday": [
-        { "time": "09:00 - 10:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" },
-        { "time": "10:00 - 11:00", "subject": "Algorithms", "faculty": "Neha Gupta" }
-      ],
-      "Tuesday": [
-        { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" },
-        { "time": "11:00 - 12:00", "subject": "Data Structures", "faculty": "Siddharth Sharma" }
-      ],
-      "Wednesday": [
-        { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" }
-      ],
-      "Thursday": [
-        { "time": "09:00 - 10:00", "subject": "Database Management", "faculty": "Rajesh Kumar" }
-      ],
-      "Friday": [
-        { "time": "10:00 - 11:00", "subject": "Operating Systems", "faculty": "Anjali Verma" }
-      ]
-    }
-  },
-  "assignments": {
-    "Department of Computer Applications": [
-      {
-        "id": 1,
-        "title": "Java Polymorphism Lab",
-        "description": "Complete the lab manual exercises for polymorphism.",
-        "filePath": null,
-        "dueDate": "2025-11-20T23:59:00.000Z",
-        "course": "Bachelor of Computer Applications (BCA)",
-        "facultyId": "siddharth.tulas.in",
-        "facultyName": "Siddharth Sharma",
-        "submissions": []
-      }
-    ]
-  },
-  "leaveRequests": [
-    {
-      "id": 1,
-      "userId": "2023012039",
-      "department": "Department of Computer Applications",
-      "type": "Sick Leave",
-      "fromDate": "2025-11-05",
-      "toDate": "2025-11-06",
-      "reason": "Fever and cold.",
-      "status": "Approved",
-      "appliedOn": "2025-11-05"
-    }
-  ]
+  "placements": [],
+  "attendance": {},
+  "marks": {},
+  "timetables": {},
+  "assignments": {},
+  "leaveRequests": [],
+  "announcements": [],
+  "idCardRequests": []
 }

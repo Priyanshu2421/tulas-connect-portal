@@ -14,21 +14,22 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 // --- CONSTANTS ---
-const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // <-- Enforced Institutional Domain
+const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // Enforced Institutional Domain
 
 // --- IN-MEMORY OTP STORE ---
 // Stores OTPs: { userId: { otp: '123456', expires: timestamp } }
 const otpStore = {}; 
 
 // --- NODEMAILER CONFIGURATION (CRUCIAL: REPLACE WITH YOUR CREDENTIALS) ---
-// Note: This needs to be configured with your SMTP provider credentials for emails to send.
+// **ACTION REQUIRED:** Replace 'smtp.example.com', 'your_email@example.com' and 'your_email_password' 
+// with your actual SMTP server details (e.g., Gmail App Password).
 const transporter = nodemailer.createTransport({
-    host: 'smtp.example.com', // e.g., 'smtp.gmail.com'
+    host: 'smtp.example.com', // e.g., 'smtp.gmail.com' for Gmail
     port: 587,
-    secure: false, 
+    secure: false, // Use true for port 465, false for 587 (TLS)
     auth: {
-        user: 'your_email@example.com', // Your email address
-        pass: 'your_email_password'  // Your password or app-specific password
+        user: 'your_email@example.com', // Your actual sending email address
+        pass: 'your_email_password'  // Your actual password or App Password
     }
 });
 
@@ -86,14 +87,13 @@ app.post('/generate-otp', async (req, res) => {
 
     if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
     
-    // --- DOMAIN CHECK START: Server-side validation ---
+    // Domain Check: Server-side validation
     if (!user.email || !user.email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
         return res.status(400).json({ 
             success: false, 
             message: `OTP delivery requires a valid institutional email (${REQUIRED_EMAIL_DOMAIN}).` 
         });
     }
-    // --- DOMAIN CHECK END ---
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     const expirationTime = Date.now() + 5 * 60 * 1000; // 5 minutes
@@ -102,7 +102,7 @@ app.post('/generate-otp', async (req, res) => {
 
     try {
         await transporter.sendMail({
-            from: '"Tula\'s Connect ERP" <your_email@example.com>', // sender address
+            from: '"Tula\'s Connect ERP" <your_email@example.com>', // sender address (use your configured user email)
             to: user.email, // list of receivers
             subject: "Your Tula's Connect ERP Login OTP", // Subject line
             html: `<b>Your OTP for login is: ${otp}.</b> This code is valid for 5 minutes. Do not share it with anyone.`
@@ -110,7 +110,8 @@ app.post('/generate-otp', async (req, res) => {
         res.json({ success: true, message: `OTP sent to ${user.email}.` });
     } catch (error) {
         console.error("OTP Email Error:", error);
-        res.status(500).json({ success: false, message: "Failed to send OTP email. Check server logs." });
+        // This is the error seen on the frontend:
+        res.status(500).json({ success: false, message: "Failed to send OTP email. Check server logs." }); 
     }
 });
 
@@ -146,20 +147,19 @@ app.post('/signup', (req, res) => {
     const { userId, pass, name, role, department, email, course, phone } = req.body;
     const db = readDB();
 
-    // --- DOMAIN CHECK START: Server-side validation during signup ---
+    // Domain Check: Server-side validation during signup
     if (!email || !email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
         return res.status(400).json({ 
             success: false, 
             message: `Registration requires an email ending in ${REQUIRED_EMAIL_DOMAIN}.` 
         });
     }
-    // --- DOMAIN CHECK END ---
 
     if (db.users[userId]) return res.status(409).json({ success: false, message: "User ID exists." });
     
     db.users[userId] = { id: userId, pass, name, role, department, email, course: course || "", phone: phone || "", photoUrl: "" };
     writeDB(db);
-    res.json({ success: true, message: "Account created." });
+    res.json({ success: true, message: "Account created" });
 });
 
 // --- GENERAL ---
