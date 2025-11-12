@@ -937,10 +937,7 @@ async function loadAdminUsers(container) {
     const res = await fetch(`${API_BASE}/users`);
     const data = await res.json();
     container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Manage Users (${data.users.length} Total)</h2>
-            <button onclick="openCreateHodModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">+ Create HOD Account</button>
-        </div>
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Manage Users (${data.users.length} Total)</h2>
         <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-gray-700">
@@ -1064,7 +1061,7 @@ async function loadAdminSubjects(container) {
      container.innerHTML = `<div class="bg-white p-6 rounded-lg shadow">
          <h2 class="text-2xl font-bold mb-6">Assign Subjects & Teachers</h2>
          <p class="text-gray-600">Here, Admin/HOD assigns subjects to a faculty member and links them to one or more batches (e.g., CS101 taught by F101 to Batch BTECH-CSE-Y1-A).</p>
-         <button onclick="openAssignSubjectModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4 transition">Assign Subject</button>
+         <button onclick="openSubjectAssignmentModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4 transition">Assign Subject</button>
      </div>`;
 }
 
