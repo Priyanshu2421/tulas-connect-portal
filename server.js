@@ -361,7 +361,6 @@ app.post('/attendance/mark', (req, res) => {
 // --- OTHER FEATURE ROUTES (RETAINED/UNCHANGED) ---
 app.get('/profile/:userId', (req, res) => {
     const user = readDB().users[req.params.userId];
-    // This returns 404/success: false if user is missing, which the frontend handles gracefully now.
     if (!user) return res.status(404).json({ success: false });
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
@@ -387,6 +386,16 @@ app.get('/users/by-role-and-dept', (req, res) => {
 
     res.json({ success: true, students, faculty });
 });
+
+// NEW ROUTE: Fetch ALL Faculty (Used for cross-department subject assignment modal)
+app.get('/users/all-faculty', (req, res) => {
+    const db = readDB();
+    const faculty = Object.values(db.users)
+        .filter(u => u.role === 'Faculty' || u.role === 'HOD')
+        .map(({ pass, ...user }) => user);
+    res.json({ success: true, faculty });
+});
+
 
 // NEW ROUTE: Fetch faculty assignments and student list for attendance sheet
 app.get('/faculty/attendance/data', (req, res) => {
@@ -471,7 +480,38 @@ app.delete('/users/:userId', (req, res) => {
         res.status(404).json({ success: false, message: "User not found in active database." });
     }
 });
-// End of User Deletion Route Fix
+
+// NEW ROUTE: Delete a Batch (Admin/HOD permission implied)
+app.delete('/batches/:batchId', (req, res) => {
+    const db = readDB();
+    const { batchId } = req.params;
+
+    if (!db.batches[batchId]) {
+        return res.status(404).json({ success: false, message: "Batch not found." });
+    }
+
+    // 1. Remove the batch itself
+    delete db.batches[batchId];
+
+    // 2. Remove batchId reference from affected subjects
+    Object.values(db.subjects).forEach(subject => {
+        const batchIndex = subject.batchIds.indexOf(batchId);
+        if (batchIndex > -1) {
+            subject.batchIds.splice(batchIndex, 1);
+        }
+    });
+
+    // 3. Remove batchId reference from affected students
+    Object.values(db.users).forEach(user => {
+        if (user.batchId === batchId) {
+            user.batchId = null;
+        }
+    });
+
+    writeDB(db);
+    res.json({ success: true, message: `Batch ${batchId} deleted successfully.` });
+});
+
 
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
