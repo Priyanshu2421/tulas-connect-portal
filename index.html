@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === AUTHENTICATION & UI HELPERS (UNCHANGED) ===
+// === AUTHENTICATION & UI HELPERS (RETAINED) ===
 
 function initAuthDropdowns() {
     const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
@@ -1104,7 +1104,7 @@ async function submitAttendance(e) {
 }
 
 
-// --- 3. Admin Approval (RETAINED) ---
+// --- 3. Admin Approval (UPDATED for Faculty ID Assignment) ---
 
 async function showAdminSignupRequests(container) {
     container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
@@ -1124,7 +1124,7 @@ async function showAdminSignupRequests(container) {
                         <p class="text-xs text-gray-500 mt-2">Email: ${r.email} | Phone: ${r.phone}</p>
                         <div class="flex space-x-3 mt-4 justify-end">
                             <button onclick="manageSignupRequest(${r.id}, 'reject')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
-                            <button onclick="manageSignupRequest(${r.id}, 'approve')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
+                            <button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
                         </div>
                     </div>
                 `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending sign-up requests.</p>'}
@@ -1135,17 +1135,51 @@ async function showAdminSignupRequests(container) {
     }
 }
 
-window.manageSignupRequest = async (id, action) => {
+// NEW HANDLER: Captures Faculty ID before calling approval
+window.handleApprovalFlow = (id, role, currentId, email) => {
+    if (role === 'Student') {
+        // Students use their registered userId/Roll No. directly
+        manageSignupRequest(id, 'approve', currentId);
+        return;
+    }
+    
+    // Logic for Faculty/HOD: Requires Admin to assign a new ID
+    showModal(`
+        <h3 class="text-xl font-bold mb-4">Assign Official ID (${role})</h3>
+        <p class="text-gray-600">Enter the official ID for: <strong>${email}</strong></p>
+        <form onsubmit="event.preventDefault(); submitNewUserId('${id}', this.newUserId.value)" class="space-y-4 mt-4">
+            <input type="text" name="newUserId" placeholder="Enter official ID (e.g., F201 or HOD05)" required class="w-full p-3 border rounded-xl" value="${role === 'Faculty' ? 'F' : 'HOD'}">
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CONFIRM ID & APPROVE</button>
+        </form>
+    `);
+};
+
+// NEW HANDLER: Submits the final approval with the provided new ID
+window.submitNewUserId = async (id, newUserId) => {
+    closeModal(); // Close the intermediate modal
+    
+    // Call the core handler with the new ID as the optional parameter
+    await manageSignupRequest(id, 'approve', newUserId);
+};
+
+
+// CORE HANDLER: Now accepts an optional newUserId
+window.manageSignupRequest = async (id, action, newUserId = null) => {
     const endpoint = `/signup-requests/${id}/${action}`;
     const actionMsg = action === 'approve' ? 'Approving...' : 'Rejecting...';
     
     showToast(actionMsg, false);
+    
+    // Construct payload only if newUserId is provided (for faculty approval)
+    const payload = newUserId ? { newUserId } : {};
 
     try {
-        const res = await postData(endpoint, {});
+        // Use postData which sends JSON payload
+        const res = await postData(endpoint, payload);
         
         if (res.success) {
             showToast(res.message, false);
+            // Refresh the requests list
             await showAdminSignupRequests(document.getElementById('content-area')); 
         } else {
             showToast(res.message, true);

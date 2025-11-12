@@ -91,7 +91,6 @@ const readDB = () => {
     }
     catch (e) { 
         console.error("DB Read Error/Corruption:", e);
-        // Fallback to initial mock data if read fails during runtime
         return getInitialMockDB(); 
     }
 };
@@ -272,7 +271,7 @@ app.get('/signup-requests/pending', (req, res) => {
     res.json({ success: true, requests: pending });
 });
 
-// FIX IS HERE: Approve route now accepts newUserId for faculty
+// FIX: Approve route now correctly handles newUserId for faculty assignment
 app.post('/signup-requests/:id/approve', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -281,7 +280,7 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
 
     const request = db.signupRequests[index];
-    // Determine the final ID. If newUserId is provided (for Faculty), use it, otherwise use the registered userId (for Student).
+    // Use newUserId from the request body (sent by the Admin modal) if available, otherwise use the registered ID (for Students).
     const finalUserId = req.body.newUserId || request.userId; 
     
     // Check if the final ID is already taken by an active user
@@ -294,12 +293,8 @@ app.post('/signup-requests/:id/approve', (req, res) => {
         ...request, 
         id: finalUserId, // Set the final, verified ID
         userId: finalUserId, // Also update the internal userId property
-        batchId: null, 
+        batchId: null, // Initialized to null, waiting for batch enrollment
     };
-    // Ensure the old (potentially incorrect) key doesn't overwrite if the new ID matches the old request key
-    if (finalUserId !== request.userId && db.users[request.userId]) {
-         delete db.users[request.userId]; 
-    }
     
     // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
