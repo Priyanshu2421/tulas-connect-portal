@@ -37,38 +37,44 @@ const readDB = () => {
     try { 
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
-        // Initialize new properties
+        // Ensure new properties are initialized
         if (!data.signupRequests) data.signupRequests = [];
-        if (!data.batches) data.batches = {}; // New: { batchId: { name, department, students: [], assignments: [] } }
-        if (!data.subjects) data.subjects = {}; // New: { courseCode: { name, department, teacherId, batchIds: [] } }
+        if (!data.batches) data.batches = {}; 
+        if (!data.subjects) data.subjects = {}; 
         
-        // Ensure initial Admin, HOD, and Student users exist for testing
-        if (!data.users || Object.keys(data.users).length === 0) {
+        // Ensure initial mock data for testing is present
+        if (!data.users || Object.keys(data.users).length < 3) {
             data.users = {
-                "admin.tulas.in": {
-                    "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": ""
-                },
-                "hod.cse": {
-                    "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": ""
-                },
-                "S2024001": {
-                    "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-2024", "photoUrl": ""
-                }
+                "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
+                "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
+                "F101": { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" },
+                "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }, // Mocked Batch ID
+                "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" } // Mocked Batch ID
             };
-            // Mock initial batch/subject data for testing the faculty view
-            data.batches["BTECH-CSE-2024"] = { name: "B.Tech CSE 2024", department: "Department of Engineering", students: ["S2024001"], subjects: ["CS101", "MA101"] };
-            data.subjects["CS101"] = { name: "Data Structures", department: "Department of Engineering", teacherId: "F101", batchIds: ["BTECH-CSE-2024"] };
-            data.users["F101"] = { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" };
+            
+            // Mock initial batch/subject data for testing the faculty attendance view
+            data.batches["BTECH-CSE-Y1-A"] = { 
+                id: "BTECH-CSE-Y1-A", 
+                name: "B.Tech CSE, 1st Year, Section A", 
+                department: "Department of Engineering", 
+                course: "B.Tech CSE", 
+                year: "1st Year",
+                students: ["S2024001", "S2024002"], 
+                subjects: ["CS101", "MA101"] 
+            };
+            data.subjects["CS101"] = { 
+                name: "Data Structures", 
+                department: "Department of Engineering", 
+                teacherId: "F101", 
+                batchIds: ["BTECH-CSE-Y1-A"] 
+            };
         }
         
         return data; 
     }
     catch (e) { 
-        // Return minimal default structure if db.json is corrupted
         return { 
-            users: {
-                "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
-            }, 
+            users: { "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" } }, 
             placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [], announcements: [], idCardRequests: [],
             signupRequests: [], batches: {}, subjects: {}
         }; 
@@ -147,34 +153,87 @@ app.post('/signup', (req, res) => {
 });
 
 // =========================================
-// BATCH MANAGEMENT ROUTES (NEW)
+// BATCH MANAGEMENT ROUTES (UPDATED/NEW)
 // =========================================
 
-// GET /api/batches - Get all batches (Admin/HOD only)
+// GET /api/batches - Get all batches (UNCHANGED)
 app.get('/batches', (req, res) => {
     const db = readDB();
-    // In a real system, you'd check if the user is Admin or HOD
     const batchesList = Object.keys(db.batches).map(id => ({ id, ...db.batches[id] }));
     res.json({ success: true, batches: batchesList });
 });
 
-// POST /api/batches - Create a new batch
+// POST /api/batches - Create a new batch (UPDATED)
 app.post('/batches', (req, res) => {
     const db = readDB();
-    const { id, name, department, course } = req.body;
-    if (db.batches[id]) return res.status(409).json({ success: false, message: "Batch ID already exists." });
+    const { batchId, department, course, year, section } = req.body;
+    
+    if (db.batches[batchId]) return res.status(409).json({ success: false, message: "Batch ID already exists." });
 
-    db.batches[id] = { id, name, department, course, students: [], subjects: [] };
+    const name = `${course}, ${year}, Section ${section}`;
+    db.batches[batchId] = { id: batchId, name, department, course, year, section, students: [], subjects: [] };
     writeDB(db);
-    res.json({ success: true, message: `Batch ${name} created.` });
+    res.json({ success: true, message: `Batch ${name} created. Now enroll students and faculty.` });
 });
 
-// POST /api/subjects - Create or Update a subject and assign teacher/batches
+// POST /api/batches/enroll - Enroll students and assign faculty for a batch (NEW)
+app.post('/batches/enroll', (req, res) => {
+    const db = readDB();
+    const { batchId, studentIds, subjectAssignments } = req.body; 
+    const batch = db.batches[batchId];
+
+    if (!batch) return res.status(404).json({ success: false, message: "Batch not found." });
+
+    // 1. Enroll Students
+    (studentIds || []).forEach(userId => {
+        const user = db.users[userId];
+        if (user && user.role === 'Student') {
+            user.batchId = batchId;
+            if (!batch.students.includes(userId)) {
+                batch.students.push(userId);
+            }
+        }
+    });
+
+    // 2. Assign Faculty to Subjects/Batch
+    (subjectAssignments || []).forEach(assignment => {
+        const { courseCode, teacherId } = assignment;
+
+        if (!db.users[teacherId] || db.users[teacherId].role !== 'Faculty') {
+            console.error(`Invalid Faculty ID: ${teacherId}`);
+            return;
+        }
+
+        let subject = db.subjects[courseCode];
+        if (!subject) {
+            // Create new subject if it doesn't exist
+            subject = { name: courseCode, department: batch.department, teacherId, batchIds: [] };
+            db.subjects[courseCode] = subject;
+        }
+        
+        // Update subject-to-batch link
+        if (!subject.batchIds.includes(batchId)) {
+            subject.batchIds.push(batchId);
+        }
+        // Ensure faculty is assigned
+        subject.teacherId = teacherId;
+        
+        // Update batch-to-subject link
+        if (!batch.subjects.includes(courseCode)) {
+            batch.subjects.push(courseCode);
+        }
+    });
+
+    writeDB(db);
+    res.json({ success: true, message: `Batch enrollment and faculty assignment complete for ${batchId}.` });
+});
+
+
+// POST /api/subjects - Create or Update a subject and assign teacher/batches (UNCHANGED logic for now)
 app.post('/subjects', (req, res) => {
     const db = readDB();
     const { courseCode, name, department, teacherId, batchIds } = req.body;
 
-    // Basic validation
     if (!db.users[teacherId] || db.users[teacherId].role !== 'Faculty') {
         return res.status(400).json({ success: false, message: "Invalid Teacher ID or role." });
     }
@@ -182,26 +241,6 @@ app.post('/subjects', (req, res) => {
     db.subjects[courseCode] = { name, department, teacherId, batchIds: batchIds || [] };
     writeDB(db);
     res.json({ success: true, message: `Subject ${name} assigned to teacher and batches.` });
-});
-
-// POST /api/batches/:batchId/enroll/:userId - Enroll a student into a batch
-app.post('/batches/:batchId/enroll/:userId', (req, res) => {
-    const db = readDB();
-    const { batchId, userId } = req.params;
-
-    if (!db.users[userId] || db.users[userId].role !== 'Student') return res.status(404).json({ success: false, message: "Student not found." });
-    if (!db.batches[batchId]) return res.status(404).json({ success: false, message: "Batch not found." });
-    
-    // 1. Update user record
-    db.users[userId].batchId = batchId;
-    
-    // 2. Update batch record
-    if (!db.batches[batchId].students.includes(userId)) {
-        db.batches[batchId].students.push(userId);
-    }
-
-    writeDB(db);
-    res.json({ success: true, message: `Student ${userId} enrolled in Batch ${batchId}.` });
 });
 
 
@@ -227,9 +266,9 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     // 1. Move the user from signupRequests to live users
     db.users[request.userId] = { 
         ...request, 
-        batchId: null, // IMPORTANT: Admin/HOD must now assign the batch separately!
+        batchId: null, // Admin/HOD must now assign the batch using the new feature
     };
-    delete db.users[request.userId].id; // Clean up redundant id property
+    delete db.users[request.userId].id; 
 
     // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
@@ -257,7 +296,7 @@ app.post('/signup-requests/:id/reject', (req, res) => {
 // FEATURE ROUTES UPDATES
 // =========================================
 
-// POST /attendance/mark - UPDATED to check teacher assignment
+// POST /attendance/mark - UPDATED to check teacher assignment (UNCHANGED from last update)
 app.post('/attendance/mark', (req, res) => {
     const { facultyId, batchId, subjectCode, studentId, status } = req.body; 
     const db = readDB();
@@ -290,9 +329,6 @@ app.post('/attendance/mark', (req, res) => {
     writeDB(db); 
     res.json({ success: true, message: "Attendance marked" });
 });
-
-// GET /attendance/:userId (UNCHANGED)
-app.get('/attendance/:userId', (req, res) => { res.json({ success: true, attendance: readDB().attendance?.[req.params.userId] || {} }); });
 
 
 // --- OTHER FEATURE ROUTES (RETAINED/UNCHANGED) ---
