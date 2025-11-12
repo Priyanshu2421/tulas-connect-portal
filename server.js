@@ -387,7 +387,7 @@ app.get('/users/by-role-and-dept', (req, res) => {
     res.json({ success: true, students, faculty });
 });
 
-// NEW ROUTE: Fetch ALL Faculty (Used for cross-department subject assignment modal)
+// NEW ROUTE: Fetch ALL Faculty (Used for cross-department assignment search)
 app.get('/users/all-faculty', (req, res) => {
     const db = readDB();
     const faculty = Object.values(db.users)
@@ -454,6 +454,37 @@ app.get('/users', (req, res) => {
     res.json({ success: true, users: usersList });
 });
 
+// NEW ROUTE: Admin can create HOD accounts directly
+app.post('/admin/create-hod', (req, res) => {
+    const { id, pass, name, department, email, phone, course } = req.body;
+    const db = readDB();
+
+    if (db.users[id]) {
+        return res.status(409).json({ success: false, message: `HOD ID ${id} already exists.` });
+    }
+
+    if (!id || !pass || !department) {
+        return res.status(400).json({ success: false, message: "Missing required fields (ID, Password, Department)." });
+    }
+
+    // Create the HOD user object directly in the users list
+    db.users[id] = { 
+        id: id, 
+        pass: pass, 
+        name: name || `HOD: ${department}`,
+        role: 'HOD',
+        department: department,
+        email: email || '', 
+        course: course || '', 
+        phone: phone || '', 
+        photoUrl: "" 
+    };
+
+    writeDB(db);
+    res.json({ success: true, message: `Department Head (${department}) created successfully with ID ${id}.` });
+});
+
+
 // User Deletion Route (FIXED for Persistence)
 app.delete('/users/:userId', (req, res) => {
     const db = readDB();
@@ -511,7 +542,7 @@ app.delete('/batches/:batchId', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: `Batch ${batchId} deleted successfully.` });
 });
-
+// End of Batch Deletion Route
 
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
