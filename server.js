@@ -30,8 +30,9 @@ function getInitialMockDB() {
             "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
             "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
             "F101": { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" },
-            "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }, 
-            "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }
+            // Added mentorId for student mock data to enable the new leave system
+            "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "mentorId": "F101", "photoUrl": "" }, 
+            "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "mentorId": "F101", "photoUrl": "" }
         }, 
         placements: [], 
         attendance: {}, 
@@ -103,11 +104,11 @@ const writeDB = (data) => {
     } 
 };
 
-// --- NEW AUTHORIZATION HELPER ---
+// --- AUTHORIZATION HELPER ---
 function isAuthorized(req, role, department) {
     const db = readDB();
-    // Check ID in body (for POST) or query (for DELETE)
-    const userId = req.body.id || req.query.deleterId || req.body.assignerId || req.body.adminId; 
+    // Check ID in body (for POST/DELETE) or query (for GET/DELETE)
+    const userId = req.body.id || req.query.deleterId || req.body.assignerId || req.body.adminId || req.query.currentUserId || req.body.currentUserId; 
     const user = db.users[userId];
     
     // 1. Admin is always authorized.
@@ -118,10 +119,22 @@ function isAuthorized(req, role, department) {
 
     return false;
 }
-// --- END OF NEW AUTHORIZATION HELPER ---
+
+function isUserOrAdmin(req, targetUserId) {
+    const db = readDB();
+    // Check ID in body (for POST) or query (for GET/DELETE)
+    const currentUserId = req.body.userId || req.query.currentUserId || req.body.id; 
+    const currentUserRole = db.users[currentUserId]?.role;
+    
+    if (currentUserRole === 'Admin' || currentUserId === targetUserId) {
+        return true;
+    }
+    return false;
+}
+// --- END OF AUTHORIZATION HELPER ---
 
 
-// --- MULTER CONFIG (UNCHANGED) ---
+// --- MULTER CONFIG ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         let uploadPath = UPLOADS_DIR;
@@ -136,7 +149,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ 
     storage, 
-    limits: { fileSize: 20 * 1024 * 1024 } 
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit enforced here
 });
 
 // =========================================
@@ -195,12 +208,11 @@ app.post('/signup', (req, res) => {
 // BATCH MANAGEMENT ROUTES 
 // =========================================
 
-// GET /api/batches - Get all batches (UNCHANGED)
+// GET /api/batches - Get all batches 
 app.get('/batches', (req, res) => {
     const db = readDB();
     const batchesList = Object.keys(db.batches).map(id => ({ id, ...db.batches[id] }));
     
-    // Filter by department if HOD is requesting (assuming currentUser info is passed in query for security)
     const { department: requestedDept, adminId } = req.query;
 
     if (requestedDept && db.users[adminId]?.role === 'HOD') {
@@ -208,7 +220,6 @@ app.get('/batches', (req, res) => {
         return res.json({ success: true, batches: filteredList });
     }
 
-    // Admin sees all, or if no filter/auth is provided (for mock safety)
     res.json({ success: true, batches: batchesList });
 });
 
@@ -217,7 +228,6 @@ app.post('/batches', (req, res) => {
     const db = readDB();
     const { batchId, department, course, year, section, adminId } = req.body; 
     
-    // AUTHORIZATION CHECK
     if (!isAuthorized({ body: { id: adminId } }, 'HOD', department)) {
         return res.status(403).json({ success: false, message: "Unauthorized. HOD can only create batches for their own department." });
     }
@@ -237,13 +247,6 @@ app.post('/batches/enroll', (req, res) => {
     const batch = db.batches[batchId];
 
     if (!batch) return res.status(404).json({ success: false, message: "Batch not found." });
-
-    // Assuming enrollment check is primarily done by the client-side UI filtering to keep API simple.
-    // However, if we wanted to enforce it:
-    // const { assignerId } = req.body;
-    // if (!isAuthorized({ body: { id: assignerId } }, 'HOD', batch.department)) {
-    //     return res.status(403).json({ success: false, message: "Unauthorized to enroll/assign for this batch." });
-    // }
 
     // 1. Enroll Students
     (studentIds || []).forEach(userId => {
@@ -291,7 +294,6 @@ app.post('/subjects', (req, res) => {
     const db = readDB();
     const { courseCode, name, department, teacherId, batchIds, assignerId } = req.body;
 
-    // AUTHORIZATION CHECK
     if (!isAuthorized({ body: { id: assignerId } }, 'HOD', department)) {
         return res.status(403).json({ success: false, message: "Unauthorized. Subject assignment must be done by the Department Head or Admin for their department." });
     }
@@ -325,19 +327,22 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
 
     const request = db.signupRequests[index];
+    // Use newUserId from the request body (sent by the Admin modal) if available, otherwise use the registered ID (for Students).
     const finalUserId = req.body.newUserId || request.userId; 
     
     if (db.users[finalUserId] && finalUserId !== request.userId) {
          return res.status(409).json({ success: false, message: `The ID ${finalUserId} is already in use by an active user.` });
     }
     
+    // 1. Move the user from signupRequests to live users
     db.users[finalUserId] = { 
         ...request, 
-        id: finalUserId, 
-        userId: finalUserId, 
-        batchId: null, 
+        id: finalUserId, // Set the final, verified ID
+        userId: finalUserId, // Also update the internal userId property
+        batchId: null, // Initialized to null, waiting for batch enrollment
     };
     
+    // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
     
     writeDB(db);
@@ -405,6 +410,37 @@ app.get('/profile/:userId', (req, res) => {
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
 });
+
+// NEW/UPDATED: POST /profile/update - Handles editable profile fields (Phone, DOB, Photo)
+app.post('/profile/update', upload.single('photoFile'), (req, res) => {
+    const db = readDB();
+    const { userId, name, email, phone, dob, address, bloodGroup } = req.body; 
+
+    // Authorization: Only the user themselves or an Admin can edit this profile
+    if (!isUserOrAdmin(req, userId)) {
+        return res.status(403).json({ success: false, message: "Unauthorized to edit this profile." });
+    }
+
+    const user = db.users[userId];
+    if (!user) return res.status(404).json({ success: false, message: "User not found." });
+
+    // Update only the editable fields
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.phone = phone || user.phone;
+    user.dob = dob || user.dob;
+    user.address = address || user.address;
+    user.bloodGroup = bloodGroup || user.bloodGroup;
+
+    if (req.file) {
+        user.photoUrl = `/uploads/profiles/${req.file.filename}`;
+    }
+
+    writeDB(db);
+    const { pass, ...safeUser } = user;
+    res.json({ success: true, message: "Profile updated successfully.", updatedUser: safeUser });
+});
+
 
 // NEW ROUTE: Fetch Users by Role and Department for Enrollment UI
 app.get('/users/by-role-and-dept', (req, res) => {
@@ -610,7 +646,7 @@ app.post('/announcements', (req, res) => {
     res.json({ success: true, message: "Announcement posted" });
 });
 app.post('/id-cards/apply', upload.single('idCardPhoto'), (req, res) => {
-    if (!req.file) return res.status(400).json({ success: false, message: "Photo is required (max 20MB)" });
+    if (!req.file) return res.status(400).json({ success: false, message: "Photo is required (max 10MB)" });
     const db = readDB();
     db.idCardRequests = db.idCardRequests || [];
     db.idCardRequests = db.idCardRequests.filter(r => r.userId !== req.body.userId);
@@ -680,12 +716,59 @@ app.post('/assignments/:id/submit', upload.single('submissionFile'), (req, res) 
     }
     if (found) { writeDB(db); res.json({ success: true, message: "Submitted" }); } else res.status(404).json({ success: false });
 });
-app.get('/leaves/:userId', (req, res) => { res.json({ success: true, leaves: (readDB().leaveRequests || []).filter(l => l.userId === req.params.userId) }); });
-app.get('/leaves/pending/:department', (req, res) => { res.json({ success: true, leaves: (readDB().leaveRequests || []).filter(l => l.department === req.params.department && l.status === 'Pending') }); });
+
+// FIX/UPDATE: Leave application goes to mentor/HOD
 app.post('/leaves', (req, res) => {
-    const db = readDB(); db.leaveRequests = (db.leaveRequests || []).concat({ id: Date.now(), ...req.body, status: 'Pending', appliedOn: new Date() });
-    writeDB(db); res.json({ success: true, message: "Leave submitted" });
+    const db = readDB();
+    const user = db.users[req.body.userId];
+    
+    let approvalTarget = 'HOD'; 
+    let mentorId = user.mentorId; // Student leave goes to mentor first
+
+    // If the applicant is a student, the approval target is their mentor
+    if (user.role === 'Student' && mentorId) {
+        approvalTarget = mentorId;
+    }
+
+    db.leaveRequests = (db.leaveRequests || []).concat({ 
+        id: Date.now(), 
+        ...req.body, 
+        status: 'Pending', 
+        appliedOn: new Date(),
+        approvalTarget: approvalTarget
+    });
+    
+    writeDB(db); 
+    res.json({ success: true, message: `Leave submitted to ${approvalTarget} for approval.` });
 });
+
+
+// FIX/UPDATE: Fetch pending leaves based on mentorId (for student leave)
+app.get('/leaves/pending/:department', (req, res) => {
+    const db = readDB();
+    const targetDept = req.params.department;
+    const { currentUserId } = req.query; // Assuming currentUserId is passed for authorization
+    const currentUser = db.users[currentUserId];
+    
+    let leaves = (db.leaveRequests || []).filter(l => l.status === 'Pending');
+
+    if (currentUser && currentUser.role === 'HOD') {
+        // HOD sees: 1. Faculty leave requests from their department. 2. Student leaves targeting them (if they are the mentor).
+        leaves = leaves.filter(l => 
+            (l.approvalTarget === 'HOD' && l.department === targetDept) ||
+            (l.approvalTarget === currentUser.id)
+        );
+    } else if (currentUser && currentUser.role === 'Faculty') {
+        // Faculty (Mentor) sees: Student leave requests directly addressed to them.
+        leaves = leaves.filter(l => l.approvalTarget === currentUser.id);
+    } else if (currentUser && currentUser.role === 'Admin') {
+        // Admin sees all pending leaves for visibility (optional)
+    }
+
+    res.json({ success: true, leaves: leaves });
+});
+
+
 app.post('/leaves/:id/action', (req, res) => {
     const db = readDB(); const l = (db.leaveRequests || []).find(x => x.id == req.params.id);
     if (l) { l.status = req.body.status; writeDB(db); res.json({ success: true, message: `Leave ${req.body.status}` }); }

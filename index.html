@@ -630,7 +630,7 @@ function renderNavigation() {
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'admin-users', label: 'Manage Users', icon: '👥' },
             { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
-            // REMOVED 'admin-subjects' from Admin role
+            // 'admin-subjects' REMOVED from Admin role
             { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
             { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
             { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
@@ -707,10 +707,11 @@ async function loadProfile(container) {
     container.innerHTML = `
         <div class="flex flex-col md:flex-row gap-8 items-start">
             <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center shadow-lg">
-                <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
+                <img id="profile-photo-display" src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">${p.name}</h2>
                 <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">${p.role}</span>
                 <p class="text-gray-500 mt-4 font-mono">${p.id}</p>
+                <button onclick="showUserProfileEditForm('${p.id}')" class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">Edit Profile</button>
             </div>
             <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full shadow-lg">
                 <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
@@ -728,6 +729,72 @@ async function loadProfile(container) {
         </div>
     `;
 }
+
+// Helper to render the edit form
+window.showUserProfileEditForm = async (userId) => {
+    const res = await fetch(`${API_BASE}/profile/${userId}`);
+    const data = await res.json();
+    if (!data.success) { showToast("Failed to fetch profile for editing.", true); return; }
+    const p = data.profile;
+
+    showModal(`
+        <h3 class="text-xl font-bold mb-4">Edit Profile: ${p.name}</h3>
+        <p class="text-sm text-gray-600 mb-4">You can only edit certain fields. Photo size limit: 10MB.</p>
+        <form onsubmit="submitProfileUpdate(event, '${p.id}')" class="space-y-4">
+            <input type="hidden" name="currentUserId" value="${currentUser.id}">
+
+            <label class="block">Full Name (Only editable by Admin)</label>
+            <input type="text" name="name" value="${p.name || ''}" class="w-full p-3 border rounded-xl bg-gray-100 ${currentUser.role === 'Admin' ? 'bg-white' : 'cursor-not-allowed'}" ${currentUser.role !== 'Admin' ? 'disabled' : ''}>
+            
+            <label class="block">Phone Number</label>
+            <input type="text" name="phone" value="${p.phone || ''}" placeholder="Phone Number" class="w-full p-3 border rounded-xl">
+            
+            <label class="block">Date of Birth</label>
+            <input type="date" name="dob" value="${p.dob || ''}" class="w-full p-3 border rounded-xl">
+            
+            <label class="block">Blood Group (Optional)</label>
+            <input type="text" name="bloodGroup" value="${p.bloodGroup || ''}" placeholder="Blood Group" class="w-full p-3 border rounded-xl">
+            
+            <label class="block pt-2 border-t">Update Profile Photo (Max 10MB)</label>
+            <input type="file" name="photoFile" accept="image/jpeg,image/png" class="w-full p-2 border rounded-xl bg-gray-50">
+
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SAVE CHANGES</button>
+        </form>
+    `);
+}
+
+window.submitProfileUpdate = async (e, userId) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Add the user ID to the form data for the server route
+    formData.append('userId', userId);
+    
+    showToast("Uploading and saving profile...", false);
+    
+    try {
+        const res = await fetch(API_BASE + '/profile/update', {
+            method: 'POST',
+            body: formData // Must use FormData directly for file upload
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            // Update the session storage data immediately
+            sessionStorage.setItem('user', JSON.stringify(data.updatedUser));
+            currentUser = data.updatedUser;
+
+            closeModal();
+            showToast(data.message, false);
+            loadContent('profile'); // Reload profile view to show changes
+        } else {
+            showToast(data.message || 'Profile update failed.', true);
+        }
+    } catch (err) {
+        showToast('Connection error during profile update.', true);
+    }
+};
+
 async function loadTimetable(container) {
     const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course)}`);
     const data = await res.json();
@@ -881,16 +948,26 @@ async function loadFacultyAssignments(container) {
 }
 
 async function loadFacultyLeaves(container) {
-    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}`);
+    const currentUserId = currentUser.id;
+    // CRITICAL: Passing currentUserId in query params for server authorization
+    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUserId}`);
     const data = await res.json();
+    
+    // Fetch my applications (to show in the history section)
+    const myLeavesRes = await fetch(`${API_BASE}/leaves/${currentUserId}`);
+    const myLeavesData = await myLeavesRes.json();
+    const myLeaves = myLeavesData.leaves || [];
+
+
     container.innerHTML = `
         <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Leave Requests <span class="text-green-600">(${currentUser.department})</span></h2>
-        <div class="space-y-4">
+        
+        <div class="space-y-4 mb-8">
             ${data.leaves.map(l => `
                 <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId}</h4>
+                            <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId} (${l.department})</h4>
                             <p class="text-sm text-gray-500">${l.type} | Applied: ${new Date(l.appliedOn).toLocaleDateString()}</p>
                         </div>
                         <div class="text-right text-sm font-medium bg-green-50 text-green-800 px-3 py-1 rounded-lg">
@@ -903,8 +980,25 @@ async function loadFacultyLeaves(container) {
                         <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md transform hover:scale-[1.01]">Approve Request</button>
                     </div>
                 </div>
-            `).join('') || '<p class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
-        </div>`;
+            `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
+        </div>
+        
+        <h3 class="text-xl font-bold text-gray-800 mb-4 border-t pt-4">My Leave History (Faculty/HOD)</h3>
+        <div class="space-y-4">
+            ${myLeaves.map(l => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${l.type}</div>
+                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
+                        <p class="text-gray-600 mt-1">${l.reason}</p>
+                    </div>
+                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
+                        ${l.status}
+                    </span>
+                </div>
+            `).join('') || '<p class="text-center py-5 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
+        </div>
+        `;
 }
 
 async function loadPlacements(container) {
@@ -1340,7 +1434,6 @@ window.manageSignupRequest = async (id, action, newUserId = null) => {
 
 // --- 4. Modals and Handlers for Batch Management (NEW) ---
 
-// HOD Creation Modal (Re-integrated for Admin Users list)
 window.openCreateHodModal = () => showModal(`
     <h3 class="text-xl font-bold mb-4">Create New Department Head (HOD)</h3>
     <p class="text-gray-600 mb-4">Assigns credentials directly to a new HOD for immediate use.</p>
@@ -1403,7 +1496,7 @@ window.submitCreateHod = async (e) => {
     }
 };
 
-// Batch Creation Modal (UNCHANGED)
+
 window.openCreateBatchModal = () => showModal(`
     <h3 class="text-xl font-bold mb-4">Create New Batch</h3>
     <form id="create-batch-form" onsubmit="submitCreateBatch(event)" class="space-y-4">
@@ -1416,7 +1509,7 @@ window.openCreateBatchModal = () => showModal(`
     </form>
 `);
 
-// Helper to populate dependent selects for batch creation (UNCHANGED)
+// Helper to populate dependent selects for batch creation
 window.populateBatchSelects = (deptId, courseId, yearId, sectionId) => {
     const dept = document.getElementById(deptId).value;
     const courseSelect = document.getElementById(courseId);
@@ -1552,10 +1645,20 @@ window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-bo
 
 async function submitLeave(e) {
     e.preventDefault();
-    await postData('/leaves', Object.fromEntries(new FormData(e.target)), { userId: currentUser.id, department: currentUser.department });
+    const formData = Object.fromEntries(new FormData(e.target));
+
+    // CRITICAL: Send the userId to the server so it can determine the mentorId (approvalTarget)
+    const payload = {
+        userId: currentUser.id, 
+        department: currentUser.department,
+        ...formData
+    };
+    
+    const res = await postData('/leaves', payload);
+    
     closeModal(); 
     setTimeout(() => loadContent('leaves'), 100); 
-    showToast('Leave application submitted');
+    showToast(res.message || 'Leave application submitted');
 }
 async function submitCreateAssign(e) {
     e.preventDefault();
