@@ -937,7 +937,10 @@ async function loadAdminUsers(container) {
     const res = await fetch(`${API_BASE}/users`);
     const data = await res.json();
     container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Manage Users (${data.users.length} Total)</h2>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Manage Users (${data.users.length} Total)</h2>
+            <button onclick="openCreateHodModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">+ Create HOD Account</button>
+        </div>
         <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 text-gray-700">
@@ -1325,6 +1328,69 @@ window.manageSignupRequest = async (id, action, newUserId = null) => {
 
 
 // --- 4. Modals and Handlers for Batch Management (NEW) ---
+
+window.openCreateHodModal = () => showModal(`
+    <h3 class="text-xl font-bold mb-4">Create New Department Head (HOD)</h3>
+    <p class="text-gray-600 mb-4">Assigns credentials directly to a new HOD for immediate use.</p>
+    <form onsubmit="submitCreateHod(event)" class="space-y-4">
+        
+        <input name="id" placeholder="Official HOD ID (e.g., HOD-MECH)" required class="w-full p-3 border rounded-xl">
+        <input type="password" name="pass" placeholder="Password" required class="w-full p-3 border rounded-xl">
+        <input name="name" placeholder="Full Name (Optional, e.g., Prof. Jane Doe)" class="w-full p-3 border rounded-xl">
+
+        <h4 class="font-bold pt-2 border-t">Department Assignment</h4>
+        
+        <select name="department" id="hod-dept-select" onchange="populateHODCourseSelect(this.value)" required class="w-full p-3 border rounded-xl">
+            <option value="">Select Department</option>
+            ${Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+        
+        <select name="course" id="hod-course-select" class="w-full p-3 border rounded-xl" required disabled>
+            <option value="">Select Course/Specialization</option>
+        </select>
+        
+        <input type="email" name="email" placeholder="Email (Optional, institutional)" class="w-full p-3 border rounded-xl">
+
+        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE ACCOUNT</button>
+    </form>
+`);
+
+// Helper for HOD Course Selection
+window.populateHODCourseSelect = (department) => {
+    const courseSelect = document.getElementById('hod-course-select');
+    courseSelect.innerHTML = '<option value="">Select Course/Specialization</option>';
+
+    if (department && DEPT_DATA[department] && DEPT_DATA[department].courses) {
+        DEPT_DATA[department].courses.forEach(course => {
+            courseSelect.innerHTML += `<option value="${course}">${course}</option>`;
+        });
+        courseSelect.disabled = false;
+    } else {
+        courseSelect.disabled = true;
+    }
+};
+
+window.submitCreateHod = async (e) => {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
+    
+    // Ensure the ID is uppercase
+    formData.id = formData.id.toUpperCase().trim();
+    
+    showToast("Creating HOD account...", false);
+
+    const res = await postData('/admin/create-hod', formData);
+
+    if (res.success) {
+        closeModal();
+        showToast(res.message, false);
+        // CRITICAL: Reloads the Admin Users page
+        loadContent('admin-users'); 
+    } else {
+        showToast(res.message || "Failed to create HOD account.", true);
+    }
+};
+
 
 window.openCreateBatchModal = () => showModal(`
     <h3 class="text-xl font-bold mb-4">Create New Batch</h3>

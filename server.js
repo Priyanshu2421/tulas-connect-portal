@@ -272,7 +272,7 @@ app.get('/signup-requests/pending', (req, res) => {
     res.json({ success: true, requests: pending });
 });
 
-// FIX: Approve route now correctly handles newUserId for faculty assignment
+// CORRECTED: Approve route handles newUserId for faculty assignment
 app.post('/signup-requests/:id/approve', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -387,7 +387,7 @@ app.get('/users/by-role-and-dept', (req, res) => {
     res.json({ success: true, students, faculty });
 });
 
-// NEW ROUTE: Fetch ALL Faculty (Used for cross-department assignment search)
+// NEW ROUTE: Fetch ALL Faculty (Used for cross-department subject assignment modal)
 app.get('/users/all-faculty', (req, res) => {
     const db = readDB();
     const faculty = Object.values(db.users)
@@ -454,7 +454,7 @@ app.get('/users', (req, res) => {
     res.json({ success: true, users: usersList });
 });
 
-// NEW ROUTE: Admin can create HOD accounts directly
+// NEW ROUTE: Allows Admin to create an HOD account directly
 app.post('/admin/create-hod', (req, res) => {
     const { id, pass, name, department, email, phone, course } = req.body;
     const db = readDB();
@@ -542,7 +542,7 @@ app.delete('/batches/:batchId', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: `Batch ${batchId} deleted successfully.` });
 });
-// End of Batch Deletion Route
+
 
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
