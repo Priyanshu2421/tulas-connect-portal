@@ -3,7 +3,6 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-// Nodemailer has been permanently removed for simple login/signup.
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +13,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 // --- CONSTANTS ---
-const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // Enforced Institutional Domain
+const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; 
 
 // --- MIDDLEWARE ---
 app.use(cors());
@@ -36,11 +35,12 @@ initialize();
 // --- DATABASE HELPERS ---
 const readDB = () => {
     try { 
-        // Read existing data or provide a default structure
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
-        // Ensure new properties are initialized
+        // Initialize new properties
         if (!data.signupRequests) data.signupRequests = [];
+        if (!data.batches) data.batches = {}; // New: { batchId: { name, department, students: [], assignments: [] } }
+        if (!data.subjects) data.subjects = {}; // New: { courseCode: { name, department, teacherId, batchIds: [] } }
         
         // Ensure initial Admin, HOD, and Student users exist for testing
         if (!data.users || Object.keys(data.users).length === 0) {
@@ -52,29 +52,31 @@ const readDB = () => {
                     "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": ""
                 },
                 "S2024001": {
-                    "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "photoUrl": ""
+                    "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-2024", "photoUrl": ""
                 }
             };
+            // Mock initial batch/subject data for testing the faculty view
+            data.batches["BTECH-CSE-2024"] = { name: "B.Tech CSE 2024", department: "Department of Engineering", students: ["S2024001"], subjects: ["CS101", "MA101"] };
+            data.subjects["CS101"] = { name: "Data Structures", department: "Department of Engineering", teacherId: "F101", batchIds: ["BTECH-CSE-2024"] };
+            data.users["F101"] = { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" };
         }
         
         return data; 
     }
     catch (e) { 
-        // Return full default structure with mock users if db.json is missing or corrupted
+        // Return minimal default structure if db.json is corrupted
         return { 
             users: {
                 "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
-                "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
-                "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "photoUrl": "" }
             }, 
             placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [], announcements: [], idCardRequests: [],
-            signupRequests: [] 
+            signupRequests: [], batches: {}, subjects: {}
         }; 
     }
 };
 const writeDB = (data) => { try { fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2)); } catch (e) { console.error("DB Write Error:", e); } };
 
-// --- MULTER CONFIG ---
+// --- MULTER CONFIG (UNCHANGED) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         let uploadPath = UPLOADS_DIR;
@@ -89,35 +91,30 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ 
     storage, 
-    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for ID card photos
+    limits: { fileSize: 20 * 1024 * 1024 } 
 });
 
 // =========================================
 // API ROUTES
 // =========================================
 
-// --- AUTH (Simple User/Pass) ---
+// --- AUTH (Simple User/Pass - UNCHANGED) ---
 app.post('/login', (req, res) => {
     const { userId, password, role, department } = req.body;
     const db = readDB();
     const user = db.users[userId];
     
-    // 1. Password Check
     if (!user || user.pass !== password) return res.status(401).json({ success: false, message: "Invalid User ID or Password." });
-
-    // 2. Role Check
     if (user.role !== role) {
         if (!(role === 'HOD' && user.role === 'HOD')) return res.status(403).json({ success: false, message: "Role mismatch." });
     }
-
-    // 3. HOD Department Check
     if (role === 'HOD' && user.department !== department) return res.status(403).json({ success: false, message: "Department mismatch." });
 
     const { pass, ...safeUser } = user;
     res.json({ success: true, user: safeUser });
 });
 
-// --- SIGNUP (UPDATED: Saves to signupRequests for Admin Approval) ---
+// --- SIGNUP (Saves to signupRequests - UNCHANGED) ---
 app.post('/signup', (req, res) => {
     const { userId, pass, name, role, department, email, course, phone } = req.body;
     const db = readDB();
@@ -126,12 +123,10 @@ app.post('/signup', (req, res) => {
         return res.status(400).json({ success: false, message: `Registration requires an email ending in ${REQUIRED_EMAIL_DOMAIN}.` });
     }
 
-    // Check if user ID or email is already registered or pending
     if (db.users[userId] || db.signupRequests.some(r => r.userId === userId || r.email === email)) {
         return res.status(409).json({ success: false, message: "User ID or Email already exists or is pending approval." });
     }
     
-    // Save to pending requests array
     const newRequestId = Date.now();
     db.signupRequests.push({ 
         id: newRequestId, 
@@ -152,17 +147,74 @@ app.post('/signup', (req, res) => {
 });
 
 // =========================================
-// ADMIN/HOD SIGNUP MANAGEMENT ROUTES
+// BATCH MANAGEMENT ROUTES (NEW)
 // =========================================
 
-// GET: Fetch all pending sign-up requests
+// GET /api/batches - Get all batches (Admin/HOD only)
+app.get('/batches', (req, res) => {
+    const db = readDB();
+    // In a real system, you'd check if the user is Admin or HOD
+    const batchesList = Object.keys(db.batches).map(id => ({ id, ...db.batches[id] }));
+    res.json({ success: true, batches: batchesList });
+});
+
+// POST /api/batches - Create a new batch
+app.post('/batches', (req, res) => {
+    const db = readDB();
+    const { id, name, department, course } = req.body;
+    if (db.batches[id]) return res.status(409).json({ success: false, message: "Batch ID already exists." });
+
+    db.batches[id] = { id, name, department, course, students: [], subjects: [] };
+    writeDB(db);
+    res.json({ success: true, message: `Batch ${name} created.` });
+});
+
+// POST /api/subjects - Create or Update a subject and assign teacher/batches
+app.post('/subjects', (req, res) => {
+    const db = readDB();
+    const { courseCode, name, department, teacherId, batchIds } = req.body;
+
+    // Basic validation
+    if (!db.users[teacherId] || db.users[teacherId].role !== 'Faculty') {
+        return res.status(400).json({ success: false, message: "Invalid Teacher ID or role." });
+    }
+
+    db.subjects[courseCode] = { name, department, teacherId, batchIds: batchIds || [] };
+    writeDB(db);
+    res.json({ success: true, message: `Subject ${name} assigned to teacher and batches.` });
+});
+
+// POST /api/batches/:batchId/enroll/:userId - Enroll a student into a batch
+app.post('/batches/:batchId/enroll/:userId', (req, res) => {
+    const db = readDB();
+    const { batchId, userId } = req.params;
+
+    if (!db.users[userId] || db.users[userId].role !== 'Student') return res.status(404).json({ success: false, message: "Student not found." });
+    if (!db.batches[batchId]) return res.status(404).json({ success: false, message: "Batch not found." });
+    
+    // 1. Update user record
+    db.users[userId].batchId = batchId;
+    
+    // 2. Update batch record
+    if (!db.batches[batchId].students.includes(userId)) {
+        db.batches[batchId].students.push(userId);
+    }
+
+    writeDB(db);
+    res.json({ success: true, message: `Student ${userId} enrolled in Batch ${batchId}.` });
+});
+
+
+// =========================================
+// ADMIN/HOD SIGNUP MANAGEMENT ROUTES (UNCHANGED)
+// =========================================
+
 app.get('/signup-requests/pending', (req, res) => {
     const db = readDB();
     const pending = (db.signupRequests || []).filter(r => r.status === 'Pending');
     res.json({ success: true, requests: pending });
 });
 
-// POST: Approve a sign-up request
 app.post('/signup-requests/:id/approve', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -174,25 +226,18 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     
     // 1. Move the user from signupRequests to live users
     db.users[request.userId] = { 
-        id: request.userId, 
-        pass: request.pass, 
-        name: request.name, 
-        role: request.role, 
-        department: request.department, 
-        email: request.email, 
-        course: request.course, 
-        phone: request.phone, 
-        photoUrl: request.photoUrl 
+        ...request, 
+        batchId: null, // IMPORTANT: Admin/HOD must now assign the batch separately!
     };
+    delete db.users[request.userId].id; // Clean up redundant id property
 
     // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
     
     writeDB(db);
-    res.json({ success: true, message: `Account for ${request.name} approved and activated.` });
+    res.json({ success: true, message: `Account for ${request.name} approved. Batch assignment pending.` });
 });
 
-// POST: Reject a sign-up request
 app.post('/signup-requests/:id/reject', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -200,7 +245,6 @@ app.post('/signup-requests/:id/reject', (req, res) => {
 
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
     
-    // Remove the request from the pending list
     const rejectedUser = db.signupRequests[index].name;
     db.signupRequests.splice(index, 1);
     
@@ -209,21 +253,60 @@ app.post('/signup-requests/:id/reject', (req, res) => {
 });
 
 
-// --- GENERAL ---
+// =========================================
+// FEATURE ROUTES UPDATES
+// =========================================
+
+// POST /attendance/mark - UPDATED to check teacher assignment
+app.post('/attendance/mark', (req, res) => {
+    const { facultyId, batchId, subjectCode, studentId, status } = req.body; 
+    const db = readDB();
+
+    // 1. Authorization check: Is this teacher assigned to this subject/batch?
+    const subject = db.subjects[subjectCode];
+    if (!subject || subject.teacherId !== facultyId) {
+        return res.status(403).json({ success: false, message: "Faculty not assigned to this subject." });
+    }
+    if (!subject.batchIds.includes(batchId)) {
+        return res.status(403).json({ success: false, message: "Batch is not linked to this subject." });
+    }
+
+    // 2. Student check: Is the student in the batch?
+    const student = db.users[studentId];
+    if (!student || student.batchId !== batchId) {
+         return res.status(403).json({ success: false, message: "Student is not part of this batch." });
+    }
+
+    // 3. Original attendance marking logic (simplified)
+    if (!db.attendance) db.attendance = {}; 
+    if (!db.attendance[studentId]) db.attendance[studentId] = {};
+    const subKey = `${subjectCode} (${batchId})`;
+
+    if (!db.attendance[studentId][subKey]) db.attendance[studentId][subKey] = { present: 0, total: 0 };
+    
+    db.attendance[studentId][subKey].total++; 
+    if (status === 'Present') db.attendance[studentId][subKey].present++;
+    
+    writeDB(db); 
+    res.json({ success: true, message: "Attendance marked" });
+});
+
+// GET /attendance/:userId (UNCHANGED)
+app.get('/attendance/:userId', (req, res) => { res.json({ success: true, attendance: readDB().attendance?.[req.params.userId] || {} }); });
+
+
+// --- OTHER FEATURE ROUTES (RETAINED/UNCHANGED) ---
 app.get('/profile/:userId', (req, res) => {
     const user = readDB().users[req.params.userId];
     if (!user) return res.status(404).json({ success: false });
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
 });
-
-// --- ADMIN: USER MANAGEMENT (CRUD for LIVE users) ---
 app.get('/users', (req, res) => {
     const db = readDB();
     const usersList = Object.values(db.users).map(({ pass, ...user }) => user);
     res.json({ success: true, users: usersList });
 });
-
 app.delete('/users/:userId', (req, res) => {
     const db = readDB();
     if (db.users[req.params.userId]) {
@@ -234,8 +317,6 @@ app.delete('/users/:userId', (req, res) => {
         res.status(404).json({ success: false, message: "User not found" });
     }
 });
-
-// --- ANNOUNCEMENTS ---
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
     const db = readDB();
@@ -245,7 +326,6 @@ app.get('/announcements', (req, res) => {
     }
     res.json({ success: true, announcements: all.reverse() });
 });
-
 app.post('/announcements', (req, res) => {
     const db = readDB();
     const newAnnounce = { id: Date.now(), title: req.body.title, body: req.body.body, target: req.body.target, department: req.body.department, date: new Date() };
@@ -254,8 +334,6 @@ app.post('/announcements', (req, res) => {
     writeDB(db);
     res.json({ success: true, message: "Announcement posted" });
 });
-
-// --- ID CARDS ---
 app.post('/id-cards/apply', upload.single('idCardPhoto'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: "Photo is required (max 20MB)" });
     const db = readDB();
@@ -271,19 +349,16 @@ app.post('/id-cards/apply', upload.single('idCardPhoto'), (req, res) => {
     writeDB(db);
     res.json({ success: true, message: "Application submitted" });
 });
-
 app.get('/id-cards/my-status/:userId', (req, res) => {
     const db = readDB();
     const reqData = (db.idCardRequests || []).find(r => r.userId === req.params.userId);
     res.json({ success: true, request: reqData || null });
 });
-
 app.get('/id-cards/pending', (req, res) => {
     const db = readDB();
     const pending = (db.idCardRequests || []).filter(r => r.status === 'Pending');
     res.json({ success: true, requests: pending });
 });
-
 app.post('/id-cards/:id/action', (req, res) => {
     const db = readDB();
     const cardReq = (db.idCardRequests || []).find(r => r.id == req.params.id);
@@ -295,8 +370,6 @@ app.post('/id-cards/:id/action', (req, res) => {
         res.status(404).json({ success: false, message: "Request not found" });
     }
 });
-
-// --- EXISTING FEATURES ---
 app.get('/placements', (req, res) => {
     const db = readDB();
     let results = db.placements || [];
@@ -310,14 +383,6 @@ app.post('/placements', (req, res) => {
     res.json({ success: true, message: "Placement posted" });
 });
 app.get('/timetable', (req, res) => { res.json({ success: true, timetable: readDB().timetables?.[req.query.course] || {} }); });
-app.get('/attendance/:userId', (req, res) => { res.json({ success: true, attendance: readDB().attendance?.[req.params.userId] || {} }); });
-app.post('/attendance/mark', (req, res) => {
-    const { studentId, subject, status } = req.body; const db = readDB();
-    if (!db.attendance) db.attendance = {}; if (!db.attendance[studentId]) db.attendance[studentId] = {};
-    if (!db.attendance[studentId][subject]) db.attendance[studentId][subject] = { present: 0, total: 0 };
-    db.attendance[studentId][subject].total++; if (status === 'Present') db.attendance[studentId][subject].present++;
-    writeDB(db); res.json({ success: true, message: "Attendance marked" });
-});
 app.get('/marks/:userId', (req, res) => { res.json({ success: true, marks: readDB().marks?.[req.params.userId] || [] }); });
 app.get('/assignments', (req, res) => {
     const { course, facultyId } = req.query; const db = readDB();

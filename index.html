@@ -297,7 +297,7 @@ const DEPT_DATA = {
     "Tula's Institute of Pharmacy": { courses: ["B.Pharm", "D.Pharm"] }
 };
 
-// --- CHATBOT CONFIG ---
+// --- CHATBOT CONFIG (UNCHANGED) ---
 const CHAT_MODEL = 'gemini-2.5-flash-preview-09-2025';
 const API_KEY = ""; 
 
@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     generateLoginCaptcha(); 
     if (currentUser) showDashboard(); else updateAuthUI();
 
-    // Login Handler: Now handles direct login with password and captcha
+    // Login Handler (UNCHANGED)
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
 
@@ -329,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Pass the credentials directly to the login handler
         await handleAuth('/login', {
             userId: document.getElementById('login-id').value.trim(),
             password: document.getElementById('login-pass').value,
@@ -338,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Signup Handler: Now submits for admin approval
+    // Signup Handler (UNCHANGED - Submits for admin approval)
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
@@ -352,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(e.target);
         const payload = Object.fromEntries(formData);
         
-        // --- DOMAIN CHECK ---
         if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
             showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
             return;
@@ -362,7 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.userId = payload.email;
         }
 
-        // Call handleAuth (which now expects the server to return "pending approval")
         await handleAuth('/signup', payload, true);
     };
 
@@ -398,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === AUTHENTICATION LOGIC ===
+// === AUTHENTICATION & UI HELPERS (UNCHANGED) ===
 
 function initAuthDropdowns() {
     const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
@@ -469,7 +466,6 @@ function updateSignupUI() {
     }
 }
 
-// === CAPTCHA GENERATORS (UNCHANGED) ===
 function generateCaptcha(canvasId = 'captcha-canvas', setState) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -524,7 +520,6 @@ async function handleAuth(endpoint, payload, isSignup = false) {
         
         if (data.success) {
             if (isSignup) {
-                // UPDATED MESSAGE: New accounts are pending admin approval
                 showToast(data.message || 'Registration submitted! Account pending admin approval.', false); 
                 toggleAuthScreen('login');
                 document.getElementById('signup-form').reset();
@@ -539,17 +534,37 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             showToast(data.message || 'Action failed', true);
             if (isSignup) generateCaptcha();
             else {
-                // On login failure, only refresh captcha, no stage reset
                 generateLoginCaptcha();
             }
         }
     } catch (err) {
         showToast('Connection error. Please try again.', true);
-        if (!isSignup) generateLoginCaptcha(); // Refresh captcha on connection error
+        if (!isSignup) generateLoginCaptcha();
     }
 }
 
-// === DASHBOARD & NAVIGATION (UPDATED FOR ADMIN/HOD) ===
+function togglePass(id) { const i = document.getElementById(id); i.type = i.type==='password'?'text':'password'; }
+function toggleAuthScreen(screen) { 
+    document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); 
+    document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
+    if (screen === 'signup') {
+        generateCaptcha(); 
+    } else if (screen === 'login') {
+        generateLoginCaptcha(); 
+    }
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
+function logout() { sessionStorage.clear(); window.location.reload(); }
+function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+function showToast(msg, isErr=false) { 
+    const t = document.getElementById('toast'); 
+    t.textContent = msg; 
+    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; 
+    setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
+}
+
+// === DASHBOARD & NAVIGATION (UPDATED) ===
 function showDashboard() {
     document.getElementById('auth-wrapper').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
@@ -581,14 +596,18 @@ function renderNavigation() {
         ],
         'HOD': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, // NEW
+            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, // NEW
             { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
-            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, // ADDED
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
             { id: 'placements', label: 'Manage Placements', icon: '💼' }
         ],
         'Admin': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'admin-users', label: 'Manage Users', icon: '👥' },
-            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, // ADDED
+            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, // NEW
+            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, // NEW
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
             { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
             { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
             { id: 'placements', label: 'All Placements', icon: '🌍' }
@@ -623,14 +642,16 @@ async function loadContent(pageId, activeBtn) {
             case 'marks': await loadMarks(container); break;
             case 'assignments': await loadAssignmentsStudent(container); break;
             case 'leaves': await loadLeavesCommon(container); break;
-            case 'fac-attendance': loadFacultyAttendance(container); break;
+            case 'fac-attendance': loadFacultyAttendance(container); break; // UPDATED LOGIC
             case 'fac-assignments': await loadFacultyAssignments(container); break;
             case 'fac-leaves': await loadFacultyLeaves(container); break;
             case 'placements': await loadPlacements(container); break;
             case 'admin-users': await loadAdminUsers(container); break;
             case 'admin-id-cards': await loadAdminIdCards(container); break;
             case 'admin-announcements': await loadAdminAnnouncements(container); break;
-            case 'admin-signup-requests': await showAdminSignupRequests(container); break; // NEW HANDLER
+            case 'admin-signup-requests': await showAdminSignupRequests(container); break; 
+            case 'admin-batches': await loadAdminBatches(container); break; // NEW CASE
+            case 'admin-subjects': await loadAdminSubjects(container); break; // NEW CASE
             default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
         }
     } catch (err) {
@@ -638,7 +659,99 @@ async function loadContent(pageId, activeBtn) {
     }
 }
 
-// === NEW ADMIN APPROVAL FUNCTIONS ===
+// =========================================
+// === FEATURE IMPLEMENTATIONS ===
+// =========================================
+
+// --- 1. Admin/HOD Batch Management (NEW) ---
+
+async function loadAdminBatches(container) {
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
+    
+    try {
+        const res = await fetch(`${API_BASE}/batches`);
+        const data = await res.json();
+        const batches = data.batches || [];
+        
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Manage Student Batches</h2>
+                <button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create New Batch</button>
+            </div>
+            <div class="space-y-4">
+                ${batches.map(b => `
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-900">${b.name} (${b.id})</h3>
+                                <p class="text-sm text-green-700">${b.department} - ${b.course}</p>
+                            </div>
+                            <span class="text-sm font-medium bg-blue-100 text-blue-800 px-3 py-1 rounded-full">${b.students.length} Students</span>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No batches defined yet.</p>'}
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching batches: ${error.message}</div>`;
+    }
+}
+
+async function loadAdminSubjects(container) {
+     container.innerHTML = `<div class="bg-white p-6 rounded-lg shadow">
+         <h2 class="text-2xl font-bold mb-6">Assign Subjects & Teachers</h2>
+         <p class="text-gray-600">Here, Admin/HOD assigns subjects to a faculty member and links them to one or more batches (e.g., CS101 taught by F101 to Batch BTECH-CSE-2024).</p>
+         <button onclick="openSubjectAssignmentModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4 transition">Assign Subject</button>
+     </div>`;
+}
+
+// --- 2. Faculty Attendance (UPDATED) ---
+
+function loadFacultyAttendance(container) {
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
+        <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
+            <p class="text-red-500 mb-4">
+                **Note:** In this simplified view, you must manually enter the **Batch ID** and **Subject Code** to demonstrate the new server-side authorization check. Use **Batch ID: BTECH-CSE-2024** and **Subject Code: CS101**.
+            </p>
+            <form onsubmit="submitAttendance(event)" class="space-y-4">
+                <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
+
+                <div><label class="block text-sm font-medium mb-1">Batch ID</label><input id="att-batch-id" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. BTECH-CSE-2024"></div>
+                <div><label class="block text-sm font-medium mb-1">Subject Code</label><input id="att-sub-code" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. CS101"></div>
+                
+                <h3 class="font-bold pt-4 border-t">Mark for Student:</h3>
+                <div><label class="block text-sm font-medium mb-1">Student ID</label><input id="att-sid" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. S2024001"></div>
+                
+                <div><label class="block text-sm font-medium mb-1">Status</label>
+                    <div class="flex space-x-4 mt-2">
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Present" checked class="text-green-600 w-5 h-5"><span>Present</span></label>
+                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Absent" class="text-red-600 w-5 h-5"><span>Absent</span></label>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4 transition transform hover:scale-[1.01]">SUBMIT RECORD</button>
+            </form>
+        </div>`;
+}
+
+async function submitAttendance(e) {
+    e.preventDefault();
+    const status = document.querySelector('input[name="att-status"]:checked').value;
+    
+    // UPDATED PAYLOAD
+    await postData('/attendance/mark', { 
+        facultyId: document.getElementById('att-faculty-id').value,
+        batchId: document.getElementById('att-batch-id').value,
+        subjectCode: document.getElementById('att-sub-code').value,
+        studentId: document.getElementById('att-sid').value, 
+        status 
+    });
+    e.target.reset(); 
+    showToast('Attendance marked successfully');
+}
+
+
+// --- 3. Admin Approval (UPDATED) ---
 
 async function showAdminSignupRequests(container) {
     container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
@@ -681,7 +794,6 @@ window.manageSignupRequest = async (id, action) => {
         
         if (data.success) {
             showToast(data.message, false);
-            // Reload the requests list
             await showAdminSignupRequests(document.getElementById('content-area')); 
         } else {
             showToast(data.message, true);
@@ -691,7 +803,46 @@ window.manageSignupRequest = async (id, action) => {
     }
 };
 
-// === PAGE LOADERS (UNCHANGED) ===
+
+// --- 4. Modals and Handlers for Batch Management (NEW) ---
+
+window.openCreateBatchModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create New Batch</h3><form onsubmit="submitCreateBatch(event)" class="space-y-4">
+    <input name="id" placeholder="Batch ID (e.g., BTECH-CSE-2024)" required class="w-full p-3 border rounded-xl">
+    <input name="name" placeholder="Batch Name (e.g., B.Tech CSE - 2024 Entry)" required class="w-full p-3 border rounded-xl">
+    <input name="department" placeholder="Department" required class="w-full p-3 border rounded-xl">
+    <input name="course" placeholder="Course (e.g., B.Tech CSE)" required class="w-full p-3 border rounded-xl">
+    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE BATCH</button>
+</form>`);
+
+async function submitCreateBatch(e) {
+    e.preventDefault();
+    const res = await postData('/batches', Object.fromEntries(new FormData(e.target)));
+    closeModal(); 
+    setTimeout(() => loadContent('admin-batches'), 100); 
+    showToast('Batch created successfully!');
+}
+
+window.openSubjectAssignmentModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Assign Subject</h3><form onsubmit="submitSubjectAssignment(event)" class="space-y-4">
+    <input name="courseCode" placeholder="Subject Code (e.g., CS101)" required class="w-full p-3 border rounded-xl">
+    <input name="name" placeholder="Subject Name" required class="w-full p-3 border rounded-xl">
+    <input name="department" placeholder="Department" required class="w-full p-3 border rounded-xl">
+    <input name="teacherId" placeholder="Faculty ID (e.g., F101)" required class="w-full p-3 border rounded-xl">
+    <textarea name="batchIds" placeholder="Batch IDs (Comma-separated, e.g., BTECH-CSE-2024, BTECH-IT-2024)" required class="w-full p-3 border rounded-xl h-24"></textarea>
+    <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">ASSIGN SUBJECT</button>
+</form>`);
+
+async function submitSubjectAssignment(e) {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
+    formData.batchIds = formData.batchIds.split(',').map(id => id.trim()).filter(id => id);
+    
+    await postData('/subjects', formData);
+    closeModal(); 
+    showToast('Subject assignment successful.');
+}
+
+// --- 5. Old Feature Implementations (RETAINED) ---
+
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
@@ -846,24 +997,6 @@ async function loadLeavesCommon(container) {
                     </span>
                 </div>
             `).join('') || '<p class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
-        </div>`;
-}
-
-function loadFacultyAttendance(container) {
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
-        <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
-            <form onsubmit="submitAttendance(event)" class="space-y-4">
-                <div><label class="block text-sm font-medium mb-1">Student ID</label><input id="att-sid" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. 2024001"></div>
-                <div><label class="block text-sm font-medium mb-1">Subject</label><input id="att-sub" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. Java Programming"></div>
-                <div><label class="block text-sm font-medium mb-1">Status</label>
-                    <div class="flex space-x-4 mt-2">
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Present" checked class="text-green-600 w-5 h-5"><span>Present</span></label>
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Absent" class="text-red-600 w-5 h-5"><span>Absent</span></label>
-                    </div>
-                </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4 transition transform hover:scale-[1.01]">SUBMIT RECORD</button>
-            </form>
         </div>`;
 }
 
@@ -1028,52 +1161,22 @@ async function updateIdCardStatus(id, status) {
     showToast(`ID Card request ${status.toLowerCase()}`, false);
 }
 
+// --- 6. Modal Handlers (RETAINED) ---
 
-// === HELPER FUNCTIONS (UNCHANGED) ===
-function detailItem(label, value) {
-    return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
-}
-function togglePass(id) { const i = document.getElementById(id); i.type = i.type==='password'?'text':'password'; }
-function toggleAuthScreen(screen) { 
-    document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); 
-    document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
-    if (screen === 'signup') {
-        generateCaptcha(); 
-    } else if (screen === 'login') {
-        generateLoginCaptcha(); 
-    }
-}
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
-function logout() { sessionStorage.clear(); window.location.reload(); }
-function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
-function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function showToast(msg, isErr=false) { 
-    const t = document.getElementById('toast'); 
-    t.textContent = msg; 
-    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; 
-    setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
-}
-
-// === MODAL HANDLERS (UNCHANGED) ===
 window.openLeaveModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Apply for Leave</h3><form onsubmit="submitLeave(event)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl"><input type="date" name="toDate" required class="p-3 border rounded-xl"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32"></textarea><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SUBMIT APPLICATION</button></form>`);
 window.openCreateAssignModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create Assignment</h3><form onsubmit="submitCreateAssign(event)" class="space-y-4"><input name="title" placeholder="Assignment Title" required class="w-full p-3 border rounded-xl"><textarea name="description" placeholder="Instructions..." class="w-full p-3 border rounded-xl h-24"></textarea><input name="course" placeholder="Target Course (e.g. BCA)" required class="w-full p-3 border rounded-xl"><div class="grid grid-cols-2 gap-4"><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Due Date</label><input type="date" name="dueDate" required class="p-3 border rounded-xl"></div><div class="flex flex-col"><label class="text-sm mb-1 font-medium">Attachment (Optional)</label><input type="file" name="assignmentFile" class="p-2 border rounded-xl bg-gray-50"></div></div><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">POST ASSIGNMENT</button></form>`);
 window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-bold mb-4">Submit Assignment</h3><form onsubmit="submitWork(event, ${id})" class="space-y-4"><div class="p-4 bg-blue-50 text-blue-800 rounded-xl text-sm mb-4">Ensure your file is in PDF or DOCX format.</div><input type="file" name="submissionFile" required class="w-full p-3 border rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold transition">UPLOAD & TURN IN</button></form>`);
 window.openPostPlacementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Post Placement Drive</h3><form onsubmit="submitPlacement(event)" class="space-y-4"><input name="companyName" placeholder="Company Name" required class="w-full p-3 border rounded-xl"><input name="jobTitle" placeholder="Job Role/Title" required class="w-full p-3 border rounded-xl"><textarea name="jobDescription" placeholder="Job Description & Requirements..." required class="w-full p-3 border rounded-xl h-32"></textarea><select name="department" required class="w-full p-3 border rounded-xl"><option value="">Target Department</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><input name="course" placeholder="Target Course (e.g. B.Tech CSE)" required class="w-full p-3 border rounded-xl"><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH DRIVE</button></form>`);
 window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-bold mb-4">Create New Announcement</h3><form onsubmit="submitAnnouncement(event)" class="space-y-4"><input name="title" placeholder="Title" required class="w-full p-3 border rounded-xl"><textarea name="body" placeholder="Announcement Details..." required class="w-full p-3 border rounded-xl h-24"></textarea><select name="target" required class="w-full p-3 border rounded-xl"><option value="All">All Users</option><option value="Student">Students Only</option><option value="Faculty">Faculty Only</option></select><select name="department" class="w-full p-3 border rounded-xl mt-2"><option value="">All Departments (or select one)</option>${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`).join('')}</select><button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">PUBLISH ANNOUNCEMENT</button></form>`);
 
-// === FORM SUBMISSION HANDLERS (UNCHANGED) ===
+// --- 7. Form Submission Handlers (RETAINED) ---
+
 async function submitLeave(e) {
     e.preventDefault();
     await postData('/leaves', Object.fromEntries(new FormData(e.target)), { userId: currentUser.id, department: currentUser.department });
     closeModal(); 
     setTimeout(() => loadContent('leaves'), 100); 
     showToast('Leave application submitted');
-}
-async function submitAttendance(e) {
-    e.preventDefault();
-    const status = document.querySelector('input[name="att-status"]:checked').value;
-    await postData('/attendance/mark', { studentId: document.getElementById('att-sid').value, subject: document.getElementById('att-sub').value, status });
-    e.target.reset(); showToast('Attendance marked successfully');
 }
 async function submitCreateAssign(e) {
     e.preventDefault();
@@ -1118,7 +1221,7 @@ async function postData(url, data, extra={}) {
     await fetch(API_BASE+url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({...data, ...extra}) });
 }
 
-// === CHATBOT LOGIC (UNCHANGED) ===
+// --- 8. Chatbot Logic (RETAINED) ---
 
 function addMessageToChat(text, isUser, sources = []) {
     const historyDiv = document.getElementById('chat-history');
