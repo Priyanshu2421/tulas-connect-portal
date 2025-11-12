@@ -1,274 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TULA'S CONNECT - ERP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #f3f4f6; 
-            overflow-x: hidden;
-        }
-        /* Loading Spinner */
-        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Navigation Styles */
-        .nav-link.active { background-color: #15803d; color: white; border-left: 4px solid #22c55e; }
-        .nav-link { transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; }
-        .nav-link:hover { background-color: #16a34a; }
-
-        /* Custom Scrollbar for sidebar */
-        aside::-webkit-scrollbar { width: 5px; }
-        aside::-webkit-scrollbar-thumb { background: #166534; border-radius: 5px; }
-
-        /* Captcha Styles */
-        #captcha-canvas, #login-captcha-canvas {
-            background-color: #f9fafb;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            cursor: pointer;
-        }
-
-        /* --- New Animations --- */
-        /* Login/Signup Box Animation */
-        #login-box, #signup-box {
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateY(0);
-        }
-        /* Content Area Fade-In */
-        #content-area > div:not(.loader-wrapper) {
-            animation: fadeIn 0.5s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        /* Chatbot Bubble Animation */
-        .chat-bubble {
-            animation: slideIn 0.3s ease-out;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        /* Small loader for chat */
-        .loader-small { 
-            border: 2px solid #f3f3f3; 
-            border-top: 2px solid #16a34a; 
-            border-radius: 50%; 
-            width: 16px; 
-            height: 16px; 
-            animation: spin 1s linear infinite; 
-            display: inline-block; 
-        }
-        /* Transition for toast */
-        #toast {
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-full opacity-0 transition-all duration-500 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white"></div>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
-             <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition text-2xl">&times;</button>
-             <div id="modal-content" class="p-6"></div>
-        </div>
-    </div>
-
-    <div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
-        
-        <div id="login-box" class="w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl transform">
-            <div class="text-center mb-8">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="h-16 mx-auto mb-2">
-                <h1 class="text-2xl font-bold text-gray-900">Welcome Back</h1>
-                <p class="text-gray-500">Sign in to Tula's Connect</p>
-            </div>
-            <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Login As</label>
-                    <select id="login-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" onchange="updateAuthUI()">
-                        <option>Student</option>
-                        <option>Faculty</option>
-                        <option value="Department Login">Department Head (HOD)</option>
-                        <option>Admin</option>
-                    </select>
-                </div>
-                
-                <div id="login-dept-wrapper" class="hidden space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <select id="login-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" onchange="updateAuthUI()">
-                            </select>
-                    </div>
-                    <div id="login-eng-branch-wrapper" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Engineering Branch</label>
-                        <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                            </select>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
-                    <input type="text" id="login-id" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
-                </div>
-                
-                <div id="otp-verification-wrapper" class="space-y-4">
-                    
-                    <div class="relative">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                        <input type="password" id="login-pass" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
-                        <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600 transition">👁️</button>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
-                        <div class="flex items-center space-x-4">
-                            <canvas id="login-captcha-canvas" width="150" height="50" onclick="generateLoginCaptcha()"></canvas>
-                            <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
-                                🔄
-                            </button>
-                        </div>
-                        <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                    </div>
-
-                    <button type="submit" id="secure-login-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
-                    
-                </div>
-            </form>
-            <div class="mt-6 text-center text-sm text-gray-600">
-                New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
-            </div>
-        </div>
-
-        <div id="signup-box" class="hidden w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transform">
-            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Create Account</h2>
-            <form id="signup-form" class="space-y-4">
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">I am a...</label>
-                    <select name="role" id="signup-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
-                        <option value="">Select Role</option>
-                        <option value="Student">Student</option>
-                        <option value="Faculty">Faculty</option>
-                    </select>
-                </div>
-
-                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                <input type="email" name="email" placeholder="Email Address (Must use @tulas.edu.in)" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-
-                <div id="student-fields" class="hidden space-y-4">
-                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                </div>
-
-                <div id="signup-dept-wrapper" class="hidden space-y-4">
-                    <select name="department" id="signup-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
-                        <option value="">Select Department</option>
-                        </select>
-                </div>
-
-                <div id="signup-course-wrapper" class="hidden">
-                    <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                        <option value="">Select Course</option>
-                        </select>
-                </div>
-
-                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
-                    <div class="flex items-center space-x-4">
-                        <canvas id="captcha-canvas" width="150" height="50" onclick="generateCaptcha()"></canvas>
-                        <button type="button" onclick="generateCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
-                            🔄
-                        </button>
-                    </div>
-                    <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-lg">REGISTER</button>
-            </form>
-            <div class="mt-6 text-center text-sm">
-                <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline transition">← Back to Login</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
-        <aside id="sidebar" class="bg-green-900 text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
-            <div class="p-6 flex items-center space-x-3 border-b border-green-800">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/40x40/22c55e/ffffff?text=TL'" class="h-10 w-10 rounded-full bg-white p-1">
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">TULA'S CONNECT</h1>
-                    <p id="nav-role-badge" class="text-xs text-green-300">Portal</p>
-                </div>
-            </div>
-            <nav id="nav-links" class="flex-1 overflow-y-auto p-4 space-y-2"></nav>
-            <div class="p-4 border-t border-green-800">
-                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-green-800 hover:text-red-200 rounded-xl transition transform hover:scale-[1.01]">
-                    <span>🚪</span><span>Sign Out</span>
-                </button>
-            </div>
-        </aside>
-
-        <div class="flex-1 md:ml-72 flex flex-col min-h-screen">
-            <header class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
-                <div class="flex items-center space-x-3">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/32x32/22c55e/ffffff?text=TL'" class="h-8">
-                    <span class="font-bold text-green-800">TULA'S</span>
-                </div>
-                <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">☰</button>
-            </header>
-
-            <main class="p-4 md:p-8 flex-1 overflow-y-auto">
-                <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
-                    </div>
-            </main>
-        </div>
-    </div>
-
-    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-3xl">
-        🤖
-    </button>
-
-    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[80vh] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all duration-300">
-        <div class="p-4 bg-green-700 text-white flex justify-between items-center shadow-md">
-            <h3 class="font-bold text-lg">Tula's AI Helper</h3>
-            <button onclick="toggleChatbot()" class="text-white hover:text-green-200 transition">
-                <span class="text-2xl">&times;</span>
-            </button>
-        </div>
-        
-        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            <div class="flex justify-start">
-                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-[80%] chat-bubble">
-                    Hello! I'm your Tula's AI Portal Assistant. I can help you with general queries or provide up-to-date information using Google Search. Try asking me about new admissions or institute news!
-                </div>
-            </div>
-            <div id="chat-loading-indicator" class="hidden flex justify-start">
-                <div class="p-3 rounded-xl bg-gray-200 chat-bubble">
-                    <div class="loader-small"></div>
-                </div>
-            </div>
-        </div>
-
-        <form id="chat-form" class="p-4 border-t border-gray-200 bg-white">
-            <div class="flex space-x-2">
-                <input type="text" id="chat-input" placeholder="Ask me anything..." required class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 outline-none">
-                <button type="submit" id="chat-submit-btn" class="bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition disabled:bg-green-400">
-                    Send
-                </button>
-            </div>
-        </form>
-    </div>
-
 <script>
 // === CONFIGURATION & DATA ===
 const API_BASE = ''; 
@@ -490,6 +219,7 @@ function updateSignupUI() {
     }
 }
 
+// === CAPTCHA FIX (Robustness) ===
 function generateCaptcha(canvasId = 'captcha-canvas', setState) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
@@ -502,6 +232,7 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
     ctx.fillStyle = '#f9fafb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Drawing lines for noise
     for (let i = 0; i < 7; i++) {
         ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
         ctx.beginPath();
@@ -510,6 +241,7 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
         ctx.stroke();
     }
 
+    // Drawing text
     for (let i = 0; i < 6; i++) {
         const char = chars.charAt(Math.floor(Math.random() * chars.length));
         captchaText += char;
@@ -1607,7 +1339,7 @@ window.addSubjectAssignmentRow = () => {
 
 async function submitEnrollBatch(e) {
     e.preventDefault();
-    const formData = Object.fromEntries(new FormData(e.target);
+    const formData = new FormData(e.target);
     const payload = {
         batchId: formData.get('batchId'),
         studentIds: formData.get('studentIds').split(',').map(id => id.trim()).filter(id => id),
