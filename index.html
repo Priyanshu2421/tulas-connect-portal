@@ -1,605 +1,703 @@
-<div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
-        
-        <div id="login-box" class="w-full max-w-sm bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl transform">
-            <div class="text-center mb-6">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="h-14 mx-auto mb-1">
-                <h1 class="text-xl font-bold text-gray-900">Welcome Back</h1>
-                <p class="text-gray-500 text-sm">Sign in to Tula's Connect</p>
-            </div>
-            <form id="login-form" class="space-y-3">
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Login As</label>
-                    <select id="login-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" onchange="updateAuthUI()">
-                        <option>Student</option>
-                        <option>Faculty</option>
-                        <option value="Department Login">Department Head (HOD)</option>
-                        <option>Admin</option>
-                    </select>
-                </div>
-                
-                <div id="login-dept-wrapper" class="hidden space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Department</label>
-                        <select id="login-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" onchange="updateAuthUI()">
-                            </select>
-                    </div>
-                    <div id="login-eng-branch-wrapper" class="hidden">
-                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Engineering Branch</label>
-                        <select id="login-eng-branch" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
-                            </select>
-                    </div>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TULA'S CONNECT - ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; 
+            overflow-x: hidden;
+        }
+        /* Adjusted background for better contrast and readability */
+        #auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            /* Increased darkness for better contrast against white form */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg'); 
+            background-size: cover; 
+            background-position: center;
+        }
+        /* Loading Spinner */
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #16a34a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 50px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-0.5">User ID</label>
-                    <input type="text" id="login-id" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
-                </div>
-                
-                <div id="otp-verification-wrapper" class="space-y-3">
-                    
-                    <div class="relative">
-                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
-                        <input type="password" id="login-pass" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
-                        <button type="button" onclick="togglePass('login-pass')" class="absolute top-7 right-3 text-gray-400 hover:text-gray-600 transition text-lg">👁️</button>
-                    </div>
+        /* Navigation Styles */
+        .nav-link.active { background-color: #15803d; color: white; border-left: 4px solid #22c55e; }
+        .nav-link { transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; }
+        .nav-link:hover { background-color: #16a34a; }
 
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-700">Verify you are human</label>
-                        <div class="flex items-center space-x-4">
-                            <canvas id="login-captcha-canvas" width="120" height="40" onclick="generateLoginCaptcha()"></canvas>
-                            <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
-                                🔄
-                            </button>
-                        </div>
-                        <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                    </div>
+        /* Custom Scrollbar for sidebar */
+        aside::-webkit-scrollbar { width: 5px; }
+        aside::-webkit-scrollbar-thumb { background: #166534; border-radius: 5px; }
 
-                    <button type="submit" id="secure-login-btn" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-[1.01] shadow-lg text-sm">SECURE LOGIN</button>
-                    
-                </div>
-            </form>
-            <div class="mt-4 text-center text-xs text-gray-600">
-                New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
-            </div>
-        </div>
+        /* Captcha Styles - Adjusted size for smaller form */
+        #captcha-canvas, #login-captcha-canvas {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            width: 120px; /* Matched width in HTML */
+            height: 40px; /* Matched height in HTML */
+        }
 
-        <div id="signup-box" class="hidden w-full max-w-sm bg-white/95 backdrop-blur-md p-6 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transform">
-            <h2 class="text-xl font-bold text-center text-gray-900 mb-4">Create Account</h2>
-            <form id="signup-form" class="space-y-3">
-                
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-0.5">I am a...</label>
-                    <select name="role" id="signup-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
-                        <option value="">Select Role</option>
-                        <option value="Student">Student</option>
-                        <option value="Faculty">Faculty</option>
-                    </select>
-                </div>
+        /* --- New Animations --- */
+        /* Login/Signup Box Animation */
+        #login-box, #signup-box {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+        /* Content Area Fade-In */
+        #content-area > div:not(.loader-wrapper) {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Chatbot Bubble Animation */
+        .chat-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        /* Small loader for chat */
+        .loader-small { 
+            border: 2px solid #f3f3f3; 
+            border-top: 2px solid #16a34a; 
+            border-radius: 50%; 
+            width: 16px; 
+            height: 16px; 
+            animation: spin 1s linear infinite; 
+            display: inline-block; 
+        }
+        /* Transition for toast */
+        #toast {
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
 
-                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                <input type="email" name="email" placeholder="Email Address (@tulas.edu.in)" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-full opacity-0 transition-all duration-500 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white"></div>
 
-                <div id="student-fields" class="hidden space-y-3">
-                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                </div>
+    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+             <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition text-2xl">&times;</button>
+             <div id="modal-content" class="p-6"></div>
+        </div>
+    </div>
 
-                <div id="signup-dept-wrapper" class="hidden space-y-3">
-                    <select name="department" id="signup-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
-                        <option value="">Select Department</option>
-                        </select>
-                </div>
+    <div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center">
+        
+        <div id="login-box" class="w-full max-w-sm bg-white p-6 rounded-2xl shadow-2xl transform">
+            <div class="text-center mb-5">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/60x60/22c55e/ffffff?text=TL'" alt="Logo" class="h-12 mx-auto mb-1">
+                <h1 class="text-xl font-bold text-gray-900">TULA'S CONNECT</h1>
+                <p class="text-gray-500 text-sm">Secure Login</p>
+            </div>
+            <form id="login-form" class="space-y-3 text-left">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Login As</label>
+                    <select id="login-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" onchange="updateAuthUI()">
+                        <option>Student</option>
+                        <option>Faculty</option>
+                        <option value="Department Login">Department Head (HOD)</option>
+                        <option>Admin</option>
+                    </select>
+                </div>
+                
+                <div id="login-dept-wrapper" class="hidden space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Department</label>
+                        <select id="login-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" onchange="updateAuthUI()">
+                            </select>
+                    </div>
+                    <div id="login-eng-branch-wrapper" class="hidden">
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Engineering Branch</label>
+                        <select id="login-eng-branch" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                            </select>
+                    </div>
+                </div>
 
-                <div id="signup-course-wrapper" class="hidden">
-                    <select name="course" id="signup-course" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                        <option value="">Select Course</option>
-                        </select>
-                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">User ID</label>
+                    <input type="text" id="login-id" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
+                </div>
+                
+                <div id="otp-verification-wrapper" class="space-y-3">
+                    
+                    <div class="relative">
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
+                        <input type="password" id="login-pass" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
+                        <button type="button" onclick="togglePass('login-pass')" class="absolute top-7 right-3 text-gray-400 hover:text-gray-600 transition text-lg">👁️</button>
+                    </div>
 
-                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                
-                <div class="space-y-2">
-                    <label class="block text-xs font-medium text-gray-700">Verify you are human</label>
-                    <div class="flex items-center space-x-4">
-                        <canvas id="captcha-canvas" width="120" height="40" onclick="generateCaptcha()"></canvas>
-                        <button type="button" onclick="generateCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
-                            🔄
-                        </button>
-                    </div>
-                    <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
-                </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-700">Verify you are human</label>
+                        <div class="flex items-center space-x-4">
+                            <canvas id="login-captcha-canvas" width="120" height="40" onclick="generateLoginCaptcha()"></canvas>
+                            <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
+                                🔄
+                            </button>
+                        </div>
+                        <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                    </div>
 
-                <button type="submit" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all shadow-lg text-sm">REGISTER</button>
-            </form>
-            <div class="mt-4 text-center text-xs">
-                <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline transition">← Back to Login</button>
-            </div>
-        </div>
-    </div>
+                    <button type="submit" id="secure-login-btn" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-[1.01] shadow-lg text-sm">SECURE LOGIN</button>
+                    
+                </div>
+            </form>
+            <div class="mt-4 text-center text-xs text-gray-600">
+                New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
+            </div>
+        </div>
 
-    <div id="dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
-        <aside id="sidebar" class="bg-green-900 text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
-            <div class="p-6 flex items-center space-x-3 border-b border-green-800">
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/40x40/22c55e/ffffff?text=TL'" class="h-10 w-10 rounded-full bg-white p-1">
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">TULA'S CONNECT</h1>
-                    <p id="nav-role-badge" class="text-xs text-green-300">Portal</p>
-                </div>
-            </div>
-            <nav id="nav-links" class="flex-1 overflow-y-auto p-4 space-y-2"></nav>
-            <div class="p-4 border-t border-green-800">
-                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-green-800 hover:text-red-200 rounded-xl transition transform hover:scale-[1.01]">
-                    <span>🚪</span><span>Sign Out</span>
-                </button>
-            </div>
-        </aside>
+        <div id="signup-box" class="hidden w-full max-w-sm bg-white p-6 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transform">
+            <h2 class="text-xl font-bold text-center text-gray-900 mb-4">Create Account</h2>
+            <form id="signup-form" class="space-y-3">
+                
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">I am a...</label>
+                    <select name="role" id="signup-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
+                        <option value="">Select Role</option>
+                        <option value="Student">Student</option>
+                        <option value="Faculty">Faculty</option>
+                    </select>
+                </div>
 
-        <div class="flex-1 md:ml-72 flex flex-col min-h-screen">
-            <header class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
-                <div class="flex items-center space-x-3">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/32x32/22c55e/ffffff?text=TL'" class="h-8">
-                    <span class="font-bold text-green-800">TULA'S</span>
-                </div>
-                <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">☰</button>
-            </header>
+                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                <input type="email" name="email" placeholder="Email Address (@tulas.edu.in)" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
 
-            <main class="p-4 md:p-8 flex-1 overflow-y-auto">
-                <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
-                    </div>
-            </main>
-        </div>
-    </div>
+                <div id="student-fields" class="hidden space-y-3">
+                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                </div>
 
-    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-3xl">
-        🤖
-    </button>
+                <div id="signup-dept-wrapper" class="hidden space-y-3">
+                    <select name="department" id="signup-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
+                        <option value="">Select Department</option>
+                        </select>
+                </div>
 
-    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[80vh] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all duration-300">
-        <div class="p-4 bg-green-700 text-white flex justify-between items-center shadow-md">
-            <h3 class="font-bold text-lg">Tula's AI Helper</h3>
-            <button onclick="toggleChatbot()" class="text-white hover:text-green-200 transition">
-                <span class="text-2xl">&times;</span>
-            </button>
-        </div>
-        
-        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            <div class="flex justify-start">
-                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-[80%] chat-bubble">
-                    Hello! I'm your Tula's AI Portal Assistant. I can help you with general queries or provide up-to-date information using Google Search. Try asking me about new admissions or institute news!
-                </div>
-            </div>
-            <div id="chat-loading-indicator" class="hidden flex justify-start">
-                <div class="p-3 rounded-xl bg-gray-200 chat-bubble">
-                    <div class="loader-small"></div>
-                </div>
-            </div>
-        </div>
+                <div id="signup-course-wrapper" class="hidden">
+                    <select name="course" id="signup-course" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                        <option value="">Select Course</option>
+                        </select>
+                </div>
 
-        <form id="chat-form" class="p-4 border-t border-gray-200 bg-white">
-            <div class="flex space-x-2">
-                <input type="text" id="chat-input" placeholder="Ask me anything..." required class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 outline-none">
-                <button type="submit" id="chat-submit-btn" class="bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition disabled:bg-green-400">
-                    Send
-                </button>
-            </div>
-        </form>
-    </div>
+                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-700">Verify you are human</label>
+                    <div class="flex items-center space-x-4">
+                        <canvas id="captcha-canvas" width="120" height="40" onclick="generateCaptcha()"></canvas>
+                        <button type="button" onclick="generateCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
+                            🔄
+                        </button>
+                    </div>
+                    <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                </div>
+
+                <button type="submit" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all shadow-lg text-sm">REGISTER</button>
+            </form>
+            <div class="mt-4 text-center text-xs">
+                <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline transition">← Back to Login</button>
+            </div>
+        </div>
+    </div>
+    <div id="dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
+        <aside id="sidebar" class="bg-green-900 text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
+            <div class="p-6 flex items-center space-x-3 border-b border-green-800">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/40x40/22c55e/ffffff?text=TL'" class="h-10 w-10 rounded-full bg-white p-1">
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">TULA'S CONNECT</h1>
+                    <p id="nav-role-badge" class="text-xs text-green-300">Portal</p>
+                </div>
+            </div>
+            <nav id="nav-links" class="flex-1 overflow-y-auto p-4 space-y-2"></nav>
+            <div class="p-4 border-t border-green-800">
+                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-green-800 hover:text-red-200 rounded-xl transition transform hover:scale-[1.01]">
+                    <span>🚪</span><span>Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 md:ml-72 flex flex-col min-h-screen">
+            <header class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
+                <div class="flex items-center space-x-3">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/32x32/22c55e/ffffff?text=TL'" class="h-8">
+                    <span class="font-bold text-green-800">TULA'S</span>
+                </div>
+                <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">☰</button>
+            </header>
+
+            <main class="p-4 md:p-8 flex-1 overflow-y-auto">
+                <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
+                    </div>
+            </main>
+        </div>
+    </div>
+
+    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-3xl">
+        🤖
+    </button>
+
+    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[80vh] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all duration-300">
+        <div class="p-4 bg-green-700 text-white flex justify-between items-center shadow-md">
+            <h3 class="font-bold text-lg">Tula's AI Helper</h3>
+            <button onclick="toggleChatbot()" class="text-white hover:text-green-200 transition">
+                <span class="text-2xl">&times;</span>
+            </button>
+        </div>
+        
+        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div class="flex justify-start">
+                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-[80%] chat-bubble">
+                    Hello! I'm your Tula's AI Portal Assistant. I can help you with general queries or provide up-to-date information using Google Search. Try asking me about new admissions or institute news!
+                </div>
+            </div>
+            <div id="chat-loading-indicator" class="hidden flex justify-start">
+                <div class="p-3 rounded-xl bg-gray-200 chat-bubble">
+                    <div class="loader-small"></div>
+                </div>
+            </div>
+        </div>
+
+        <form id="chat-form" class="p-4 border-t border-gray-200 bg-white">
+            <div class="flex space-x-2">
+                <input type="text" id="chat-input" placeholder="Ask me anything..." required class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 outline-none">
+                <button type="submit" id="chat-submit-btn" class="bg-green-600 text-white px-4 py-3 rounded-xl hover:bg-green-700 transition disabled:bg-green-400">
+                    Send
+                </button>
+            </div>
+        </form>
+    </div>
 
 <script>
 // === CONFIGURATION & DATA ===
-const API_BASE = ''; 
+const API_BASE = ''; 
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
-let currentLoginCaptcha = ''; 
-const REQUIRED_DOMAIN = '@tulas.edu.in'; 
+let currentLoginCaptcha = ''; 
+const REQUIRED_DOMAIN = '@tulas.edu.in'; 
 
 // Course Data Mapping (UPDATED with Year/Section placeholders)
 const DEPT_DATA = {
-    "Department of Engineering": {
-        branches: [
-            "Computer Science & Engineering", "Civil Engineering", "Mechanical Engineering",
-            "Electronics & Communication Engineering", "Electrical & Electronics Engineering"
-        ],
-        courses: ["B.Tech CSE", "B.Tech Civil", "B.Tech Mechanical", "B.Tech ECE", "B.Tech EEE",
-                  "M.Tech CSE", "M.Tech Civil", "M.Tech Thermal Engg"],
-        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
-        sections: ["A", "B", "C"]
-    },
-    "Department of Computer Applications": { 
-        courses: ["BCA", "MCA"], 
-        years: ["1st Year", "2nd Year", "3rd Year"], 
-        sections: ["A", "B"] 
-    },
-    "Graduate School of Business": { 
-        courses: ["BBA", "MBA", "B.Com (Hons)"], 
-        years: ["1st Year", "2nd Year"], 
-        sections: ["A"] 
-    },
-    "Department of Agriculture": { 
-        courses: ["B.Sc Agriculture"], 
-        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"], 
-        sections: ["A"] 
-    },
-    "Department of Applied Sciences and Humanities": { 
-        courses: ["B.Sc Physics", "B.Sc Chemistry", "B.A. English"], 
-        years: ["1st Year", "2nd Year", "3rd Year"], 
-        sections: ["A"] 
-    },
-    "Department of Journalism and Communications": { 
-        courses: ["BA (Hons) Journalism & Mass Comm", "MA JMC"], 
-        years: ["1st Year", "2nd Year"], 
-        sections: ["A"] 
-    },
-    "Tula's Institute of Pharmacy": { 
-        courses: ["B.Pharm", "D.Pharm"], 
-        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"], 
-        sections: ["A"] 
-    }
+    "Department of Engineering": {
+        branches: [
+            "Computer Science & Engineering", "Civil Engineering", "Mechanical Engineering",
+            "Electronics & Communication Engineering", "Electrical & Electronics Engineering"
+        ],
+        courses: ["B.Tech CSE", "B.Tech Civil", "B.Tech Mechanical", "B.Tech ECE", "B.Tech EEE",
+                    "M.Tech CSE", "M.Tech Civil", "M.Tech Thermal Engg"],
+        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"],
+        sections: ["A", "B", "C"]
+    },
+    "Department of Computer Applications": { 
+        courses: ["BCA", "MCA"], 
+        years: ["1st Year", "2nd Year", "3rd Year"], 
+        sections: ["A", "B"] 
+    },
+    "Graduate School of Business": { 
+        courses: ["BBA", "MBA", "B.Com (Hons)"], 
+        years: ["1st Year", "2nd Year"], 
+        sections: ["A"] 
+    },
+    "Department of Agriculture": { 
+        courses: ["B.Sc Agriculture"], 
+        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"], 
+        sections: ["A"] 
+    },
+    "Department of Applied Sciences and Humanities": { 
+        courses: ["B.Sc Physics", "B.Sc Chemistry", "B.A. English"], 
+        years: ["1st Year", "2nd Year", "3rd Year"], 
+        sections: ["A"] 
+    },
+    "Department of Journalism and Communications": { 
+        courses: ["BA (Hons) Journalism & Mass Comm", "MA JMC"], 
+        years: ["1st Year", "2nd Year"], 
+        sections: ["A"] 
+    },
+    "Tula's Institute of Pharmacy": { 
+        courses: ["B.Pharm", "D.Pharm"], 
+        years: ["1st Year", "2nd Year", "3rd Year", "4th Year"], 
+        sections: ["A"] 
+    }
 };
 
 // --- CHATBOT CONFIG (UNCHANGED) ---
 const CHAT_MODEL = 'gemini-2.5-flash-preview-09-2025';
-const API_KEY = ""; 
+const API_KEY = ""; 
 
 // === INITIALIZATION ===
 document.addEventListener('DOMContentLoaded', () => {
-    initAuthDropdowns();
-    generateCaptcha(); 
-    generateLoginCaptcha(); 
-    if (currentUser) showDashboard(); else updateAuthUI();
+    initAuthDropdowns();
+    generateCaptcha(); 
+    generateLoginCaptcha(); 
+    if (currentUser) showDashboard(); else updateAuthUI();
 
-    // Login Handler (UNCHANGED)
-    document.getElementById('login-form').onsubmit = async (e) => {
-        e.preventDefault();
+    // Login Handler (UNCHANGED)
+    document.getElementById('login-form').onsubmit = async (e) => {
+        e.preventDefault();
 
-        const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
-        if (loginCaptchaInput !== currentLoginCaptcha) {
-            showToast('Incorrect Captcha. Please try again.', true);
-            generateLoginCaptcha();
-            document.getElementById('login-captcha-input').value = '';
-            return;
-        }
+        const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
+        if (loginCaptchaInput !== currentLoginCaptcha) {
+            showToast('Incorrect Captcha. Please try again.', true);
+            generateLoginCaptcha();
+            document.getElementById('login-captcha-input').value = '';
+            return;
+        }
 
-        const role = document.getElementById('login-role').value;
-        let dept = null;
-        if (role === 'Department Login') {
-            dept = document.getElementById('login-dept').value;
-            if (dept === 'Department of Engineering') {
-                dept = document.getElementById('login-eng-branch').value;
-            }
-        }
-        
-        await handleAuth('/login', {
-            userId: document.getElementById('login-id').value.trim(),
-            password: document.getElementById('login-pass').value,
-            role: role === 'Department Login' ? 'HOD' : role,
-            department: dept,
-        });
-    };
+        const role = document.getElementById('login-role').value;
+        let dept = null;
+        if (role === 'Department Login') {
+            dept = document.getElementById('login-dept').value;
+            if (dept === 'Department of Engineering') {
+                dept = document.getElementById('login-eng-branch').value;
+            }
+        }
+        
+        await handleAuth('/login', {
+            userId: document.getElementById('login-id').value.trim(),
+            password: document.getElementById('login-pass').value,
+            role: role === 'Department Login' ? 'HOD' : role,
+            department: dept,
+        });
+    };
 
-    // Signup Handler (UNCHANGED - Submits for admin approval)
-    document.getElementById('signup-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
-        if (captchaInput !== currentCaptcha) {
-            showToast('Incorrect Captcha. Please try again.', true);
-            generateCaptcha();
-            document.getElementById('captcha-input').value = '';
-            return;
-        }
+    // Signup Handler (UNCHANGED - Submits for admin approval)
+    document.getElementById('signup-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
+        if (captchaInput !== currentCaptcha) {
+            showToast('Incorrect Captcha. Please try again.', true);
+            generateCaptcha();
+            document.getElementById('captcha-input').value = '';
+            return;
+        }
 
-        const formData = new FormData(e.target);
-        const payload = Object.fromEntries(formData);
-        
-        if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
-            showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
-        }
+        const formData = new FormData(e.target);
+        const payload = Object.fromEntries(formData);
+        
+        if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
+            showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
+            return;
+        }
 
-        if (payload.role === 'Faculty') {
-            payload.userId = payload.email;
-        }
+        if (payload.role === 'Faculty') {
+            payload.userId = payload.email;
+        }
 
-        await handleAuth('/signup', payload, true);
-    };
+        await handleAuth('/signup', payload, true);
+    };
 
-    // --- CHATBOT FORM LISTENER (UNCHANGED) ---
-    const chatForm = document.getElementById('chat-form');
-    if (chatForm) {
-        chatForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const chatInput = document.getElementById('chat-input');
-            const chatSubmitBtn = document.getElementById('chat-submit-btn');
-            const loadingIndicator = document.getElementById('chat-loading-indicator');
-            const userQuery = chatInput.value.trim();
+    // --- CHATBOT FORM LISTENER (UNCHANGED) ---
+    const chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+        chatForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const chatInput = document.getElementById('chat-input');
+            const chatSubmitBtn = document.getElementById('chat-submit-btn');
+            const loadingIndicator = document.getElementById('chat-loading-indicator');
+            const userQuery = chatInput.value.trim();
 
-            if (!userQuery) return;
+            if (!userQuery) return;
 
-            addMessageToChat(userQuery, true);
-            chatInput.value = '';
-            
-            loadingIndicator.classList.remove('hidden');
-            chatInput.disabled = true;
-            chatSubmitBtn.disabled = true;
+            addMessageToChat(userQuery, true);
+            chatInput.value = '';
+            
+            loadingIndicator.classList.remove('hidden');
+            chatInput.disabled = true;
+            chatSubmitBtn.disabled = true;
 
-            const { text, sources } = await getGeminiResponse(userQuery);
-            
-            loadingIndicator.classList.add('hidden');
-            chatInput.disabled = false;
-            chatSubmitBtn.disabled = false;
-            chatInput.focus();
+            const { text, sources } = await getGeminiResponse(userQuery);
+            
+            loadingIndicator.classList.add('hidden');
+            chatInput.disabled = false;
+            chatSubmitBtn.disabled = false;
+            chatInput.focus();
 
-            addMessageToChat(text, false, sources);
-        };
-    }
+            addMessageToChat(text, false, sources);
+        };
+    }
 });
 
 
 // === AUTHENTICATION & UI HELPERS (RETAINED) ===
 
 function initAuthDropdowns() {
-    const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
-    const depts = Object.keys(DEPT_DATA);
-    deptSelects.forEach(sel => {
-        sel.innerHTML = '<option value="">Select Department</option>' + 
-            depts.map(d => `<option value="${d}">${d}</option>`).join('');
-    });
+    const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
+    const depts = Object.keys(DEPT_DATA);
+    deptSelects.forEach(sel => {
+        sel.innerHTML = '<option value="">Select Department</option>' + 
+            depts.map(d => `<option value="${d}">${d}</option>`).join('');
+    });
 }
 
 function updateAuthUI() {
-    const role = document.getElementById('login-role').value;
-    const isHOD = role === 'Department Login';
-    const deptWrapper = document.getElementById('login-dept-wrapper');
-    const branchSelect = document.getElementById('login-eng-branch');
-    const branchWrapper = document.getElementById('login-eng-branch-wrapper');
-    
-    deptWrapper.classList.toggle('hidden', !isHOD);
-    
-    if (isHOD && document.getElementById('login-dept').value === 'Department of Engineering') {
-        branchWrapper.classList.remove('hidden');
-        branchSelect.innerHTML = '<option value="">Select Branch</option>' + 
-            DEPT_DATA['Department of Engineering'].branches.map(b => `<option>${b}</option>`).join('');
-    } else {
-        branchWrapper.classList.add('hidden');
-    }
+    const role = document.getElementById('login-role').value;
+    const isHOD = role === 'Department Login';
+    const deptWrapper = document.getElementById('login-dept-wrapper');
+    const branchSelect = document.getElementById('login-eng-branch');
+    const branchWrapper = document.getElementById('login-eng-branch-wrapper');
+    
+    deptWrapper.classList.toggle('hidden', !isHOD);
+    
+    if (isHOD && document.getElementById('login-dept').value === 'Department of Engineering') {
+        branchWrapper.classList.remove('hidden');
+        branchSelect.innerHTML = '<option value="">Select Branch</option>' + 
+            DEPT_DATA['Department of Engineering'].branches.map(b => `<option>${b}</option>`).join('');
+    } else {
+        branchWrapper.classList.add('hidden');
+    }
 }
 
 function updateSignupUI() {
-    const role = document.getElementById('signup-role').value;
-    const dept = document.getElementById('signup-dept').value;
-    const deptWrapper = document.getElementById('signup-dept-wrapper');
-    const courseWrapper = document.getElementById('signup-course-wrapper');
-    const courseSelect = document.getElementById('signup-course');
-    const studentFields = document.getElementById('student-fields');
-    const userIdInput = document.getElementById('signup-userid');
+    const role = document.getElementById('signup-role').value;
+    const dept = document.getElementById('signup-dept').value;
+    const deptWrapper = document.getElementById('signup-dept-wrapper');
+    const courseWrapper = document.getElementById('signup-course-wrapper');
+    const courseSelect = document.getElementById('signup-course');
+    const studentFields = document.getElementById('student-fields');
+    const userIdInput = document.getElementById('signup-userid');
 
-    // 1. Show/Hide Department based on role
-    deptWrapper.classList.toggle('hidden', !role);
+    // 1. Show/Hide Department based on role
+    deptWrapper.classList.toggle('hidden', !role);
 
-    // 2. Handle Student Specifics
-    if (role === 'Student') {
-        studentFields.classList.remove('hidden');
-        userIdInput.required = true;
-        
-        // Show courses if dept is selected
-        if (dept && DEPT_DATA[dept]?.courses) {
-            courseWrapper.classList.remove('hidden');
-            courseSelect.required = true;
-            courseSelect.innerHTML = '<option value="">Select Course</option>' + 
-                DEPT_DATA[dept].courses.map(c => `<option value="${c}">${c}</option>`).join('');
-        } else {
-            courseWrapper.classList.add('hidden');
-            courseSelect.required = false;
-        }
-    } 
-    // 3. Handle Faculty Specifics
-    else if (role === 'Faculty') {
-        studentFields.classList.add('hidden');
-        userIdInput.required = false;
-        courseWrapper.classList.add('hidden');
-        courseSelect.required = false;
-    } 
-    // 4. Initial State
-    else {
-        studentFields.classList.add('hidden');
-        courseWrapper.classList.add('hidden');
-    }
+    // 2. Handle Student Specifics
+    if (role === 'Student') {
+        studentFields.classList.remove('hidden');
+        userIdInput.required = true;
+        
+        // Show courses if dept is selected
+        if (dept && DEPT_DATA[dept]?.courses) {
+            courseWrapper.classList.remove('hidden');
+            courseSelect.required = true;
+            courseSelect.innerHTML = '<option value="">Select Course</option>' + 
+                DEPT_DATA[dept].courses.map(c => `<option value="${c}">${c}</option>`).join('');
+        } else {
+            courseWrapper.classList.add('hidden');
+            courseSelect.required = false;
+        }
+    } 
+    // 3. Handle Faculty Specifics
+    else if (role === 'Faculty') {
+        studentFields.classList.add('hidden');
+        userIdInput.required = false;
+        courseWrapper.classList.add('hidden');
+        courseSelect.required = false;
+    } 
+    // 4. Initial State
+    else {
+        studentFields.classList.add('hidden');
+        courseWrapper.classList.add('hidden');
+    }
 }
 
 function generateCaptcha(canvasId = 'captcha-canvas', setState) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let captchaText = '';
+    const ctx = canvas.getContext('2d');
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let captchaText = '';
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#f9fafb';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#f9fafb';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let i = 0; i < 7; i++) {
-        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
-        ctx.stroke();
-    }
+    for (let i = 0; i < 7; i++) {
+        ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+        ctx.stroke();
+    }
 
-    for (let i = 0; i < 6; i++) {
-        const char = chars.charAt(Math.floor(Math.random() * chars.length));
-        captchaText += char;
-        ctx.font = 'bold 24px Inter';
-        ctx.fillStyle = '#1f2937';
-        
-        ctx.save();
-        const x = 20 + i * 20;
-        const y = 30 + Math.random() * 10;
-        const angle = (Math.random() - 0.5) * 0.4;
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.fillText(char, 0, 0);
-        ctx.restore();
-    }
-    
-    if (canvasId === 'captcha-canvas') currentCaptcha = captchaText;
-    else if (canvasId === 'login-captcha-canvas') currentLoginCaptcha = captchaText;
+    for (let i = 0; i < 6; i++) {
+        const char = chars.charAt(Math.floor(Math.random() * chars.length));
+        captchaText += char;
+        ctx.font = 'bold 24px Inter';
+        ctx.fillStyle = '#1f2937';
+        
+        ctx.save();
+        const x = 20 + i * 20;
+        const y = 30 + Math.random() * 10;
+        const angle = (Math.random() - 0.5) * 0.4;
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillText(char, 0, 0);
+        ctx.restore();
+    }
+    
+    if (canvasId === 'captcha-canvas') currentCaptcha = captchaText;
+    else if (canvasId === 'login-captcha-canvas') currentLoginCaptcha = captchaText;
 }
 
 function generateLoginCaptcha() { generateCaptcha('login-captcha-canvas'); }
 
 async function handleAuth(endpoint, payload, isSignup = false) {
-    try {
-        showToast(isSignup ? 'Registering...' : 'Logging in...');
-        const res = await fetch(API_BASE + endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            if (isSignup) {
-                showToast(data.message || 'Registration submitted! Account pending admin approval.', false); 
-                toggleAuthScreen('login');
-                document.getElementById('signup-form').reset();
-                generateCaptcha();
-            } else {
-                currentUser = data.user;
-                sessionStorage.setItem('user', JSON.stringify(currentUser));
-                showDashboard();
-                showToast(`Welcome, ${currentUser.name}!`);
-            }
-        } else {
-            showToast(data.message || 'Action failed', true);
-            if (isSignup) generateCaptcha();
-            else {
-                generateLoginCaptcha();
-            }
-        }
-    } catch (err) {
-        showToast('Connection error. Please try again.', true);
-        if (!isSignup) generateLoginCaptcha();
-    }
+    try {
+        showToast(isSignup ? 'Registering...' : 'Logging in...');
+        const res = await fetch(API_BASE + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            if (isSignup) {
+                showToast(data.message || 'Registration submitted! Account pending admin approval.', false); 
+                toggleAuthScreen('login');
+                document.getElementById('signup-form').reset();
+                generateCaptcha();
+            } else {
+                currentUser = data.user;
+                sessionStorage.setItem('user', JSON.stringify(currentUser));
+                showDashboard();
+                showToast(`Welcome, ${currentUser.name}!`);
+            }
+        } else {
+            showToast(data.message || 'Action failed', true);
+            if (isSignup) generateCaptcha();
+            else {
+                generateLoginCaptcha();
+            }
+        }
+    } catch (err) {
+        showToast('Connection error. Please try again.', true);
+        if (!isSignup) generateLoginCaptcha();
+    }
 }
 
 function togglePass(id) { const i = document.getElementById(id); i.type = i.type==='password'?'text':'password'; }
-function toggleAuthScreen(screen) { 
-    document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); 
-    document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
-    if (screen === 'signup') {
-        generateCaptcha(); 
-    } else if (screen === 'login') {
-        generateLoginCaptcha(); 
-    }
+function toggleAuthScreen(screen) { 
+    document.getElementById('login-box').classList.toggle('hidden', screen!=='login'); 
+    document.getElementById('signup-box').classList.toggle('hidden', screen!=='signup'); 
+    if (screen === 'signup') {
+        generateCaptcha(); 
+    } else if (screen === 'login') {
+        generateLoginCaptcha(); 
+    }
 }
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 function logout() { sessionStorage.clear(); window.location.reload(); }
 function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-function showToast(msg, isErr=false) { 
-    const t = document.getElementById('toast'); 
-    t.textContent = msg; 
-    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; 
-    setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
+function showToast(msg, isErr=false) { 
+    const t = document.getElementById('toast'); 
+    t.textContent = msg; 
+    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white ${isErr?'bg-red-600':'bg-green-600'}`; 
+    setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
 }
 
 // === DASHBOARD & NAVIGATION (UPDATED) ===
 function showDashboard() {
-    document.getElementById('auth-wrapper').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
-    document.getElementById('nav-role-badge').textContent = currentUser.role.toUpperCase();
-    renderNavigation();
+    document.getElementById('auth-wrapper').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.getElementById('nav-role-badge').textContent = currentUser.role.toUpperCase();
+    renderNavigation();
 }
 
 function renderNavigation() {
-    const nav = document.getElementById('nav-links');
-    nav.innerHTML = '';
+    const nav = document.getElementById('nav-links');
+    nav.innerHTML = '';
 
-    const MENU_ITEMS = {
-        'Student': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'timetable', label: 'Class Timetable', icon: '📅' },
-            { id: 'attendance', label: 'My Attendance', icon: '📊' },
-            { id: 'assignments', label: 'Assignments', icon: '📁' },
-            { id: 'marks', label: 'Exam Results', icon: '📝' },
-            { id: 'leaves', label: 'Leave Application', icon: '📨' },
-            { id: 'placements', label: 'Placements', icon: '💼' }
-        ],
-        'Faculty': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'fac-attendance', label: 'Mark Attendance', icon: '✅' },
-            { id: 'fac-assignments', label: 'Manage Assignments', icon: '📚' },
-            { id: 'fac-leaves', label: 'Student Leaves', icon: '📫' },
-            { id: 'leaves', label: 'My Leave Req', icon: '📨' },
-            { id: 'placements', label: 'Dept Placements', icon: '💼' }
-        ],
-        'HOD': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
-            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, // HOD KEEPS THIS
-            { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
-            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
-            { id: 'placements', label: 'Manage Placements', icon: '💼' }
-        ],
-        'Admin': [
-            { id: 'profile', label: 'My Profile', icon: '👤' },
-            { id: 'admin-users', label: 'Manage Users', icon: '👥' },
-            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
-            // 'admin-subjects' REMOVED from Admin role
-            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
-            { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
-            { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
-            { id: 'placements', label: 'All Placements', icon: '🌍' }
-        ]
-    };
+    const MENU_ITEMS = {
+        'Student': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'timetable', label: 'Class Timetable', icon: '📅' },
+            { id: 'attendance', label: 'My Attendance', icon: '📊' },
+            { id: 'assignments', label: 'Assignments', icon: '📁' },
+            { id: 'marks', label: 'Exam Results', icon: '📝' },
+            { id: 'leaves', label: 'Leave Application', icon: '📨' },
+            { id: 'placements', label: 'Placements', icon: '💼' }
+        ],
+        'Faculty': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'fac-attendance', label: 'Mark Attendance', icon: '✅' },
+            { id: 'fac-assignments', label: 'Manage Assignments', icon: '📚' },
+            { id: 'fac-leaves', label: 'Student Leaves', icon: '📫' },
+            { id: 'leaves', label: 'My Leave Req', icon: '📨' },
+            { id: 'placements', label: 'Dept Placements', icon: '💼' }
+        ],
+        'HOD': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
+            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, // HOD KEEPS THIS
+            { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
+            { id: 'placements', label: 'Manage Placements', icon: '💼' }
+        ],
+        'Admin': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-users', label: 'Manage Users', icon: '👥' },
+            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
+            // 'admin-subjects' REMOVED from Admin role
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
+            { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
+            { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
+            { id: 'placements', label: 'All Placements', icon: '🌍' }
+        ]
+    };
 
-    (MENU_ITEMS[currentUser.role] || []).forEach(item => {
-        const btn = document.createElement('button');
-        btn.className = 'nav-link w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-green-800 hover:text-white rounded-xl transition-all duration-200';
-        btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="font-medium">${item.label}</span>`;
-        btn.onclick = () => loadContent(item.id, btn);
-        nav.appendChild(btn);
-    });
+    (MENU_ITEMS[currentUser.role] || []).forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-link w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-green-800 hover:text-white rounded-xl transition-all duration-200';
+        btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="font-medium">${item.label}</span>`;
+        btn.onclick = () => loadContent(item.id, btn);
+        nav.appendChild(btn);
+    });
 
-    if (nav.firstChild) nav.firstChild.click();
+    if (nav.firstChild) nav.firstChild.click();
 }
 
 async function loadContent(pageId, activeBtn) {
-    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-800', 'text-white'));
-    if (activeBtn) activeBtn.classList.add('active', 'bg-green-800', 'text-white');
-    
-    if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-800', 'text-white'));
+    if (activeBtn) activeBtn.classList.add('active', 'bg-green-800', 'text-white');
+    
+    if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
 
-    const container = document.getElementById('content-area');
-    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
+    const container = document.getElementById('content-area');
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
 
-    try {
-        // --- FIX 1: Ensure currentUser exists before fetching data ---
-        if (!currentUser || !currentUser.id) throw new Error("User session invalid or expired. Please sign in."); 
+    try {
+        // --- FIX 1: Ensure currentUser exists before fetching data ---
+        if (!currentUser || !currentUser.id) throw new Error("User session invalid or expired. Please sign in."); 
 
-        switch (pageId) {
-            case 'profile': await loadProfile(container); break;
-            case 'timetable': await loadTimetable(container); break;
-            case 'attendance': await loadAttendance(container); break;
-            case 'marks': await loadMarks(container); break;
-            case 'assignments': await loadAssignmentsStudent(container); break;
-            case 'leaves': await loadLeavesCommon(container); break;
-            case 'fac-attendance': loadFacultyAttendance(container); break; 
-            case 'fac-assignments': await loadFacultyAssignments(container); break;
-            case 'fac-leaves': await loadFacultyLeaves(container); break;
-            case 'placements': await loadPlacements(container); break;
-            case 'admin-users': await loadAdminUsers(container); break;
-            case 'admin-id-cards': await loadAdminIdCards(container); break;
-            case 'admin-announcements': await loadAdminAnnouncements(container); break;
-            case 'admin-signup-requests': await showAdminSignupRequests(container); break; 
-            case 'admin-batches': await loadAdminBatches(container); break; 
-            case 'admin-subjects': await loadAdminSubjects(container); break; 
-            default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
-        }
-    } catch (err) {
-        // This general catch handles all API fetch failures and the initial session check failure.
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}. Please sign out and log in again.</div>`;
-    }
+        switch (pageId) {
+            case 'profile': await loadProfile(container); break;
+            case 'timetable': await loadTimetable(container); break;
+            case 'attendance': await loadAttendance(container); break;
+            case 'marks': await loadMarks(container); break;
+            case 'assignments': await loadAssignmentsStudent(container); break;
+            case 'leaves': await loadLeavesCommon(container); break;
+            case 'fac-attendance': loadFacultyAttendance(container); break; 
+            case 'fac-assignments': await loadFacultyAssignments(container); break;
+            case 'fac-leaves': await loadFacultyLeaves(container); break;
+            case 'placements': await loadPlacements(container); break;
+            case 'admin-users': await loadAdminUsers(container); break;
+            case 'admin-id-cards': await loadAdminIdCards(container); break;
+            case 'admin-announcements': await loadAdminAnnouncements(container); break;
+            case 'admin-signup-requests': await showAdminSignupRequests(container); break; 
+            case 'admin-batches': await loadAdminBatches(container); break; 
+            case 'admin-subjects': await loadAdminSubjects(container); break; 
+            default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
+        }
+    } catch (err) {
+        // This general catch handles all API fetch failures and the initial session check failure.
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}. Please sign out and log in again.</div>`;
+    }
 }
 
 // =========================================
@@ -607,425 +705,425 @@ async function loadContent(pageId, activeBtn) {
 // =========================================
 
 function detailItem(label, value) {
-    return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
+    return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
 }
 
 
 async function loadProfile(container) {
-    const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
-    const data = await res.json();
-    // --- FIX 2: Explicitly check for API failure on profile load ---
-    if (!data.success) throw new Error("Profile data not found on server."); 
-    
-    const p = data.profile;
+    const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
+    const data = await res.json();
+    // --- FIX 2: Explicitly check for API failure on profile load ---
+    if (!data.success) throw new Error("Profile data not found on server."); 
+    
+    const p = data.profile;
 
-    container.innerHTML = `
-        <div class="flex flex-col md:flex-row gap-8 items-start">
-            <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center shadow-lg">
-                <img id="profile-photo-display" src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">${p.name}</h2>
-                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">${p.role}</span>
-                <p class="text-gray-500 mt-4 font-mono">${p.id}</p>
-                <button onclick="showUserProfileEditForm('${p.id}')" class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">Edit Profile</button>
-            </div>
-            <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full shadow-lg">
-                <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                    <span class="bg-green-600 w-2 h-6 mr-3 rounded-full"></span> Personal Details
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    ${detailItem('Email', p.email)}
-                    ${detailItem('Phone', p.phone || 'Not set')}
-                    ${detailItem('Department', p.department)}
-                    ${p.course ? detailItem('Course', p.course) : ''}
-                    ${detailItem('Date of Birth', p.dob || 'Not set')}
-                    ${detailItem('Address', p.address || 'Not set')}
-                </div>
-            </div>
-        </div>
-    `;
+    container.innerHTML = `
+        <div class="flex flex-col md:flex-row gap-8 items-start">
+            <div class="w-full md:w-1/3 bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl border border-green-100 text-center shadow-lg">
+                <img id="profile-photo-display" src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-white shadow-md mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">${p.name}</h2>
+                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">${p.role}</span>
+                <p class="text-gray-500 mt-4 font-mono">${p.id}</p>
+                <button onclick="showUserProfileEditForm('${p.id}')" class="mt-4 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">Edit Profile</button>
+            </div>
+            <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full shadow-lg">
+                <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                    <span class="bg-green-600 w-2 h-6 mr-3 rounded-full"></span> Personal Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${detailItem('Email', p.email)}
+                    ${detailItem('Phone', p.phone || 'Not set')}
+                    ${detailItem('Department', p.department)}
+                    ${p.course ? detailItem('Course', p.course) : ''}
+                    ${detailItem('Date of Birth', p.dob || 'Not set')}
+                    ${detailItem('Address', p.address || 'Not set')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // Helper to render the edit form
 window.showUserProfileEditForm = async (userId) => {
-    const res = await fetch(`${API_BASE}/profile/${userId}`);
-    const data = await res.json();
-    if (!data.success) { showToast("Failed to fetch profile for editing.", true); return; }
-    const p = data.profile;
+    const res = await fetch(`${API_BASE}/profile/${userId}`);
+    const data = await res.json();
+    if (!data.success) { showToast("Failed to fetch profile for editing.", true); return; }
+    const p = data.profile;
 
-    showModal(`
-        <h3 class="text-xl font-bold mb-4">Edit Profile: ${p.name}</h3>
-        <p class="text-sm text-gray-600 mb-4">You can only edit certain fields. Photo size limit: 10MB.</p>
-        <form onsubmit="submitProfileUpdate(event, '${p.id}')" class="space-y-4">
-            <input type="hidden" name="currentUserId" value="${currentUser.id}">
+    showModal(`
+        <h3 class="text-xl font-bold mb-4">Edit Profile: ${p.name}</h3>
+        <p class="text-sm text-gray-600 mb-4">You can only edit certain fields. Photo size limit: 10MB.</p>
+        <form onsubmit="submitProfileUpdate(event, '${p.id}')" class="space-y-4">
+            <input type="hidden" name="currentUserId" value="${currentUser.id}">
 
-            <label class="block">Full Name (Only editable by Admin)</label>
-            <input type="text" name="name" value="${p.name || ''}" class="w-full p-3 border rounded-xl bg-gray-100 ${currentUser.role === 'Admin' ? 'bg-white' : 'cursor-not-allowed'}" ${currentUser.role !== 'Admin' ? 'disabled' : ''}>
-            
-            <label class="block">Phone Number</label>
-            <input type="text" name="phone" value="${p.phone || ''}" placeholder="Phone Number" class="w-full p-3 border rounded-xl">
-            
-            <label class="block">Date of Birth</label>
-            <input type="date" name="dob" value="${p.dob || ''}" class="w-full p-3 border rounded-xl">
-            
-            <label class="block">Blood Group (Optional)</label>
-            <input type="text" name="bloodGroup" value="${p.bloodGroup || ''}" placeholder="Blood Group" class="w-full p-3 border rounded-xl">
-            
-            <label class="block pt-2 border-t">Update Profile Photo (Max 10MB)</label>
-            <input type="file" name="photoFile" accept="image/jpeg,image/png" class="w-full p-2 border rounded-xl bg-gray-50">
+            <label class="block">Full Name (Only editable by Admin)</label>
+            <input type="text" name="name" value="${p.name || ''}" class="w-full p-3 border rounded-xl bg-gray-100 ${currentUser.role === 'Admin' ? 'bg-white' : 'cursor-not-allowed'}" ${currentUser.role !== 'Admin' ? 'disabled' : ''}>
+            
+            <label class="block">Phone Number</label>
+            <input type="text" name="phone" value="${p.phone || ''}" placeholder="Phone Number" class="w-full p-3 border rounded-xl">
+            
+            <label class="block">Date of Birth</label>
+            <input type="date" name="dob" value="${p.dob || ''}" class="w-full p-3 border rounded-xl">
+            
+            <label class="block">Blood Group (Optional)</label>
+            <input type="text" name="bloodGroup" value="${p.bloodGroup || ''}" placeholder="Blood Group" class="w-full p-3 border rounded-xl">
+            
+            <label class="block pt-2 border-t">Update Profile Photo (Max 10MB)</label>
+            <input type="file" name="photoFile" accept="image/jpeg,image/png" class="w-full p-2 border rounded-xl bg-gray-50">
 
-            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SAVE CHANGES</button>
-        </form>
-    `);
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">SAVE CHANGES</button>
+        </form>
+    `);
 }
 
 window.submitProfileUpdate = async (e, userId) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    
-    // Add the user ID to the form data for the server route
-    formData.append('userId', userId);
-    
-    showToast("Uploading and saving profile...", false);
-    
-    try {
-        const res = await fetch(API_BASE + '/profile/update', {
-            method: 'POST',
-            body: formData // Must use FormData directly for file upload
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            // Update the session storage data immediately
-            sessionStorage.setItem('user', JSON.stringify(data.updatedUser));
-            currentUser = data.updatedUser;
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    
+    // Add the user ID to the form data for the server route
+    formData.append('userId', userId);
+    
+    showToast("Uploading and saving profile...", false);
+    
+    try {
+        const res = await fetch(API_BASE + '/profile/update', {
+            method: 'POST',
+            body: formData // Must use FormData directly for file upload
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            // Update the session storage data immediately
+            sessionStorage.setItem('user', JSON.stringify(data.updatedUser));
+            currentUser = data.updatedUser;
 
-            closeModal();
-            showToast(data.message, false);
-            loadContent('profile'); // Reload profile view to show changes
-        } else {
-            showToast(data.message || 'Profile update failed.', true);
-        }
-    } catch (err) {
-        showToast('Connection error during profile update.', true);
-    }
+            closeModal();
+            showToast(data.message, false);
+            loadContent('profile'); // Reload profile view to show changes
+        } else {
+            showToast(data.message || 'Profile update failed.', true);
+        }
+    } catch (err) {
+        showToast('Connection error during profile update.', true);
+    }
 };
 
 async function loadTimetable(container) {
-    const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course)}`);
-    const data = await res.json();
-    const tt = data.timetable || {};
-    
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Weekly Schedule <span class="text-gray-400 text-lg">(${currentUser.course})</span></h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            ${Object.entries(tt).map(([day, slots]) => `
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md transition-shadow hover:shadow-lg">
-                    <div class="bg-green-600 text-white p-3 font-bold">${day}</div>
-                    <div class="p-4 space-y-3">
-                        ${slots.map(s => `
-                            <div class="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                                <div class="text-sm font-semibold text-green-700 w-24">${s.time}</div>
-                                <div>
-                                    <div class="font-medium text-gray-900">${s.subject}</div>
-                                    <div class="text-xs text-gray-500">${s.faculty}</div>
-                                </div>
-                            </div>
-                        `).join('') || '<p class="text-gray-400">No classes</p>'}
-                    </div>
-                </div>
-            `).join('')}
-        </div>`;
+    const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course)}`);
+    const data = await res.json();
+    const tt = data.timetable || {};
+    
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Weekly Schedule <span class="text-gray-400 text-lg">(${currentUser.course})</span></h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${Object.entries(tt).map(([day, slots]) => `
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-md transition-shadow hover:shadow-lg">
+                    <div class="bg-green-600 text-white p-3 font-bold">${day}</div>
+                    <div class="p-4 space-y-3">
+                        ${slots.map(s => `
+                            <div class="flex items-start p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                                <div class="text-sm font-semibold text-green-700 w-24">${s.time}</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">${s.subject}</div>
+                                    <div class="text-xs text-gray-500">${s.faculty}</div>
+                                </div>
+                            </div>
+                        `).join('') || '<p class="text-gray-400">No classes</p>'}
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
 }
 
 async function loadAttendance(container) {
-    const res = await fetch(`${API_BASE}/attendance/${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Attendance Record</h2>
-        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 text-gray-700">
-                    <tr><th class="p-4">Subject</th><th class="p-4">Attended / Total</th><th class="p-4">Percentage</th></tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    ${Object.entries(data.attendance).map(([sub, stats]) => {
-                        const pct = (stats.present / stats.total * 100) || 0;
-                        return `<tr class="hover:bg-gray-50 transition">
-                            <td class="p-4 font-medium">${sub}</td>
-                            <td class="p-4">${stats.present} / ${stats.total}</td>
-                            <td class="p-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${pct < 75 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pct.toFixed(1)}%</span></td>
-                        </tr>`;
-                    }).join('') || '<tr><td colspan="3" class="p-4 text-center text-gray-500">No attendance data found.</td></tr>'}
-                </tbody>
-                </table>
-        </div>`;
+    const res = await fetch(`${API_BASE}/attendance/${currentUser.id}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Attendance Record</h2>
+        <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-700">
+                    <tr><th class="p-4">Subject</th><th class="p-4">Attended / Total</th><th class="p-4">Percentage</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    ${Object.entries(data.attendance).map(([sub, stats]) => {
+                        const pct = (stats.present / stats.total * 100) || 0;
+                        return `<tr class="hover:bg-gray-50 transition">
+                            <td class="p-4 font-medium">${sub}</td>
+                            <td class="p-4">${stats.present} / ${stats.total}</td>
+                            <td class="p-4"><span class="px-3 py-1 rounded-full text-sm font-medium ${pct < 75 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">${pct.toFixed(1)}%</span></td>
+                        </tr>`;
+                    }).join('') || '<tr><td colspan="3" class="p-4 text-center text-gray-500">No attendance data found.</td></tr>'}
+                </tbody>
+            </table>
+        </div>`;
 }
 
 async function loadMarks(container) {
-    const res = await fetch(`${API_BASE}/marks/${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Examination Results</h2>
-        <div class="grid gap-4 md:grid-cols-2">
-            ${data.marks.map(m => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md flex justify-between items-center transition-transform hover:scale-[1.01]">
-                    <div>
-                        <h4 class="font-bold text-gray-800">${m.subject}</h4>
-                        <p class="text-sm text-gray-500">${m.exam}</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-2xl font-bold text-green-700">${m.marks}</span>
-                        <span class="text-gray-400">/ ${m.total}</span>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 col-span-2 text-center py-10 bg-gray-50 rounded-xl">No marks available yet.</p>'}
-        </div>`;
+    const res = await fetch(`${API_BASE}/marks/${currentUser.id}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Examination Results</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+            ${data.marks.map(m => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md flex justify-between items-center transition-transform hover:scale-[1.01]">
+                    <div>
+                        <h4 class="font-bold text-gray-800">${m.subject}</h4>
+                        <p class="text-sm text-gray-500">${m.exam}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-2xl font-bold text-green-700">${m.marks}</span>
+                        <span class="text-gray-400">/ ${m.total}</span>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500 col-span-2 text-center py-10 bg-gray-50 rounded-xl">No marks available yet.</p>'}
+        </div>`;
 }
 
 async function loadAssignmentsStudent(container) {
-    const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course)}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Course Assignments</h2>
-        <div class="space-y-4">
-            ${data.assignments.map(a => {
-                const isSubmitted = a.submissions.some(s => s.studentId === currentUser.id);
-                return `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-900">${a.title}</h3>
-                           <p class="text-sm text-green-700 font-medium">By: ${a.facultyName}</p>
-                        </div>
-                        <span class="text-xs font-medium px-3 py-1 rounded-full ${isSubmitted ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${isSubmitted ? 'Submitted' : 'Pending'}
-                        </span>
-                    </div>
-                    <p class="text-gray-600 mb-4">${a.description}</p>
-                    ${a.filePath ? `<a href="${a.filePath}" target="_blank" class="text-green-600 hover:underline text-sm flex items-center mb-4 transition">📎 Download Attachment</a>` : ''}
-                    <div class="flex justify-between items-center border-t pt-4">
-                        <span class="text-sm text-gray-500">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
-                        ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.01]">Submit Work</button>` : ''}
-                    </div>
-                </div>`;
-            }).join('') || '<p class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</p>'}
-        </div>`;
+    const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course)}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Course Assignments</h2>
+        <div class="space-y-4">
+            ${data.assignments.map(a => {
+                const isSubmitted = a.submissions.some(s => s.studentId === currentUser.id);
+                return `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">${a.title}</h3>
+                           <p class="text-sm text-green-700 font-medium">By: ${a.facultyName}</p>
+                        </div>
+                        <span class="text-xs font-medium px-3 py-1 rounded-full ${isSubmitted ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
+                            ${isSubmitted ? 'Submitted' : 'Pending'}
+                        </span>
+                    </div>
+                    <p class="text-gray-600 mb-4">${a.description}</p>
+                    ${a.filePath ? `<a href="${a.filePath}" target="_blank" class="text-green-600 hover:underline text-sm flex items-center mb-4 transition">📎 Download Attachment</a>` : ''}
+                    <div class="flex justify-between items-center border-t pt-4">
+                        <span class="text-sm text-gray-500">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+                        ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.01]">Submit Work</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('') || '<p class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</p>'}
+        </div>`;
 }
 
 async function loadLeavesCommon(container) {
-    const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">My Leave Applications</h2>
-            <button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center transition transform hover:scale-[1.02]">
-                <span class="text-xl mr-2">+</span> Apply New
-            </button>
-        </div>
-        <div class="space-y-4">
-            ${data.leaves.map(l => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="font-bold text-gray-800">${l.type}</div>
-                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
-                        <p class="text-gray-600 mt-1">${l.reason}</p>
-                    </div>
-                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
-                        ${l.status}
-                    </span>
-                </div>
-            `).join('') || '<p class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
-        </div>`;
+    const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">My Leave Applications</h2>
+            <button onclick="openLeaveModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center transition transform hover:scale-[1.02]">
+                <span class="text-xl mr-2">+</span> Apply New
+            </button>
+        </div>
+        <div class="space-y-4">
+            ${data.leaves.map(l => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${l.type}</div>
+                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
+                        <p class="text-gray-600 mt-1">${l.reason}</p>
+                    </div>
+                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
+                        ${l.status}
+                    </span>
+                </div>
+            `).join('') || '<p class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
+        </div>`;
 }
 
 async function loadFacultyAssignments(container) {
-    const res = await fetch(`${API_BASE}/assignments?facultyId=${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Manage Assignments</h2>
-            <button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create New</button>
-        </div>
-        <div class="grid gap-4">
-            ${data.assignments.map(a => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
-                    <div class="flex justify-between">
-                        <h3 class="font-bold text-lg">${a.title}</h3>
-                        <span class="text-sm bg-gray-100 px-3 py-1 rounded-full">${a.course}</span>
-                    </div>
-                    <p class="text-gray-500 text-sm mt-1">Due: ${new Date(a.dueDate).toLocaleDateString()}</p>
-                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
-                        <span class="font-medium text-green-700">${a.submissions.length} Submissions</span>
-                        <button class="text-blue-600 hover:underline text-sm transition">View All</button>
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">You haven\'t created any assignments yet.</p>'}
-        </div>`;
+    const res = await fetch(`${API_BASE}/assignments?facultyId=${currentUser.id}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Manage Assignments</h2>
+            <button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create New</button>
+        </div>
+        <div class="grid gap-4">
+            ${data.assignments.map(a => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md transition-shadow hover:shadow-lg">
+                    <div class="flex justify-between">
+                        <h3 class="font-bold text-lg">${a.title}</h3>
+                        <span class="text-sm bg-gray-100 px-3 py-1 rounded-full">${a.course}</span>
+                    </div>
+                    <p class="text-gray-500 text-sm mt-1">Due: ${new Date(a.dueDate).toLocaleDateString()}</p>
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                        <span class="font-medium text-green-700">${a.submissions.length} Submissions</span>
+                        <button class="text-blue-600 hover:underline text-sm transition">View All</button>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">You haven\'t created any assignments yet.</p>'}
+        </div>`;
 }
 
 async function loadFacultyLeaves(container) {
-    const currentUserId = currentUser.id;
-    // CRITICAL: Passing currentUserId in query params for server authorization
-    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUserId}`);
-    const data = await res.json();
-    
-    // Fetch my applications (to show in the history section)
-    const myLeavesRes = await fetch(`${API_BASE}/leaves/${currentUserId}`);
-    const myLeavesData = await myLeavesRes.json();
-    const myLeaves = myLeavesData.leaves || [];
+    const currentUserId = currentUser.id;
+    // CRITICAL: Passing currentUserId in query params for server authorization
+    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUserId}`);
+    const data = await res.json();
+    
+    // Fetch my applications (to show in the history section)
+    const myLeavesRes = await fetch(`${API_BASE}/leaves/${currentUserId}`);
+    const myLeavesData = await myLeavesRes.json();
+    const myLeaves = myLeavesData.leaves || [];
 
 
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Leave Requests <span class="text-green-600">(${currentUser.department})</span></h2>
-        
-        <div class="space-y-4 mb-8">
-            ${data.leaves.map(l => `
-                <div class="bg-white p-6 rounded-xl border border-yellow-200 shadow-md transition-shadow hover:shadow-lg">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId} (${l.department})</h4>
-                            <p class="text-sm text-gray-500">${l.type} | Applied: ${new Date(l.appliedOn).toLocaleDateString()}</p>
-                        </div>
-                        <div class="text-right text-sm font-medium bg-green-50 text-green-800 px-3 py-1 rounded-lg">
-                            ${new Date(l.fromDate).toLocaleDateString()} ➔ ${new Date(l.toDate).toLocaleDateString()}
-                        </div>
-                    </div>
-                    <p class="bg-gray-50 p-4 rounded-lg text-gray-700 mb-4 italic">"${l.reason}"</p>
-                    <div class="flex space-x-3 justify-end">
-                        <button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition transform hover:scale-[1.01]">Reject</button>
-                        <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md transform hover:scale-[1.01]">Approve Request</button>
-                    </div>
-                </div>
-            `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
-        </div>
-        
-        <h3 class="text-xl font-bold text-gray-800 mb-4 border-t pt-4">My Leave History (Faculty/HOD)</h3>
-        <div class="space-y-4">
-            ${myLeaves.map(l => `
-                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="font-bold text-gray-800">${l.type}</div>
-                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
-                        <p class="text-gray-600 mt-1">${l.reason}</p>
-                    </div>
-                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
-                        ${l.status}
-                    </span>
-                </div>
-            `).join('') || '<p class="text-center py-5 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
-        </div>
-        `;
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Leave Requests <span class="text-green-600">(${currentUser.department})</span></h2>
+        
+        <div class="space-y-4 mb-8">
+            ${data.leaves.map(l => `
+                <div class="bg-white p-6 rounded-xl border border-yellow-200 shadow-md transition-shadow hover:shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h4 class="font-bold text-lg text-gray-900">User ID: ${l.userId} (${l.department})</h4>
+                            <p class="text-sm text-gray-500">${l.type} | Applied: ${new Date(l.appliedOn).toLocaleDateString()}</p>
+                        </div>
+                        <div class="text-right text-sm font-medium bg-green-50 text-green-800 px-3 py-1 rounded-lg">
+                            ${new Date(l.fromDate).toLocaleDateString()} ➔ ${new Date(l.toDate).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <p class="bg-gray-50 p-4 rounded-lg text-gray-700 mb-4 italic">"${l.reason}"</p>
+                    <div class="flex space-x-3 justify-end">
+                        <button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition transform hover:scale-[1.01]">Reject</button>
+                        <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md transform hover:scale-[1.01]">Approve Request</button>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
+        </div>
+        
+        <h3 class="text-xl font-bold text-gray-800 mb-4 border-t pt-4">My Leave History (Faculty/HOD)</h3>
+        <div class="space-y-4">
+            ${myLeaves.map(l => `
+                <div class="bg-white p-5 rounded-xl border border-gray-200 flex justify-between items-center shadow-sm">
+                    <div>
+                        <div class="font-bold text-gray-800">${l.type}</div>
+                        <div class="text-sm text-gray-500">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</div>
+                        <p class="text-gray-600 mt-1">${l.reason}</p>
+                    </div>
+                    <span class="px-4 py-2 rounded-lg text-sm font-bold ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">
+                        ${l.status}
+                    </span>
+                </div>
+            `).join('') || '<p class="text-center py-5 text-gray-500 bg-gray-50 rounded-xl">No leave history found.</p>'}
+        </div>
+        `;
 }
 
 async function loadPlacements(container) {
-    let url = `${API_BASE}/placements`;
-    if (currentUser.role !== 'Admin') url += `?department=${encodeURIComponent(currentUser.department)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">${currentUser.role === 'Admin' ? 'All' : 'Department'} Placements</h2>
-            ${['Admin', 'HOD'].includes(currentUser.role) ? `<button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Post New</button>` : ''}
-        </div>
-        <div class="grid gap-6">
-            ${data.placements.map(p => `
-                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition">
-                    <h3 class="text-xl font-bold text-gray-900">${p.jobTitle} <span class="text-gray-400 font-normal">at</span> ${p.companyName}</h3>
-                    <p class="text-sm text-green-700 font-medium mt-1">${p.course} | ${p.department}</p>
-                    <p class="text-gray-600 my-4 line-clamp-2">${p.jobDescription}</p>
-                    <div class="flex justify-between items-center text-sm text-gray-500">
-                        <span>Posted: ${new Date(p.postedOn).toLocaleDateString()}</span>
-                        ${currentUser.role === 'Student' ? '<button class="text-green-600 font-bold hover:underline transition">View Details & Apply →</button>' : `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">${p.applications.length} Applicants</span>`}
-                    </div>
-                </div>
-            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No active placement drives.</p>'}
-        </div>`;
+    let url = `${API_BASE}/placements`;
+    if (currentUser.role !== 'Admin') url += `?department=${encodeURIComponent(currentUser.department)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">${currentUser.role === 'Admin' ? 'All' : 'Department'} Placements</h2>
+            ${['Admin', 'HOD'].includes(currentUser.role) ? `<button onclick="openPostPlacementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Post New</button>` : ''}
+        </div>
+        <div class="grid gap-6">
+            ${data.placements.map(p => `
+                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-md hover:shadow-lg transition">
+                    <h3 class="text-xl font-bold text-gray-900">${p.jobTitle} <span class="text-gray-400 font-normal">at</span> ${p.companyName}</h3>
+                    <p class="text-sm text-green-700 font-medium mt-1">${p.course} | ${p.department}</p>
+                    <p class="text-gray-600 my-4 line-clamp-2">${p.jobDescription}</p>
+                    <div class="flex justify-between items-center text-sm text-gray-500">
+                        <span>Posted: ${new Date(p.postedOn).toLocaleDateString()}</span>
+                        ${currentUser.role === 'Student' ? '<button class="text-green-600 font-bold hover:underline transition">View Details & Apply →</button>' : `<span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full">${p.applications.length} Applicants</span>`}
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No active placement drives.</p>'}
+        </div>`;
 }
 
 async function loadAdminUsers(container) {
-    const res = await fetch(`${API_BASE}/users`);
-    const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Manage Users (${data.users.length} Total)</h2>
-            <button onclick="openCreateHodModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">+ Create HOD Account</button>
-        </div>
-        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
-            <table class="w-full text-left">
-                <thead class="bg-gray-50 text-gray-700">
-                    <tr><th class="p-4">Name/ID</th><th class="p-4">Role</th><th class="p-4">Department</th><th class="p-4">Email</th><th class="p-4">Action</th></tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    ${data.users.map(u => `<tr class="hover:bg-gray-50 transition">
-                        <td class="p-4">${u.name}<br><span class="text-xs text-gray-500 font-mono">${u.id}</span></td>
-                        <td class="p-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">${u.role}</span></td>
-                        <td class="p-4 text-sm">${u.department || 'N/A'}</td>
-                        <td class="p-4 text-sm">${u.email}</td>
-                        <td class="p-4"><button onclick="deleteUser('${u.id}')" class="text-red-600 hover:text-red-800 transition">🗑️</button></td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
+    const res = await fetch(`${API_BASE}/users`);
+    const data = await res.json();
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Manage Users (${data.users.length} Total)</h2>
+            <button onclick="openCreateHodModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">+ Create HOD Account</button>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-lg">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-700">
+                    <tr><th class="p-4">Name/ID</th><th class="p-4">Role</th><th class="p-4">Department</th><th class="p-4">Email</th><th class="p-4">Action</th></tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    ${data.users.map(u => `<tr class="hover:bg-gray-50 transition">
+                        <td class="p-4">${u.name}<br><span class="text-xs text-gray-500 font-mono">${u.id}</span></td>
+                        <td class="p-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">${u.role}</span></td>
+                        <td class="p-4 text-sm">${u.department || 'N/A'}</td>
+                        <td class="p-4 text-sm">${u.email}</td>
+                        <td class="p-4"><button onclick="deleteUser('${u.id}')" class="text-red-600 hover:text-red-800 transition">🗑️</button></td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
 
 async function deleteUser(userId) {
-    if (confirm(`Are you sure you want to delete user ${userId}?`)) {
-        await fetch(`${API_BASE}/users/${userId}`, { method: 'DELETE' });
-        showToast(`User ${userId} deleted.`, false);
-        loadContent('admin-users'); 
-    }
+    if (confirm(`Are you sure you want to delete user ${userId}?`)) {
+        await fetch(`${API_BASE}/users/${userId}`, { method: 'DELETE' });
+        showToast(`User ${userId} deleted.`, false);
+        loadContent('admin-users'); 
+    }
 }
 
 async function loadAdminAnnouncements(container) {
-    const res = await fetch(`${API_BASE}/announcements?role=${currentUser.role}`);
-    const data = await res.json();
-    container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Institute Announcements</h2>
-            <button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ New Announcement</button>
-        </div>
-        <div class="space-y-4">
-            ${data.announcements.map(a => `<div class="bg-white p-5 rounded-xl border-l-4 border-blue-500 shadow-md">
-                <h3 class="font-bold text-lg text-gray-900">${a.title}</h3>
-                <p class="text-gray-600 mt-1">${a.body}</p>
-                <div class="mt-2 text-xs text-gray-500 flex justify-between">
-                    <span>Target: ${a.target} (${a.department || 'All Depts'})</span>
-                    <span>Posted: ${new Date(a.date).toLocaleDateString()}</span>
-                </div>
-            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No announcements posted yet.</p>'}
-        </div>
-    `;
+    const res = await fetch(`${API_BASE}/announcements?role=${currentUser.role}`);
+    const data = await res.json();
+    container.innerHTML = `
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Institute Announcements</h2>
+            <button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ New Announcement</button>
+        </div>
+        <div class="space-y-4">
+            ${data.announcements.map(a => `<div class="bg-white p-5 rounded-xl border-l-4 border-blue-500 shadow-md">
+                <h3 class="font-bold text-lg text-gray-900">${a.title}</h3>
+                <p class="text-gray-600 mt-1">${a.body}</p>
+                <div class="mt-2 text-xs text-gray-500 flex justify-between">
+                    <span>Target: ${a.target} (${a.department || 'All Depts'})</span>
+                    <span>Posted: ${new Date(a.date).toLocaleDateString()}</span>
+                </div>
+            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No announcements posted yet.</p>'}
+        </div>
+    `;
 }
 
 async function loadAdminIdCards(container) {
-    const res = await fetch(`${API_BASE}/id-cards/pending`);
-    const data = await res.json();
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending ID Card Requests</h2>
-        <div class="space-y-4">
-            ${data.requests.map(r => `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
-                <div class="flex items-center space-x-4">
-                    <img src="${API_BASE}${r.photoUrl}" class="w-16 h-16 object-cover rounded-full border border-gray-200">
-                    <div>
-                        <h4 class="font-bold text-lg">${r.name} (${r.userId})</h4>
-                        <p class="text-sm text-gray-500">${r.course} - ${r.department}</p>
-                    </div>
-                </div>
-                <p class="mt-4 text-sm text-gray-700">Applied On: ${new Date(r.appliedOn).toLocaleDateString()}</p>
-                <div class="flex space-x-3 mt-4 justify-end">
-                    <button onclick="updateIdCardStatus(${r.id}, 'Rejected')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
-                    <button onclick="updateIdCardStatus(${r.id}, 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
-                </div>
-            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending ID card requests.</p>'}
-        </div>
-    `;
+    const res = await fetch(`${API_BASE}/id-cards/pending`);
+    const data = await res.json();
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending ID Card Requests</h2>
+        <div class="space-y-4">
+            ${data.requests.map(r => `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-md">
+                <div class="flex items-center space-x-4">
+                    <img src="${API_BASE}${r.photoUrl}" class="w-16 h-16 object-cover rounded-full border border-gray-200">
+                    <div>
+                        <h4 class="font-bold text-lg">${r.name} (${r.userId})</h4>
+                        <p class="text-sm text-gray-500">${r.course} - ${r.department}</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-gray-700">Applied On: ${new Date(r.appliedOn).toLocaleDateString()}</p>
+                <div class="flex space-x-3 mt-4 justify-end">
+                    <button onclick="updateIdCardStatus(${r.id}, 'Rejected')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
+                    <button onclick="updateIdCardStatus(${r.id}, 'Approved')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
+                </div>
+            </div>`).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending ID card requests.</p>'}
+        </div>
+    `;
 }
 
 async function updateIdCardStatus(id, status) {
-    await postData(`/id-cards/${id}/action`, { status });
-    loadContent('admin-id-cards');
-    showToast(`ID Card request ${status.toLowerCase()}`, false);
+    await postData(`/id-cards/${id}/action`, { status });
+    loadContent('admin-id-cards');
+    showToast(`ID Card request ${status.toLowerCase()}`, false);
 }
 
 // =========================================
@@ -1035,517 +1133,517 @@ async function updateIdCardStatus(id, status) {
 // --- 1. Admin/HOD Batch Management (NEW) ---
 
 async function loadAdminBatches(container) {
-    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
-    
-    try {
-        let url = `${API_BASE}/batches`;
-        const isHOD = currentUser.role === 'HOD';
-        
-        // Filter URL for HODs only
-        if (isHOD) {
-            url += `?department=${encodeURIComponent(currentUser.department)}&adminId=${currentUser.id}`;
-        }
-        
-        const res = await fetch(url);
-        const data = await res.json();
-        const batches = data.batches || [];
-        
-        const isAdminOrHOD = currentUser.role === 'Admin' || currentUser.role === 'HOD';
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
+    
+    try {
+        let url = `${API_BASE}/batches`;
+        const isHOD = currentUser.role === 'HOD';
+        
+        // Filter URL for HODs only
+        if (isHOD) {
+            url += `?department=${encodeURIComponent(currentUser.department)}&adminId=${currentUser.id}`;
+        }
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        const batches = data.batches || [];
+        
+        const isAdminOrHOD = currentUser.role === 'Admin' || currentUser.role === 'HOD';
 
-        container.innerHTML = `
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Manage Student Batches ${isHOD ? `(${currentUser.department})` : ''}</h2>
-                <div class="space-x-2">
-                    <button onclick="openEnrollBatchModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">Enroll Users</button>
-                    <button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create Batch</button>
-                </div>
-            </div>
-            <div class="space-y-4">
-                ${batches.map(b => `
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-lg text-gray-900">${b.name} (${b.id})</h3>
-                                <p class="text-sm text-green-700">${b.department} - ${b.course}, ${b.year}</p>
-                                <p class="text-xs text-gray-500 mt-1">Subjects: ${b.subjects.length}, Students: ${b.students.length}</p>
-                            </div>
-                            ${isAdminOrHOD ? `<button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-red-600 hover:text-red-800 transition p-2">🗑️ Delete</button>` : ''}
-                        </div>
-                    </div>
-                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No batches defined yet.</p>'}
-            </div>
-        `;
-    } catch (error) {
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching batches: ${error.message}</div>`;
-    }
+        container.innerHTML = `
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Manage Student Batches ${isHOD ? `(${currentUser.department})` : ''}</h2>
+                <div class="space-x-2">
+                    <button onclick="openEnrollBatchModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition transform hover:scale-[1.02]">Enroll Users</button>
+                    <button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.02]">+ Create Batch</button>
+                </div>
+            </div>
+            <div class="space-y-4">
+                ${batches.map(b => `
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-900">${b.name} (${b.id})</h3>
+                                <p class="text-sm text-green-700">${b.department} - ${b.course}, ${b.year}</p>
+                                <p class="text-xs text-gray-500 mt-1">Subjects: ${b.subjects.length}, Students: ${b.students.length}</p>
+                            </div>
+                            ${isAdminOrHOD ? `<button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-red-600 hover:text-red-800 transition p-2">🗑️ Delete</button>` : ''}
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No batches defined yet.</p>'}
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching batches: ${error.message}</div>`;
+    }
 }
 
 async function loadAdminSubjects(container) {
-     container.innerHTML = `<div class="bg-white p-6 rounded-lg shadow">
-         <h2 class="text-2xl font-bold mb-6">Assign Subjects & Teachers</h2>
-         <p class="text-gray-600">Here, Admin/HOD assigns subjects to a faculty member and links them to one or more batches (e.g., CS101 taught by F101 to Batch BTECH-CSE-Y1-A).</p>
-         <button onclick="openSubjectAssignmentModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4 transition">Assign Subject</button>
-     </div>`;
+     container.innerHTML = `<div class="bg-white p-6 rounded-lg shadow">
+           <h2 class="text-2xl font-bold mb-6">Assign Subjects & Teachers</h2>
+           <p class="text-gray-600">Here, Admin/HOD assigns subjects to a faculty member and links them to one or more batches (e.g., CS101 taught by F101 to Batch BTECH-CSE-Y1-A).</p>
+           <button onclick="openSubjectAssignmentModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mt-4 transition">Assign Subject</button>
+       </div>`;
 }
 
 // --- 2. Faculty Attendance (UPDATED) ---
 
 function loadFacultyAttendance(container) {
-    container.innerHTML = `
-        <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
-        <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
-            <p class="text-red-500 mb-4">
-                **Note:** Select your assigned class to load the attendance sheet. (Use mock data: F101, BTECH-CSE-Y1-A, CS101)
-            </p>
-            <form class="space-y-4">
-                <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
+    container.innerHTML = `
+        <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
+        <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
+            <p class="text-red-500 mb-4">
+                **Note:** Select your assigned class to load the attendance sheet. (Use mock data: F101, BTECH-CSE-Y1-A, CS101)
+            </p>
+            <form class="space-y-4">
+                <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
 
-                <label class="block text-sm font-medium mb-1">Assigned Class</label>
-                <select id="class-select" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-green-500 outline-none" 
-                    onchange="previewAttendanceSheet(this.value)">
-                    <option value="">Select Subject and Batch</option>
-                </select>
+                <label class="block text-sm font-medium mb-1">Assigned Class</label>
+                <select id="class-select" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-green-500 outline-none" 
+                    onchange="previewAttendanceSheet(this.value)">
+                    <option value="">Select Subject and Batch</option>
+                </select>
 
-                <div id="attendance-preview-area">
-                    <p class="text-gray-500 mt-4">Select a class above to load the student list.</p>
-                </div>
-            </form>
-        </div>`;
-        
-    // Initial fetch to populate the subject/batch dropdown
-    fetchFacultyAssignments();
+                <div id="attendance-preview-area">
+                    <p class="text-gray-500 mt-4">Select a class above to load the student list.</p>
+                </div>
+            </form>
+        </div>`;
+    
+    // Initial fetch to populate the subject/batch dropdown
+    fetchFacultyAssignments();
 }
 
 // NEW HELPER: Fetch faculty assignments and populate the dropdown
 async function fetchFacultyAssignments() {
-    const facultyId = currentUser.id;
-    const select = document.getElementById('class-select');
-    
-    try {
-        const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${facultyId}`);
-        const data = await res.json();
-        
-        const assignedSubjects = data.assignedSubjects || [];
-        
-        let optionsHtml = '<option value="">Select Subject and Batch</option>';
-        if (assignedSubjects.length === 0) {
-            optionsHtml = '<option value="">No subjects assigned to you</option>';
-            select.innerHTML = optionsHtml;
-            select.disabled = true;
-            return;
-        }
+    const facultyId = currentUser.id;
+    const select = document.getElementById('class-select');
+    
+    try {
+        const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${facultyId}`);
+        const data = await res.json();
+        
+        const assignedSubjects = data.assignedSubjects || [];
+        
+        let optionsHtml = '<option value="">Select Subject and Batch</option>';
+        if (assignedSubjects.length === 0) {
+            optionsHtml = '<option value="">No subjects assigned to you</option>';
+            select.innerHTML = optionsHtml;
+            select.disabled = true;
+            return;
+        }
 
-        assignedSubjects.forEach(subject => {
-            subject.batchIds.forEach(batchId => {
-                optionsHtml += `<option value="${subject.code},${batchId}">${subject.name} (${subject.code}) - Batch ${batchId}</option>`;
-            });
-        });
-        
-        select.innerHTML = optionsHtml;
-        select.disabled = false;
+        assignedSubjects.forEach(subject => {
+            subject.batchIds.forEach(batchId => {
+                optionsHtml += `<option value="${subject.code},${batchId}">${subject.name} (${subject.code}) - Batch ${batchId}</option>`;
+            });
+        });
+        
+        select.innerHTML = optionsHtml;
+        select.disabled = false;
 
-    } catch (error) {
-        showToast('Error loading assignments for attendance.', true);
-        select.innerHTML = '<option value="">Error loading data</option>';
-        select.disabled = true;
-    }
+    } catch (error) {
+        showToast('Error loading assignments for attendance.', true);
+        select.innerHTML = '<option value="">Error loading data</option>';
+        select.disabled = true;
+    }
 }
 
 // Function to fetch the student list and render the sheet
 window.previewAttendanceSheet = async (selectedValue) => {
-    const previewArea = document.getElementById('attendance-preview-area');
-    if (!selectedValue) {
-        previewArea.innerHTML = '<p class="text-gray-500 mt-4">Select a class above to load the student list.</p>';
-        return;
-    }
-    
-    previewArea.innerHTML = '<div class="loader-small mx-auto"></div>';
-    
-    const [subjectCode, batchId] = selectedValue.split(',');
+    const previewArea = document.getElementById('attendance-preview-area');
+    if (!selectedValue) {
+        previewArea.innerHTML = '<p class="text-gray-500 mt-4">Select a class above to load the student list.</p>';
+        return;
+    }
+    
+    previewArea.innerHTML = '<div class="loader-small mx-auto"></div>';
+    
+    const [subjectCode, batchId] = selectedValue.split(',');
 
-    const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${currentUser.id}&batchId=${batchId}&subjectCode=${subjectCode}`);
-    const data = await res.json();
+    const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${currentUser.id}&batchId=${batchId}&subjectCode=${subjectCode}`);
+    const data = await res.json();
 
-    if (data.students && data.students.length > 0) {
-        renderAttendanceSheet(previewArea, data.students, batchId, subjectCode, data.currentBatchInfo.batchName);
-    } else {
-         previewArea.innerHTML = `<p class="text-red-500 mt-4">Could not load student list. Check batch or subject linkage.</p>`;
-    }
+    if (data.students && data.students.length > 0) {
+        renderAttendanceSheet(previewArea, data.students, batchId, subjectCode, data.currentBatchInfo.batchName);
+    } else {
+         previewArea.innerHTML = `<p class="text-red-500 mt-4">Could not load student list. Check batch or subject linkage.</p>`;
+    }
 };
 
 // Helper to render the student list attendance form
 function renderAttendanceSheet(container, students, batchId, subjectCode, batchName) {
-    const studentsHtml = students.map(s => `
-        <tr class="hover:bg-gray-50 transition">
-            <td class="p-4 font-medium text-gray-800">${s.name} <span class="text-xs text-gray-500 font-mono">(${s.id})</span></td>
-            <td class="p-4 flex justify-around">
-                <label class="flex items-center space-x-1 cursor-pointer">
-                    <input type="radio" name="status_${s.id}" value="Present" required class="text-green-600 w-4 h-4"><span>P</span>
-                </label>
-                <label class="flex items-center space-x-1 cursor-pointer">
-                    <input type="radio" name="status_${s.id}" value="Absent" required class="text-red-600 w-4 h-4"><span>A</span>
-                </label>
-            </td>
-        </tr>
-    `).join('');
+    const studentsHtml = students.map(s => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="p-4 font-medium text-gray-800">${s.name} <span class="text-xs text-gray-500 font-mono">(${s.id})</span></td>
+            <td class="p-4 flex justify-around">
+                <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="radio" name="status_${s.id}" value="Present" required class="text-green-600 w-4 h-4"><span>P</span>
+                </label>
+                <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="radio" name="status_${s.id}" value="Absent" required class="text-red-600 w-4 h-4"><span>A</span>
+                </label>
+            </td>
+        </tr>
+    `).join('');
 
-    container.innerHTML = `
-        <h2 class="text-xl font-bold mb-4 text-gray-800">Attendance: ${batchName}</h2>
-        <h3 class="text-md font-medium text-green-700 mb-6">Subject: ${subjectCode} (${students.length} students)</h3>
-        
-        <form id="attendance-sheet-form" onsubmit="submitAttendanceSheet(event, '${batchId}', '${subjectCode}')" class="space-y-4">
-            <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
-            
-            <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
-                <table class="w-full text-left">
-                    <thead class="bg-gray-50 text-gray-700">
-                        <tr><th class="p-4">Student Name / ID</th><th class="p-4 text-center">Status</th></tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        ${studentsHtml}
-                    </tbody>
-                </table>
-            </div>
-            
-            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition transform hover:scale-[1.01]">SUBMIT ATTENDANCE RECORD</button>
-        </form>
-    `;
+    container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Attendance: ${batchName}</h2>
+        <h3 class="text-md font-medium text-green-700 mb-6">Subject: ${subjectCode} (${students.length} students)</h3>
+        
+        <form id="attendance-sheet-form" onsubmit="submitAttendanceSheet(event, '${batchId}', '${subjectCode}')" class="space-y-4">
+            <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
+            
+            <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-700">
+                        <tr><th class="p-4">Student Name / ID</th><th class="p-4 text-center">Status</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${studentsHtml}
+                    </tbody>
+                </table>
+            </div>
+            
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition transform hover:scale-[1.01]">SUBMIT ATTENDANCE RECORD</button>
+        </form>
+    `;
 }
 
 
 // Function to process and submit the full attendance sheet
 window.submitAttendanceSheet = async (e, batchId, subjectCode) => {
-    e.preventDefault();
-    showToast('Submitting attendance...', false);
-    
-    const facultyId = currentUser.id;
-    const formData = new FormData(e.target);
-    
-    let submissionSuccessCount = 0;
-    let submissionFailures = 0;
+    e.preventDefault();
+    showToast('Submitting attendance...', false);
+    
+    const facultyId = currentUser.id;
+    const formData = new FormData(e.target);
+    
+    let submissionSuccessCount = 0;
+    let submissionFailures = 0;
 
-    // Iterate through all radio button groups (status_SXXXXXXXX)
-    for (const [key, status] of formData.entries()) {
-        if (key.startsWith('status_')) {
-            const studentId = key.split('_')[1]; 
-            const statusValue = status; 
+    // Iterate through all radio button groups (status_SXXXXXXXX)
+    for (const [key, status] of formData.entries()) {
+        if (key.startsWith('status_')) {
+            const studentId = key.split('_')[1]; 
+            const statusValue = status; 
 
-            if (statusValue) {
-                const res = await postData('/attendance/mark', {
-                    facultyId: facultyId,
-                    batchId: batchId,
-                    subjectCode: subjectCode,
-                    studentId: studentId,
-                    status: statusValue
-                });
+            if (statusValue) {
+                const res = await postData('/attendance/mark', {
+                    facultyId: facultyId,
+                    batchId: batchId,
+                    subjectCode: subjectCode,
+                    studentId: studentId,
+                    status: statusValue
+                });
 
-                if (res.success) {
-                    submissionSuccessCount++;
-                } else {
-                    submissionFailures++;
-                }
-            }
-        }
-    }
+                if (res.success) {
+                    submissionSuccessCount++;
+                } else {
+                    submissionFailures++;
+                }
+            }
+        }
+    }
 
-    // 3. Provide feedback and reset the view
-    if (submissionSuccessCount > 0) {
-        showToast(`Attendance submitted for ${submissionSuccessCount} students!`, false);
-    }
-    if (submissionFailures > 0) {
-        showToast(`${submissionFailures} students failed to submit. Try checking the server logs.`, true);
-    }
-    
-    // Reload the main attendance selection screen
-    loadFacultyAttendance(document.getElementById('content-area'));
+    // 3. Provide feedback and reset the view
+    if (submissionSuccessCount > 0) {
+        showToast(`Attendance submitted for ${submissionSuccessCount} students!`, false);
+    }
+    if (submissionFailures > 0) {
+        showToast(`${submissionFailures} students failed to submit. Try checking the server logs.`, true);
+    }
+    
+    // Reload the main attendance selection screen
+    loadFacultyAttendance(document.getElementById('content-area'));
 };
 
 
 // --- 3. Admin Approval (UPDATED for Faculty ID Assignment) ---
 
 async function showAdminSignupRequests(container) {
-    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
-    
-    try {
-        const res = await fetch(`${API_BASE}/signup-requests/pending`);
-        const data = await res.json();
-        const requests = data.requests || [];
-        
-        container.innerHTML = `
-            <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Sign-up Requests <span class="text-yellow-600">(${requests.length})</span></h2>
-            <div class="space-y-4">
-                ${requests.map(r => `
-                    <div class="bg-white p-6 rounded-xl border border-yellow-200 shadow-md transition-shadow hover:shadow-lg">
-                        <h3 class="font-bold text-lg text-gray-900">${r.name} (${r.userId})</h3>
-                        <p class="text-sm text-gray-600">${r.role} - ${r.department} (${r.course || 'N/A'})</p>
-                        <p class="text-xs text-gray-500 mt-2">Email: ${r.email} | Phone: ${r.phone}</p>
-                        <div class="flex space-x-3 mt-4 justify-end">
-                            <button onclick="manageSignupRequest(${r.id}, 'reject')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
-                            <button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
-                        </div>
-                    </div>
-                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending sign-up requests.</p>'}
-            </div>
-        `;
-    } catch (error) {
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching requests: ${error.message}</div>`;
-    }
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
+    
+    try {
+        const res = await fetch(`${API_BASE}/signup-requests/pending`);
+        const data = await res.json();
+        const requests = data.requests || [];
+        
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Sign-up Requests <span class="text-yellow-600">(${requests.length})</span></h2>
+            <div class="space-y-4">
+                ${requests.map(r => `
+                    <div class="bg-white p-6 rounded-xl border border-yellow-200 shadow-md transition-shadow hover:shadow-lg">
+                        <h3 class="font-bold text-lg text-gray-900">${r.name} (${r.userId})</h3>
+                        <p class="text-sm text-gray-600">${r.role} - ${r.department} (${r.course || 'N/A'})</p>
+                        <p class="text-xs text-gray-500 mt-2">Email: ${r.email} | Phone: ${r.phone}</p>
+                        <div class="flex space-x-3 mt-4 justify-end">
+                            <button onclick="manageSignupRequest(${r.id}, 'reject')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
+                            <button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending sign-up requests.</p>'}
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching requests: ${error.message}</div>`;
+    }
 }
 
 // NEW HANDLER: Captures Faculty ID before calling approval
 window.handleApprovalFlow = (id, role, currentId, email) => {
-    if (role === 'Student') {
-        // Students use their registered userId/Roll No. directly
-        manageSignupRequest(id, 'approve', currentId);
-        return;
-    }
-    
-    // Logic for Faculty/HOD: Requires Admin to assign a new ID
-    showModal(`
-        <h3 class="text-xl font-bold mb-4">Assign Official ID (${role})</h3>
-        <p class="text-gray-600">Enter the official ID for: <strong>${email}</strong></p>
-        <form onsubmit="event.preventDefault(); submitNewUserId('${id}', this.newUserId.value)" class="space-y-4 mt-4">
-            <input type="text" name="newUserId" placeholder="Enter official ID (e.g., F201 or HOD05)" required class="w-full p-3 border rounded-xl" value="${role === 'Faculty' ? 'F' : 'HOD'}">
-            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CONFIRM ID & APPROVE</button>
-        </form>
-    `);
+    if (role === 'Student') {
+        // Students use their registered userId/Roll No. directly
+        manageSignupRequest(id, 'approve', currentId);
+        return;
+    }
+    
+    // Logic for Faculty/HOD: Requires Admin to assign a new ID
+    showModal(`
+        <h3 class="text-xl font-bold mb-4">Assign Official ID (${role})</h3>
+        <p class="text-gray-600">Enter the official ID for: <strong>${email}</strong></p>
+        <form onsubmit="event.preventDefault(); submitNewUserId('${id}', this.newUserId.value)" class="space-y-4 mt-4">
+            <input type="text" name="newUserId" placeholder="Enter official ID (e.g., F201 or HOD05)" required class="w-full p-3 border rounded-xl" value="${role === 'Faculty' ? 'F' : 'HOD'}">
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CONFIRM ID & APPROVE</button>
+        </form>
+    `);
 };
 
 // NEW HANDLER: Submits the final approval with the provided new ID
 window.submitNewUserId = async (id, newUserId) => {
-    closeModal(); // Close the intermediate modal
-    
-    // Call the core handler with the new ID as the optional parameter
-    await manageSignupRequest(id, 'approve', newUserId);
+    closeModal(); // Close the intermediate modal
+    
+    // Call the core handler with the new ID as the optional parameter
+    await manageSignupRequest(id, 'approve', newUserId);
 };
 
 
 // CORE HANDLER: Now accepts an optional newUserId
 window.manageSignupRequest = async (id, action, newUserId = null) => {
-    const endpoint = `/signup-requests/${id}/${action}`;
-    const actionMsg = action === 'approve' ? 'Approving...' : 'Rejecting...';
-    
-    showToast(actionMsg, false);
-    
-    // Construct payload only if newUserId is provided (for faculty approval)
-    const payload = newUserId ? { newUserId } : {};
+    const endpoint = `/signup-requests/${id}/${action}`;
+    const actionMsg = action === 'approve' ? 'Approving...' : 'Rejecting...';
+    
+    showToast(actionMsg, false);
+    
+    // Construct payload only if newUserId is provided (for faculty approval)
+    const payload = newUserId ? { newUserId } : {};
 
-    try {
-        // Use postData which sends JSON payload
-        const res = await postData(endpoint, payload);
-        
-        if (res.success) {
-            showToast(res.message, false);
-            // Refresh the requests list
-            await showAdminSignupRequests(document.getElementById('content-area')); 
-        } else {
-            showToast(res.message, true);
-        }
-    } catch (error) {
-        showToast('Connection error during request management.', true);
-    }
+    try {
+        // Use postData which sends JSON payload
+        const res = await postData(endpoint, payload);
+        
+        if (res.success) {
+            showToast(res.message, false);
+            // Refresh the requests list
+            await showAdminSignupRequests(document.getElementById('content-area')); 
+        } else {
+            showToast(res.message, true);
+        }
+    } catch (error) {
+        showToast('Connection error during request management.', true);
+    }
 };
 
 
 // --- 4. Modals and Handlers for Batch Management (NEW) ---
 
 window.openCreateHodModal = () => showModal(`
-    <h3 class="text-xl font-bold mb-4">Create New Department Head (HOD)</h3>
-    <p class="text-gray-600 mb-4">Assigns credentials directly to a new HOD for immediate use.</p>
-    <form onsubmit="submitCreateHod(event)" class="space-y-4">
-        
-        <input name="id" placeholder="Official HOD ID (e.g., HOD-MECH)" required class="w-full p-3 border rounded-xl">
-        <input type="password" name="pass" placeholder="Password" required class="w-full p-3 border rounded-xl">
-        <input name="name" placeholder="Full Name (Optional, e.g., Prof. Jane Doe)" class="w-full p-3 border rounded-xl">
+    <h3 class="text-xl font-bold mb-4">Create New Department Head (HOD)</h3>
+    <p class="text-gray-600 mb-4">Assigns credentials directly to a new HOD for immediate use.</p>
+    <form onsubmit="submitCreateHod(event)" class="space-y-4">
+        
+        <input name="id" placeholder="Official HOD ID (e.g., HOD-MECH)" required class="w-full p-3 border rounded-xl">
+        <input type="password" name="pass" placeholder="Password" required class="w-full p-3 border rounded-xl">
+        <input name="name" placeholder="Full Name (Optional, e.g., Prof. Jane Doe)" class="w-full p-3 border rounded-xl">
 
-        <h4 class="font-bold pt-2 border-t">Department Assignment</h4>
-        
-        <select name="department" id="hod-dept-select" onchange="populateHODCourseSelect(this.value)" required class="w-full p-3 border rounded-xl">
-            <option value="">Select Department</option>
-            ${Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('')}
-        </select>
-        
-        <select name="course" id="hod-course-select" class="w-full p-3 border rounded-xl" required disabled>
-            <option value="">Select Course/Specialization</option>
-        </select>
-        
-        <input type="email" name="email" placeholder="Email (Optional, institutional)" class="w-full p-3 border rounded-xl">
+        <h4 class="font-bold pt-2 border-t">Department Assignment</h4>
+        
+        <select name="department" id="hod-dept-select" onchange="populateHODCourseSelect(this.value)" required class="w-full p-3 border rounded-xl">
+            <option value="">Select Department</option>
+            ${Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('')}
+        </select>
+        
+        <select name="course" id="hod-course-select" class="w-full p-3 border rounded-xl" required disabled>
+            <option value="">Select Course/Specialization</option>
+        </select>
+        
+        <input type="email" name="email" placeholder="Email (Optional, institutional)" class="w-full p-3 border rounded-xl">
 
-        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE ACCOUNT</button>
-    </form>
+        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE ACCOUNT</button>
+    </form>
 `);
 
 // Helper for HOD Course Selection
 window.populateHODCourseSelect = (department) => {
-    const courseSelect = document.getElementById('hod-course-select');
-    courseSelect.innerHTML = '<option value="">Select Course/Specialization</option>';
+    const courseSelect = document.getElementById('hod-course-select');
+    courseSelect.innerHTML = '<option value="">Select Course/Specialization</option>';
 
-    if (department && DEPT_DATA[department] && DEPT_DATA[department].courses) {
-        DEPT_DATA[department].courses.forEach(course => {
-            courseSelect.innerHTML += `<option value="${course}">${course}</option>`;
-        });
-        courseSelect.disabled = false;
-    } else {
-        courseSelect.disabled = true;
-    }
+    if (department && DEPT_DATA[department] && DEPT_DATA[department].courses) {
+        DEPT_DATA[department].courses.forEach(course => {
+            courseSelect.innerHTML += `<option value="${course}">${course}</option>`;
+        });
+        courseSelect.disabled = false;
+    } else {
+        courseSelect.disabled = true;
+    }
 };
 
 window.submitCreateHod = async (e) => {
-    e.preventDefault();
-    const formData = Object.fromEntries(new FormData(e.target));
-    
-    // Ensure the ID is uppercase
-    formData.id = formData.id.toUpperCase().trim();
-    
-    showToast("Creating HOD account...", false);
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
+    
+    // Ensure the ID is uppercase
+    formData.id = formData.id.toUpperCase().trim();
+    
+    showToast("Creating HOD account...", false);
 
-    const res = await postData('/admin/create-hod', formData);
+    const res = await postData('/admin/create-hod', formData);
 
-    if (res.success) {
-        closeModal();
-        showToast(res.message, false);
-        // CRITICAL: Reloads the Admin Users page
-        loadContent('admin-users'); 
-    } else {
-        showToast(res.message || "Failed to create HOD account.", true);
-    }
+    if (res.success) {
+        closeModal();
+        showToast(res.message, false);
+        // CRITICAL: Reloads the Admin Users page
+        loadContent('admin-users'); 
+    } else {
+        showToast(res.message || "Failed to create HOD account.", true);
+    }
 };
 
 
 window.openCreateBatchModal = () => showModal(`
-    <h3 class="text-xl font-bold mb-4">Create New Batch</h3>
-    <form id="create-batch-form" onsubmit="submitCreateBatch(event)" class="space-y-4">
-        <input name="batchId" placeholder="Batch ID (e.g., BTECH-CSE-Y1-A)" required class="w-full p-3 border rounded-xl">
-        <select name="department" id="batch-dept" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required><option value="">Select Department</option>${Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('')}</select>
-        <select name="course" id="batch-course" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Course</option></select>
-        <select name="year" id="batch-year" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Year</option></select>
-        <select name="section" id="batch-section" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Section</option></select>
-        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE BATCH</button>
-    </form>
+    <h3 class="text-xl font-bold mb-4">Create New Batch</h3>
+    <form id="create-batch-form" onsubmit="submitCreateBatch(event)" class="space-y-4">
+        <input name="batchId" placeholder="Batch ID (e.g., BTECH-CSE-Y1-A)" required class="w-full p-3 border rounded-xl">
+        <select name="department" id="batch-dept" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required><option value="">Select Department</option>${Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('')}</select>
+        <select name="course" id="batch-course" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Course</option></select>
+        <select name="year" id="batch-year" onchange="populateBatchSelects('batch-dept', 'batch-course', 'batch-year', 'batch-section')" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Year</option></select>
+        <select name="section" id="batch-section" class="w-full p-3 border rounded-xl" required disabled><option value="">Select Section</option></select>
+        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">CREATE BATCH</button>
+    </form>
 `);
 
 // Helper to populate dependent selects for batch creation
 window.populateBatchSelects = (deptId, courseId, yearId, sectionId) => {
-    const dept = document.getElementById(deptId).value;
-    const courseSelect = document.getElementById(courseId);
-    const yearSelect = document.getElementById(yearId);
-    const sectionSelect = document.getElementById(sectionId);
-    
-    const data = DEPT_DATA[dept];
-    
-    const populateAndEnable = (select, values, defaultText, isEnabled) => {
-        const currentValue = select.value;
-        select.innerHTML = `<option value="">${defaultText}</option>`;
-        select.disabled = !isEnabled;
-        if (values) {
-            values.forEach(val => {
-                select.innerHTML += `<option value="${val}" ${val === currentValue ? 'selected' : ''}>${val}</option>`;
-            });
-        }
-    };
+    const dept = document.getElementById(deptId).value;
+    const courseSelect = document.getElementById(courseId);
+    const yearSelect = document.getElementById(yearId);
+    const sectionSelect = document.getElementById(sectionId);
+    
+    const data = DEPT_DATA[dept];
+    
+    const populateAndEnable = (select, values, defaultText, isEnabled) => {
+        const currentValue = select.value;
+        select.innerHTML = `<option value="">${defaultText}</option>`;
+        select.disabled = !isEnabled;
+        if (values) {
+            values.forEach(val => {
+                select.innerHTML += `<option value="${val}" ${val === currentValue ? 'selected' : ''}>${val}</option>`;
+            });
+        }
+    };
 
-    if (dept && data) {
-        populateAndEnable(courseSelect, data.courses, 'Select Course', true);
-        
-        const courseSelected = courseSelect.value;
-        if (courseSelected && data.years) {
-            populateAndEnable(yearSelect, data.years, 'Select Year', true);
-            
-            const yearSelected = yearSelect.value;
-            if (yearSelected && data.sections) {
-                populateAndEnable(sectionSelect, data.sections, 'Select Section', true);
-            } else {
-                 populateAndEnable(sectionSelect, null, 'Select Section', false);
-            }
-        } else {
-            populateAndEnable(yearSelect, null, 'Select Year', false);
-            populateAndEnable(sectionSelect, null, 'Select Section', false);
-        }
-    } else {
-        populateAndEnable(courseSelect, null, 'Select Course', false);
-        populateAndEnable(yearSelect, null, 'Select Year', false);
-        populateAndEnable(sectionSelect, null, 'Select Section', false);
-    }
+    if (dept && data) {
+        populateAndEnable(courseSelect, data.courses, 'Select Course', true);
+        
+        const courseSelected = courseSelect.value;
+        if (courseSelected && data.years) {
+            populateAndEnable(yearSelect, data.years, 'Select Year', true);
+            
+            const yearSelected = yearSelect.value;
+            if (yearSelected && data.sections) {
+                populateAndEnable(sectionSelect, data.sections, 'Select Section', true);
+            } else {
+                 populateAndEnable(sectionSelect, null, 'Select Section', false);
+            }
+        } else {
+            populateAndEnable(yearSelect, null, 'Select Year', false);
+            populateAndEnable(sectionSelect, null, 'Select Section', false);
+        }
+    } else {
+        populateAndEnable(courseSelect, null, 'Select Course', false);
+        populateAndEnable(yearSelect, null, 'Select Year', false);
+        populateAndEnable(sectionSelect, null, 'Select Section', false);
+    }
 };
 
 async function submitCreateBatch(e) {
-    e.preventDefault();
-    const formData = Object.fromEntries(new FormData(e.target));
-    formData.section = formData.section.toUpperCase(); 
-    
-    const res = await postData('/batches', formData);
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
+    formData.section = formData.section.toUpperCase(); 
+    
+    const res = await postData('/batches', formData);
 
-    if (res.success) {
-        closeModal(); 
-        setTimeout(() => loadContent('admin-batches'), 100); 
-        showToast(res.message);
-    } else {
-        showToast(res.message, true);
-    }
+    if (res.success) {
+        closeModal(); 
+        setTimeout(() => loadContent('admin-batches'), 100); 
+        showToast(res.message);
+    } else {
+        showToast(res.message, true);
+    }
 }
 
 window.openEnrollBatchModal = () => showModal(`
-    <h3 class="text-xl font-bold mb-4">Enroll Users into Batch</h3>
-    <p class="text-sm text-gray-600 mb-4">Assign students and faculty to a specific batch.</p>
-    <form onsubmit="submitEnrollBatch(event)" class="space-y-4">
-        <input name="batchId" placeholder="Existing Batch ID (e.g., BTECH-CSE-Y1-A)" required class="w-full p-3 border rounded-xl">
-        
-        <h4 class="font-bold pt-4 border-t">1. Enroll Students (Student IDs, comma-separated)</h4>
-        <textarea name="studentIds" placeholder="S2024001, S2024002, ..." class="w-full p-3 border rounded-xl h-20"></textarea>
+    <h3 class="text-xl font-bold mb-4">Enroll Users into Batch</h3>
+    <p class="text-sm text-gray-600 mb-4">Assign students and faculty to a specific batch.</p>
+    <form onsubmit="submitEnrollBatch(event)" class="space-y-4">
+        <input name="batchId" placeholder="Existing Batch ID (e.g., BTECH-CSE-Y1-A)" required class="w-full p-3 border rounded-xl">
+        
+        <h4 class="font-bold pt-4 border-t">1. Enroll Students (Student IDs, comma-separated)</h4>
+        <textarea name="studentIds" placeholder="S2024001, S2024002, ..." class="w-full p-3 border rounded-xl h-20"></textarea>
 
-        <h4 class="font-bold pt-4 border-t">2. Assign Faculty to Subjects</h4>
-        <div id="subject-assignments" class="space-y-2">
-            <p class="text-sm text-gray-500">Subject Code and Faculty ID must match existing users/subjects.</p>
-            <div class="flex space-x-2">
-                <input name="subject_0_code" placeholder="Subject Code (e.g., CS101)" class="w-1/2 p-2 border rounded-xl">
-                <input name="subject_0_faculty" placeholder="Faculty ID (e.g., F101)" class="w-1/2 p-2 border rounded-xl">
-            </div>
-        </div>
-        <button type="button" onclick="addSubjectAssignmentRow()" class="text-sm text-blue-600 hover:underline"> + Add Subject/Faculty Assignment</button>
+        <h4 class="font-bold pt-4 border-t">2. Assign Faculty to Subjects</h4>
+        <div id="subject-assignments" class="space-y-2">
+            <p class="text-sm text-gray-500">Subject Code and Faculty ID must match existing users/subjects.</p>
+            <div class="flex space-x-2">
+                <input name="subject_0_code" placeholder="Subject Code (e.g., CS101)" class="w-1/2 p-2 border rounded-xl">
+                <input name="subject_0_faculty" placeholder="Faculty ID (e.g., F101)" class="w-1/2 p-2 border rounded-xl">
+            </div>
+        </div>
+        <button type="button" onclick="addSubjectAssignmentRow()" class="text-sm text-blue-600 hover:underline"> + Add Subject/Faculty Assignment</button>
 
-        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">ENROLL & ASSIGN</button>
-    </form>
+        <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold transition">ENROLL & ASSIGN</button>
+    </form>
 `);
 
 let assignmentRowCount = 1;
 window.addSubjectAssignmentRow = () => {
-    const container = document.getElementById('subject-assignments');
-    const newRow = document.createElement('div');
-    newRow.className = 'flex space-x-2';
-    newRow.innerHTML = `
-        <input name="subject_${assignmentRowCount}_code" placeholder="Subject Code" class="w-1/2 p-2 border rounded-xl">
-        <input name="subject_${assignmentRowCount}_faculty" placeholder="Faculty ID" class="w-1/2 p-2 border rounded-xl">
-    `;
-    container.appendChild(newRow);
-    assignmentRowCount++;
+    const container = document.getElementById('subject-assignments');
+    const newRow = document.createElement('div');
+    newRow.className = 'flex space-x-2';
+    newRow.innerHTML = `
+        <input name="subject_${assignmentRowCount}_code" placeholder="Subject Code" class="w-1/2 p-2 border rounded-xl">
+        <input name="subject_${assignmentRowCount}_faculty" placeholder="Faculty ID" class="w-1/2 p-2 border rounded-xl">
+    `;
+    container.appendChild(newRow);
+    assignmentRowCount++;
 };
 
 async function submitEnrollBatch(e) {
-    e.preventDefault();
-    const rawFormData = new FormData(e.target);
-    const payload = {
-        batchId: rawFormData.get('batchId'),
-        studentIds: (rawFormData.get('studentIds') || '').split(',').map(id => id.trim()).filter(id => id),
-        subjectAssignments: []
-    };
-    
-    for (let i = 0; i < assignmentRowCount; i++) {
-        const code = rawFormData.get(`subject_${i}_code`);
-        const faculty = rawFormData.get(`subject_${i}_faculty`);
-        if (code && faculty) {
-            payload.subjectAssignments.push({ courseCode: code, teacherId: faculty });
-        }
-    }
-    
-    const res = await postData('/batches/enroll', payload);
-    
-    if (res.success) {
-        closeModal(); 
-        setTimeout(() => loadContent('admin-batches'), 100); 
-        showToast(res.message);
-    } else {
-        showToast(res.message, true);
-    }
+    e.preventDefault();
+    const rawFormData = new FormData(e.target);
+    const payload = {
+        batchId: rawFormData.get('batchId'),
+        studentIds: (rawFormData.get('studentIds') || '').split(',').map(id => id.trim()).filter(id => id),
+        subjectAssignments: []
+    };
+    
+    for (let i = 0; i < assignmentRowCount; i++) {
+        const code = rawFormData.get(`subject_${i}_code`);
+        const faculty = rawFormData.get(`subject_${i}_faculty`);
+        if (code && faculty) {
+            payload.subjectAssignments.push({ courseCode: code, teacherId: faculty });
+        }
+    }
+    
+    const res = await postData('/batches/enroll', payload);
+    
+    if (res.success) {
+        closeModal(); 
+        setTimeout(() => loadContent('admin-batches'), 100); 
+        showToast(res.message);
+    } else {
+        showToast(res.message, true);
+    }
 }
 
 // --- 5. Modal Handlers (RETAINED) ---
@@ -1559,68 +1657,68 @@ window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-bo
 // --- 6. Form Submission Handlers (RETAINED) ---
 
 async function submitLeave(e) {
-    e.preventDefault();
-    const formData = Object.fromEntries(new FormData(e.target));
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(e.target));
 
-    // CRITICAL: Send the userId to the server so it can determine the mentorId (approvalTarget)
-    const payload = {
-        userId: currentUser.id, 
-        department: currentUser.department,
-        ...formData
-    };
-    
-    const res = await postData('/leaves', payload);
-    
-    closeModal(); 
-    setTimeout(() => loadContent('leaves'), 100); 
-    showToast(res.message || 'Leave application submitted');
+    // CRITICAL: Send the userId to the server so it can determine the mentorId (approvalTarget)
+    const payload = {
+        userId: currentUser.id, 
+        department: currentUser.department,
+        ...formData
+    };
+    
+    const res = await postData('/leaves', payload);
+    
+    closeModal(); 
+    setTimeout(() => loadContent('leaves'), 100); 
+    showToast(res.message || 'Leave application submitted');
 }
 async function submitCreateAssign(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fd.append('facultyId', currentUser.id); fd.append('facultyName', currentUser.name); fd.append('department', currentUser.department);
-    await fetch(API_BASE+'/assignments', {method:'POST', body:fd});
-    closeModal(); 
-    setTimeout(() => loadContent('fac-assignments'), 100); 
-    showToast('Assignment created');
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    fd.append('facultyId', currentUser.id); fd.append('facultyName', currentUser.name); fd.append('department', currentUser.department);
+    await fetch(API_BASE+'/assignments', {method:'POST', body:fd});
+    closeModal(); 
+    setTimeout(() => loadContent('fac-assignments'), 100); 
+    showToast('Assignment created');
 }
 async function submitWork(e, id) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
-    await fetch(API_BASE+`/assignments/${id}/submit`, {method:'POST', body:fd});
-    closeModal(); 
-    setTimeout(() => loadContent('assignments'), 100); 
-    showToast('Work submitted successfully!');
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
+    await fetch(API_BASE+`/assignments/${id}/submit`, {method:'POST', body:fd});
+    closeModal(); 
+    setTimeout(() => loadContent('assignments'), 100); 
+    showToast('Work submitted successfully!');
 }
 async function updateLeaveStatus(id, status) {
-    await postData(`/leaves/${id}/action`, {status});
-    setTimeout(() => loadContent('fac-leaves'), 100); 
-    showToast(`Leave ${status.toLowerCase()}`);
+    await postData(`/leaves/${id}/action`, {status});
+    setTimeout(() => loadContent('fac-leaves'), 100); 
+    showToast(`Leave ${status.toLowerCase()}`);
 }
 async function submitPlacement(e) {
-    e.preventDefault();
-    await postData('/placements', Object.fromEntries(new FormData(e.target)));
-    closeModal(); 
-    setTimeout(() => loadContent('placements'), 100); 
-    showToast('Placement drive published');
+    e.preventDefault();
+    await postData('/placements', Object.fromEntries(new FormData(e.target)));
+    closeModal(); 
+    setTimeout(() => loadContent('placements'), 100); 
+    showToast('Placement drive published');
 }
 async function submitAnnouncement(e) {
-    e.preventDefault();
-    await postData('/announcements', Object.fromEntries(new FormData(e.target)));
-    closeModal();
-    setTimeout(() => loadContent('admin-announcements'), 100);
-    showToast('Announcement posted');
+    e.preventDefault();
+    await postData('/announcements', Object.fromEntries(new FormData(e.target)));
+    closeModal();
+    setTimeout(() => loadContent('admin-announcements'), 100);
+    showToast('Announcement posted');
 }
 
 
 async function postData(url, data, extra={}) {
-    const res = await fetch(API_BASE+url, { 
-        method:'POST', 
-        headers:{'Content-Type':'application/json'}, 
-        body:JSON.stringify({...data, ...extra}) 
-    });
-    return res.json(); 
+    const res = await fetch(API_BASE+url, { 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify({...data, ...extra}) 
+    });
+    return res.json(); 
 }
 
 // --- 7. Chatbot Logic (IMPLEMENTED DUMMIES TO PREVENT CRASH) ---
