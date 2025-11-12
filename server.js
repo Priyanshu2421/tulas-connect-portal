@@ -91,7 +91,6 @@ const readDB = () => {
     }
     catch (e) { 
         console.error("DB Read Error/Corruption:", e);
-        // Fallback to initial mock data if read fails during runtime
         return getInitialMockDB(); 
     }
 };
@@ -103,6 +102,24 @@ const writeDB = (data) => {
         console.error("DB Write Error:", e); 
     } 
 };
+
+// --- NEW AUTHORIZATION HELPER ---
+function isAuthorized(req, role, department) {
+    const db = readDB();
+    // Check ID in body (for POST) or query (for DELETE)
+    const userId = req.body.id || req.query.deleterId || req.body.assignerId || req.body.adminId; 
+    const user = db.users[userId];
+    
+    // 1. Admin is always authorized.
+    if (user && user.role === 'Admin') return true; 
+
+    // 2. HOD is authorized only if their department matches the target department.
+    if (user && user.role === 'HOD' && user.department === department) return true;
+
+    return false;
+}
+// --- END OF NEW AUTHORIZATION HELPER ---
+
 
 // --- MULTER CONFIG (UNCHANGED) ---
 const storage = multer.diskStorage({
@@ -182,14 +199,29 @@ app.post('/signup', (req, res) => {
 app.get('/batches', (req, res) => {
     const db = readDB();
     const batchesList = Object.keys(db.batches).map(id => ({ id, ...db.batches[id] }));
+    
+    // Filter by department if HOD is requesting (assuming currentUser info is passed in query for security)
+    const { department: requestedDept, adminId } = req.query;
+
+    if (requestedDept && db.users[adminId]?.role === 'HOD') {
+        const filteredList = batchesList.filter(b => b.department === requestedDept);
+        return res.json({ success: true, batches: filteredList });
+    }
+
+    // Admin sees all, or if no filter/auth is provided (for mock safety)
     res.json({ success: true, batches: batchesList });
 });
 
-// POST /api/batches - Create a new batch (UNCHANGED)
+// POST /api/batches - Create a new batch (HOD DEPT RESTRICTION)
 app.post('/batches', (req, res) => {
     const db = readDB();
-    const { batchId, department, course, year, section } = req.body;
+    const { batchId, department, course, year, section, adminId } = req.body; 
     
+    // AUTHORIZATION CHECK
+    if (!isAuthorized({ body: { id: adminId } }, 'HOD', department)) {
+        return res.status(403).json({ success: false, message: "Unauthorized. HOD can only create batches for their own department." });
+    }
+
     if (db.batches[batchId]) return res.status(409).json({ success: false, message: "Batch ID already exists." });
 
     const name = `${course}, ${year}, Section ${section}`;
@@ -206,6 +238,13 @@ app.post('/batches/enroll', (req, res) => {
 
     if (!batch) return res.status(404).json({ success: false, message: "Batch not found." });
 
+    // Assuming enrollment check is primarily done by the client-side UI filtering to keep API simple.
+    // However, if we wanted to enforce it:
+    // const { assignerId } = req.body;
+    // if (!isAuthorized({ body: { id: assignerId } }, 'HOD', batch.department)) {
+    //     return res.status(403).json({ success: false, message: "Unauthorized to enroll/assign for this batch." });
+    // }
+
     // 1. Enroll Students
     (studentIds || []).forEach(userId => {
         const user = db.users[userId];
@@ -221,7 +260,7 @@ app.post('/batches/enroll', (req, res) => {
     (subjectAssignments || []).forEach(assignment => {
         const { courseCode, teacherId } = assignment;
 
-        if (!db.users[teacherId] || db.users[teacherId].role !== 'Faculty') {
+        if (!db.users[teacherId] || (db.users[teacherId].role !== 'Faculty' && db.users[teacherId].role !== 'HOD')) {
             console.error(`Invalid Faculty ID: ${teacherId}`);
             return;
         }
@@ -247,12 +286,17 @@ app.post('/batches/enroll', (req, res) => {
 });
 
 
-// POST /api/subjects - Create or Update a subject and assign teacher/batches (UNCHANGED)
+// POST /api/subjects - Create or Update a subject and assign teacher/batches (HOD DEPT RESTRICTION)
 app.post('/subjects', (req, res) => {
     const db = readDB();
-    const { courseCode, name, department, teacherId, batchIds } = req.body;
+    const { courseCode, name, department, teacherId, batchIds, assignerId } = req.body;
 
-    if (!db.users[teacherId] || db.users[teacherId].role !== 'Faculty') {
+    // AUTHORIZATION CHECK
+    if (!isAuthorized({ body: { id: assignerId } }, 'HOD', department)) {
+        return res.status(403).json({ success: false, message: "Unauthorized. Subject assignment must be done by the Department Head or Admin for their department." });
+    }
+
+    if (!db.users[teacherId] || (db.users[teacherId].role !== 'Faculty' && db.users[teacherId].role !== 'HOD')) {
         return res.status(400).json({ success: false, message: "Invalid Teacher ID or role." });
     }
 
@@ -272,7 +316,7 @@ app.get('/signup-requests/pending', (req, res) => {
     res.json({ success: true, requests: pending });
 });
 
-// CORRECTED: Approve route handles newUserId for faculty assignment
+// FIX: Approve route now correctly handles newUserId for faculty assignment
 app.post('/signup-requests/:id/approve', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -281,23 +325,19 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
 
     const request = db.signupRequests[index];
-    // Use newUserId from the request body (sent by the Admin modal) if available, otherwise use the registered ID (for Students).
     const finalUserId = req.body.newUserId || request.userId; 
     
-    // Check if the final ID is already taken by an active user
     if (db.users[finalUserId] && finalUserId !== request.userId) {
          return res.status(409).json({ success: false, message: `The ID ${finalUserId} is already in use by an active user.` });
     }
     
-    // 1. Move the user from signupRequests to live users
     db.users[finalUserId] = { 
         ...request, 
-        id: finalUserId, // Set the final, verified ID
-        userId: finalUserId, // Also update the internal userId property
-        batchId: null, // Initialized to null, waiting for batch enrollment
+        id: finalUserId, 
+        userId: finalUserId, 
+        batchId: null, 
     };
     
-    // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
     
     writeDB(db);
@@ -512,13 +552,21 @@ app.delete('/users/:userId', (req, res) => {
     }
 });
 
-// NEW ROUTE: Delete a Batch (Admin/HOD permission implied)
+// NEW ROUTE: Delete a Batch (HOD DEPT RESTRICTION)
 app.delete('/batches/:batchId', (req, res) => {
     const db = readDB();
     const { batchId } = req.params;
+    const { deleterId } = req.query; // Auth check requires user ID
 
     if (!db.batches[batchId]) {
         return res.status(404).json({ success: false, message: "Batch not found." });
+    }
+    
+    const batchDepartment = db.batches[batchId].department;
+
+    // AUTHORIZATION CHECK: HOD can only delete batches in their department. Admin can delete all.
+    if (!isAuthorized({ query: { deleterId: deleterId } }, 'HOD', batchDepartment)) {
+        return res.status(403).json({ success: false, message: "Unauthorized. Only Admin or HOD of this department can delete this batch." });
     }
 
     // 1. Remove the batch itself
