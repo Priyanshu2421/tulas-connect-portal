@@ -1066,42 +1066,170 @@ function loadFacultyAttendance(container) {
         <h2 class="text-2xl font-bold mb-6">Mark Class Attendance</h2>
         <div class="bg-white p-8 rounded-2xl border shadow-lg max-w-lg mx-auto">
             <p class="text-red-500 mb-4">
-                **Note:** In this simplified view, you must manually enter the **Batch ID** and **Subject Code** to demonstrate the new server-side authorization check. Use **Batch ID: BTECH-CSE-Y1-A** and **Subject Code: CS101** (if logged in as F101).
+                **Note:** Select your assigned class to load the attendance sheet. (Use mock data: F101, BTECH-CSE-Y1-A, CS101)
             </p>
-            <form onsubmit="submitAttendance(event)" class="space-y-4">
+            <form class="space-y-4">
                 <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
 
-                <div><label class="block text-sm font-medium mb-1">Batch ID</label><input id="att-batch-id" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. BTECH-CSE-Y1-A"></div>
-                <div><label class="block text-sm font-medium mb-1">Subject Code</label><input id="att-sub-code" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. CS101"></div>
-                
-                <h3 class="font-bold pt-4 border-t">Mark for Student:</h3>
-                <div><label class="block text-sm font-medium mb-1">Student ID</label><input id="att-sid" type="text" required class="w-full p-3 border rounded-xl" placeholder="e.g. S2024001"></div>
-                
-                <div><label class="block text-sm font-medium mb-1">Status</label>
-                    <div class="flex space-x-4 mt-2">
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Present" checked class="text-green-600 w-5 h-5"><span>Present</span></label>
-                        <label class="flex items-center space-x-2 cursor-pointer"><input type="radio" name="att-status" value="Absent" class="text-red-600 w-5 h-5"><span>Absent</span></label>
-                    </div>
+                <label class="block text-sm font-medium mb-1">Assigned Class</label>
+                <select id="class-select" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-green-500 outline-none" 
+                    onchange="previewAttendanceSheet(this.value)">
+                    <option value="">Select Subject and Batch</option>
+                </select>
+
+                <div id="attendance-preview-area">
+                    <p class="text-gray-500 mt-4">Select a class above to load the student list.</p>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 mt-4 transition transform hover:scale-[1.01]">SUBMIT RECORD</button>
             </form>
         </div>`;
+        
+    // Initial fetch to populate the subject/batch dropdown
+    fetchFacultyAssignments();
 }
 
-async function submitAttendance(e) {
-    e.preventDefault();
-    const status = document.querySelector('input[name="att-status"]:checked').value;
+// NEW HELPER: Fetch faculty assignments and populate the dropdown
+async function fetchFacultyAssignments() {
+    const facultyId = currentUser.id;
+    const select = document.getElementById('class-select');
     
-    await postData('/attendance/mark', { 
-        facultyId: document.getElementById('att-faculty-id').value,
-        batchId: document.getElementById('att-batch-id').value,
-        subjectCode: document.getElementById('att-sub-code').value,
-        studentId: document.getElementById('att-sid').value, 
-        status 
-    });
-    e.target.reset(); 
-    showToast('Attendance marked successfully');
+    try {
+        const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${facultyId}`);
+        const data = await res.json();
+        
+        const assignedSubjects = data.assignedSubjects || [];
+        
+        let optionsHtml = '<option value="">Select Subject and Batch</option>';
+        if (assignedSubjects.length === 0) {
+            optionsHtml = '<option value="">No subjects assigned to you</option>';
+            select.innerHTML = optionsHtml;
+            select.disabled = true;
+            return;
+        }
+
+        assignedSubjects.forEach(subject => {
+            subject.batchIds.forEach(batchId => {
+                optionsHtml += `<option value="${subject.code},${batchId}">${subject.name} (${subject.code}) - Batch ${batchId}</option>`;
+            });
+        });
+        
+        select.innerHTML = optionsHtml;
+        select.disabled = false;
+
+    } catch (error) {
+        showToast('Error loading assignments for attendance.', true);
+        select.innerHTML = '<option value="">Error loading data</option>';
+        select.disabled = true;
+    }
 }
+
+// Function to fetch the student list and render the sheet
+window.previewAttendanceSheet = async (selectedValue) => {
+    const previewArea = document.getElementById('attendance-preview-area');
+    if (!selectedValue) {
+        previewArea.innerHTML = '<p class="text-gray-500 mt-4">Select a class above to load the student list.</p>';
+        return;
+    }
+    
+    previewArea.innerHTML = '<div class="loader-small mx-auto"></div>';
+    
+    const [subjectCode, batchId] = selectedValue.split(',');
+
+    const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${currentUser.id}&batchId=${batchId}&subjectCode=${subjectCode}`);
+    const data = await res.json();
+
+    if (data.students && data.students.length > 0) {
+        renderAttendanceSheet(previewArea, data.students, batchId, subjectCode, data.currentBatchInfo.batchName);
+    } else {
+         previewArea.innerHTML = `<p class="text-red-500 mt-4">Could not load student list. Check batch or subject linkage.</p>`;
+    }
+};
+
+// Helper to render the student list attendance form
+function renderAttendanceSheet(container, students, batchId, subjectCode, batchName) {
+    const studentsHtml = students.map(s => `
+        <tr class="hover:bg-gray-50 transition">
+            <td class="p-4 font-medium text-gray-800">${s.name} <span class="text-xs text-gray-500 font-mono">(${s.id})</span></td>
+            <td class="p-4 flex justify-around">
+                <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="radio" name="status_${s.id}" value="Present" required class="text-green-600 w-4 h-4"><span>P</span>
+                </label>
+                <label class="flex items-center space-x-1 cursor-pointer">
+                    <input type="radio" name="status_${s.id}" value="Absent" required class="text-red-600 w-4 h-4"><span>A</span>
+                </label>
+            </td>
+        </tr>
+    `).join('');
+
+    container.innerHTML = `
+        <h2 class="text-xl font-bold mb-4 text-gray-800">Attendance: ${batchName}</h2>
+        <h3 class="text-md font-medium text-green-700 mb-6">Subject: ${subjectCode} (${students.length} students)</h3>
+        
+        <form id="attendance-sheet-form" onsubmit="submitAttendanceSheet(event, '${batchId}', '${subjectCode}')" class="space-y-4">
+            <input type="hidden" id="att-faculty-id" value="${currentUser.id}">
+            
+            <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-700">
+                        <tr><th class="p-4">Student Name / ID</th><th class="p-4 text-center">Status</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${studentsHtml}
+                    </tbody>
+                </table>
+            </div>
+            
+            <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition transform hover:scale-[1.01]">SUBMIT ATTENDANCE RECORD</button>
+        </form>
+    `;
+}
+
+
+// Function to process and submit the full attendance sheet
+window.submitAttendanceSheet = async (e, batchId, subjectCode) => {
+    e.preventDefault();
+    showToast('Submitting attendance...', false);
+    
+    const facultyId = currentUser.id;
+    const formData = new FormData(e.target);
+    
+    let submissionSuccessCount = 0;
+    let submissionFailures = 0;
+
+    // Iterate through all radio button groups (status_SXXXXXXXX)
+    for (const [key, status] of formData.entries()) {
+        if (key.startsWith('status_')) {
+            const studentId = key.split('_')[1]; 
+            const statusValue = status; 
+
+            if (statusValue) {
+                const res = await postData('/attendance/mark', {
+                    facultyId: facultyId,
+                    batchId: batchId,
+                    subjectCode: subjectCode,
+                    studentId: studentId,
+                    status: statusValue
+                });
+
+                if (res.success) {
+                    submissionSuccessCount++;
+                } else {
+                    submissionFailures++;
+                }
+            }
+        }
+    }
+
+    // 3. Provide feedback and reset the view
+    if (submissionSuccessCount > 0) {
+        showToast(`Attendance submitted for ${submissionSuccessCount} students!`, false);
+    }
+    if (submissionFailures > 0) {
+        showToast(`${submissionFailures} students failed to submit. Try checking the server logs.`, true);
+    }
+    
+    // Reload the main attendance selection screen
+    loadFacultyAttendance(document.getElementById('content-area'));
+};
 
 
 // --- 3. Admin Approval (UPDATED for Faculty ID Assignment) ---

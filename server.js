@@ -82,6 +82,7 @@ const readDB = () => {
     try { 
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
+        // Ensure new properties are initialized if they somehow disappear after initial setup
         if (!data.signupRequests) data.signupRequests = [];
         if (!data.batches) data.batches = {}; 
         if (!data.subjects) data.subjects = {}; 
@@ -91,6 +92,7 @@ const readDB = () => {
     }
     catch (e) { 
         console.error("DB Read Error/Corruption:", e);
+        // Fallback to initial mock data if read fails during runtime
         return getInitialMockDB(); 
     }
 };
@@ -384,6 +386,56 @@ app.get('/users/by-role-and-dept', (req, res) => {
         .map(({ pass, ...user }) => user); // Exclude password
 
     res.json({ success: true, students, faculty });
+});
+
+// NEW ROUTE: Fetch faculty assignments and student list for attendance sheet
+app.get('/faculty/attendance/data', (req, res) => {
+    const { facultyId, batchId, subjectCode } = req.query;
+    const db = readDB();
+    const faculty = db.users[facultyId];
+    
+    if (!faculty || faculty.role !== 'Faculty') {
+        return res.status(403).json({ success: false, message: "Invalid or unauthorized Faculty ID." });
+    }
+
+    // Find all subjects assigned to this faculty
+    const assignedSubjects = Object.keys(db.subjects)
+        .filter(code => db.subjects[code].teacherId === facultyId)
+        .map(code => ({ 
+            code: code, 
+            name: db.subjects[code].name,
+            batchIds: db.subjects[code].batchIds 
+        }));
+
+    let students = [];
+    let currentBatchInfo = null;
+
+    if (batchId && subjectCode) {
+        const batch = db.batches[batchId];
+        const subject = db.subjects[subjectCode];
+        
+        // Validation: Ensure the subject is assigned to the batch and the faculty
+        if (batch && subject && subject.teacherId === facultyId && subject.batchIds.includes(batchId)) {
+            // Retrieve full student details for the attendance sheet
+            students = batch.students.map(studentId => {
+                const student = db.users[studentId];
+                return student ? { id: student.id, name: student.name } : null;
+            }).filter(s => s !== null);
+
+            currentBatchInfo = {
+                batchName: batch.name,
+                subjectName: subject.name,
+                studentCount: students.length
+            };
+        }
+    }
+
+    res.json({
+        success: true,
+        assignedSubjects,
+        students,
+        currentBatchInfo
+    });
 });
 
 
