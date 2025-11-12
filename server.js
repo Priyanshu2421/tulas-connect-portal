@@ -27,33 +27,35 @@ function initialize() {
     [PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'assignments'), path.join(UPLOADS_DIR, 'submissions'), path.join(UPLOADS_DIR, 'id-cards')].forEach(dir => {
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     });
-    if (!fs.existsSync(DB_PATH)) console.error("FATAL: db.json not found!");
-    else console.log("db.json found.");
+    if (!fs.existsSync(DB_PATH)) {
+        console.warn("db.json not found! Initializing database with mock data.");
+        writeDB(getInitialMockDB()); // Initialize only if missing
+    } else {
+        console.log("db.json found.");
+    }
 }
-initialize();
 
-// --- DATABASE HELPERS ---
-const readDB = () => {
-    try { 
-        let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        
-        // Ensure new properties are initialized
-        if (!data.signupRequests) data.signupRequests = [];
-        if (!data.batches) data.batches = {}; 
-        if (!data.subjects) data.subjects = {}; 
-        
-        // Ensure initial mock data for testing is present
-        if (!data.users || Object.keys(data.users).length < 3) {
-            data.users = {
-                "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
-                "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
-                "F101": { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" },
-                "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }, // Mocked Batch ID
-                "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" } // Mocked Batch ID
-            };
-            
-            // Mock initial batch/subject data for testing the faculty attendance view
-            data.batches["BTECH-CSE-Y1-A"] = { 
+// Separate function for providing the initial mock data structure
+function getInitialMockDB() {
+    return {
+        users: {
+            "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
+            "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
+            "F101": { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" },
+            "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }, 
+            "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "photoUrl": "" }
+        }, 
+        placements: [], 
+        attendance: {}, 
+        marks: {}, 
+        timetables: {}, 
+        assignments: {}, 
+        leaveRequests: [], 
+        announcements: [], 
+        idCardRequests: [],
+        signupRequests: [], 
+        batches: {
+            "BTECH-CSE-Y1-A": { 
                 id: "BTECH-CSE-Y1-A", 
                 name: "B.Tech CSE, 1st Year, Section A", 
                 department: "Department of Engineering", 
@@ -61,26 +63,48 @@ const readDB = () => {
                 year: "1st Year",
                 students: ["S2024001", "S2024002"], 
                 subjects: ["CS101", "MA101"] 
-            };
-            data.subjects["CS101"] = { 
+            }
+        }, 
+        subjects: {
+            "CS101": { 
                 name: "Data Structures", 
                 department: "Department of Engineering", 
                 teacherId: "F101", 
                 batchIds: ["BTECH-CSE-Y1-A"] 
-            };
+            }
         }
+    };
+}
+initialize();
+
+
+// --- DATABASE HELPERS ---
+const readDB = () => {
+    try { 
+        let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
+        // Ensure new properties are initialized if they somehow disappear after initial setup
+        if (!data.signupRequests) data.signupRequests = [];
+        if (!data.batches) data.batches = {}; 
+        if (!data.subjects) data.subjects = {}; 
+        if (!data.users) data.users = {};
+
         return data; 
     }
     catch (e) { 
-        return { 
-            users: { "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" } }, 
-            placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [], announcements: [], idCardRequests: [],
-            signupRequests: [], batches: {}, subjects: {}
-        }; 
+        console.error("DB Read Error/Corruption:", e);
+        // Fallback to initial mock data if read fails during runtime
+        return getInitialMockDB(); 
     }
 };
-const writeDB = (data) => { try { fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2)); } catch (e) { console.error("DB Write Error:", e); } };
+
+const writeDB = (data) => { 
+    try { 
+        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2)); 
+    } catch (e) { 
+        console.error("DB Write Error:", e); 
+    } 
+};
 
 // --- MULTER CONFIG (UNCHANGED) ---
 const storage = multer.diskStorage({
@@ -153,7 +177,7 @@ app.post('/signup', (req, res) => {
 });
 
 // =========================================
-// BATCH MANAGEMENT ROUTES (UPDATED/NEW)
+// BATCH MANAGEMENT ROUTES 
 // =========================================
 
 // GET /api/batches - Get all batches (UNCHANGED)
@@ -163,7 +187,7 @@ app.get('/batches', (req, res) => {
     res.json({ success: true, batches: batchesList });
 });
 
-// POST /api/batches - Create a new batch (UPDATED)
+// POST /api/batches - Create a new batch (UNCHANGED)
 app.post('/batches', (req, res) => {
     const db = readDB();
     const { batchId, department, course, year, section } = req.body;
@@ -176,7 +200,7 @@ app.post('/batches', (req, res) => {
     res.json({ success: true, message: `Batch ${name} created. Now enroll students and faculty.` });
 });
 
-// POST /api/batches/enroll - Enroll students and assign faculty for a batch (NEW)
+// POST /api/batches/enroll - Enroll students and assign faculty for a batch (UNCHANGED)
 app.post('/batches/enroll', (req, res) => {
     const db = readDB();
     const { batchId, studentIds, subjectAssignments } = req.body; 
@@ -206,19 +230,15 @@ app.post('/batches/enroll', (req, res) => {
 
         let subject = db.subjects[courseCode];
         if (!subject) {
-            // Create new subject if it doesn't exist
             subject = { name: courseCode, department: batch.department, teacherId, batchIds: [] };
             db.subjects[courseCode] = subject;
         }
         
-        // Update subject-to-batch link
         if (!subject.batchIds.includes(batchId)) {
             subject.batchIds.push(batchId);
         }
-        // Ensure faculty is assigned
         subject.teacherId = teacherId;
         
-        // Update batch-to-subject link
         if (!batch.subjects.includes(courseCode)) {
             batch.subjects.push(courseCode);
         }
@@ -229,7 +249,7 @@ app.post('/batches/enroll', (req, res) => {
 });
 
 
-// POST /api/subjects - Create or Update a subject and assign teacher/batches (UNCHANGED logic for now)
+// POST /api/subjects - Create or Update a subject and assign teacher/batches (UNCHANGED)
 app.post('/subjects', (req, res) => {
     const db = readDB();
     const { courseCode, name, department, teacherId, batchIds } = req.body;
@@ -263,14 +283,12 @@ app.post('/signup-requests/:id/approve', (req, res) => {
 
     const request = db.signupRequests[index];
     
-    // 1. Move the user from signupRequests to live users
     db.users[request.userId] = { 
         ...request, 
-        batchId: null, // Admin/HOD must now assign the batch using the new feature
+        batchId: null, 
     };
     delete db.users[request.userId].id; 
 
-    // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
     
     writeDB(db);
@@ -296,7 +314,7 @@ app.post('/signup-requests/:id/reject', (req, res) => {
 // FEATURE ROUTES UPDATES
 // =========================================
 
-// POST /attendance/mark - UPDATED to check teacher assignment (UNCHANGED from last update)
+// POST /attendance/mark - UNCHANGED
 app.post('/attendance/mark', (req, res) => {
     const { facultyId, batchId, subjectCode, studentId, status } = req.body; 
     const db = readDB();
@@ -343,16 +361,35 @@ app.get('/users', (req, res) => {
     const usersList = Object.values(db.users).map(({ pass, ...user }) => user);
     res.json({ success: true, users: usersList });
 });
+
+// FIX IS HERE: User Deletion Route
 app.delete('/users/:userId', (req, res) => {
     const db = readDB();
-    if (db.users[req.params.userId]) {
-        delete db.users[req.params.userId];
+    const userIdToDelete = req.params.userId;
+    
+    if (db.users[userIdToDelete]) {
+        // Use the 'delete' operator to remove the property from the object (the reliable fix)
+        delete db.users[userIdToDelete];
+        
+        // Also remove the user from any batch lists they might be in
+        Object.values(db.batches).forEach(batch => {
+            const studentIndex = batch.students.indexOf(userIdToDelete);
+            if (studentIndex > -1) {
+                batch.students.splice(studentIndex, 1);
+            }
+        });
+
+        // Save the entire updated DB structure back to the file
         writeDB(db);
-        res.json({ success: true, message: "User deleted" });
+        
+        console.log(`User deleted: ${userIdToDelete}`);
+        res.json({ success: true, message: `User ${userIdToDelete} deleted.` });
     } else {
-        res.status(404).json({ success: false, message: "User not found" });
+        res.status(404).json({ success: false, message: "User not found in active database." });
     }
 });
+// End of User Deletion Route Fix
+
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
     const db = readDB();
