@@ -361,6 +361,7 @@ app.post('/attendance/mark', (req, res) => {
 // --- OTHER FEATURE ROUTES (RETAINED/UNCHANGED) ---
 app.get('/profile/:userId', (req, res) => {
     const user = readDB().users[req.params.userId];
+    // This returns 404/success: false if user is missing, which the frontend handles gracefully now.
     if (!user) return res.status(404).json({ success: false });
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
@@ -450,7 +451,7 @@ app.delete('/users/:userId', (req, res) => {
     const userIdToDelete = req.params.userId;
     
     if (db.users[userIdToDelete]) {
-        // Use the 'delete' operator to remove the property from the object
+        // Use the 'delete' operator to remove the property from the object (the reliable fix)
         delete db.users[userIdToDelete];
         
         // Also remove the user from any batch lists they might be in
