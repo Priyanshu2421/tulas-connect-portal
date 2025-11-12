@@ -30,7 +30,6 @@ function getInitialMockDB() {
             "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
             "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
             "F101": { "id": "F101", "pass": "faculty123", "name": "Dr. Sharma", "role": "Faculty", "department": "Department of Engineering", "email": "f101@tulas.edu.in", "phone": "7776665550", "photoUrl": "" },
-            // Added mentorId for student mock data to enable the new leave system
             "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "batchId": "BTECH-CSE-Y1-A", "mentorId": "F101", "photoUrl": "" }, 
             "S2024002": { "id": "S2024002", "pass": "student123", "name": "Priya Singh", "role": "Student", "department": "Department of Engineering", "email": "priya.singh@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776661", "batchId": "BTECH-CSE-Y1-A", "mentorId": "F101", "photoUrl": "" }
         }, 
@@ -92,6 +91,7 @@ const readDB = () => {
     }
     catch (e) { 
         console.error("DB Read Error/Corruption:", e);
+        // Fallback to initial mock data if read fails during runtime
         return getInitialMockDB(); 
     }
 };
@@ -208,18 +208,33 @@ app.post('/signup', (req, res) => {
 // BATCH MANAGEMENT ROUTES 
 // =========================================
 
-// GET /api/batches - Get all batches 
+// GET /api/batches - Get all batches (HOD FILTER APPLIED)
 app.get('/batches', (req, res) => {
     const db = readDB();
     const batchesList = Object.keys(db.batches).map(id => ({ id, ...db.batches[id] }));
     
+    // Filtering logic
     const { department: requestedDept, adminId } = req.query;
 
-    if (requestedDept && db.users[adminId]?.role === 'HOD') {
-        const filteredList = batchesList.filter(b => b.department === requestedDept);
-        return res.json({ success: true, batches: filteredList });
+    if (requestedDept) {
+        // Authorization Check (Admin sees all, HOD sees only their department)
+        const user = db.users[adminId];
+        
+        if (user && user.role === 'Admin') {
+            return res.json({ success: true, batches: batchesList });
+        }
+        
+        if (user && user.role === 'HOD' && user.department === requestedDept) {
+            const filteredList = batchesList.filter(b => b.department === requestedDept);
+            return res.json({ success: true, batches: filteredList });
+        } 
+        
+        if (adminId) {
+             return res.status(403).json({ success: false, message: "Unauthorized access or department mismatch." });
+        }
     }
-
+    
+    // Default case (Admin or unfiltered access)
     res.json({ success: true, batches: batchesList });
 });
 
@@ -327,7 +342,6 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
 
     const request = db.signupRequests[index];
-    // Use newUserId from the request body (sent by the Admin modal) if available, otherwise use the registered ID (for Students).
     const finalUserId = req.body.newUserId || request.userId; 
     
     if (db.users[finalUserId] && finalUserId !== request.userId) {
@@ -406,7 +420,7 @@ app.post('/attendance/mark', (req, res) => {
 // --- OTHER FEATURE ROUTES (RETAINED/UNCHANGED) ---
 app.get('/profile/:userId', (req, res) => {
     const user = readDB().users[req.params.userId];
-    if (!user) return res.status(404).json({ success: false });
+    if (!user) return res.status(404).json({ success: false, message: "Profile not found." });
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
 });
@@ -414,7 +428,7 @@ app.get('/profile/:userId', (req, res) => {
 // NEW/UPDATED: POST /profile/update - Handles editable profile fields (Phone, DOB, Photo)
 app.post('/profile/update', upload.single('photoFile'), (req, res) => {
     const db = readDB();
-    const { userId, name, email, phone, dob, address, bloodGroup } = req.body; 
+    const { userId, name, email, phone, dob, address, bloodGroup, currentUserId } = req.body; 
 
     // Authorization: Only the user themselves or an Admin can edit this profile
     if (!isUserOrAdmin(req, userId)) {
@@ -723,10 +737,10 @@ app.post('/leaves', (req, res) => {
     const user = db.users[req.body.userId];
     
     let approvalTarget = 'HOD'; 
-    let mentorId = user.mentorId; // Student leave goes to mentor first
+    let mentorId = user?.mentorId; 
 
     // If the applicant is a student, the approval target is their mentor
-    if (user.role === 'Student' && mentorId) {
+    if (user && user.role === 'Student' && mentorId) {
         approvalTarget = mentorId;
     }
 
@@ -747,22 +761,23 @@ app.post('/leaves', (req, res) => {
 app.get('/leaves/pending/:department', (req, res) => {
     const db = readDB();
     const targetDept = req.params.department;
-    const { currentUserId } = req.query; // Assuming currentUserId is passed for authorization
+    const { currentUserId } = req.query; 
     const currentUser = db.users[currentUserId];
     
     let leaves = (db.leaveRequests || []).filter(l => l.status === 'Pending');
 
     if (currentUser && currentUser.role === 'HOD') {
-        // HOD sees: 1. Faculty leave requests from their department. 2. Student leaves targeting them (if they are the mentor).
         leaves = leaves.filter(l => 
             (l.approvalTarget === 'HOD' && l.department === targetDept) ||
             (l.approvalTarget === currentUser.id)
         );
     } else if (currentUser && currentUser.role === 'Faculty') {
-        // Faculty (Mentor) sees: Student leave requests directly addressed to them.
         leaves = leaves.filter(l => l.approvalTarget === currentUser.id);
     } else if (currentUser && currentUser.role === 'Admin') {
-        // Admin sees all pending leaves for visibility (optional)
+        // Admin sees all pending leaves
+    } else {
+        // Unauthorized access attempting to filter
+        return res.status(403).json({ success: false, message: "Authorization required to view pending leaves." });
     }
 
     res.json({ success: true, leaves: leaves });

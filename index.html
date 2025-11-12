@@ -1607,7 +1607,7 @@ window.addSubjectAssignmentRow = () => {
 
 async function submitEnrollBatch(e) {
     e.preventDefault();
-    const formData = new FormData(e.target);
+    const formData = Object.fromEntries(new FormData(e.target);
     const payload = {
         batchId: formData.get('batchId'),
         studentIds: formData.get('studentIds').split(',').map(id => id.trim()).filter(id => id),
