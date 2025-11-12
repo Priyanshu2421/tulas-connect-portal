@@ -73,10 +73,8 @@
 </head>
 <body>
 
-    <!-- NOTIFICATION TOAST -->
     <div id="toast" class="fixed bottom-5 right-5 transform translate-y-full opacity-0 transition-all duration-500 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white"></div>
 
-    <!-- MAIN MODAL -->
     <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
              <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition text-2xl">&times;</button>
@@ -84,10 +82,8 @@
         </div>
     </div>
 
-    <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper" class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg');">
         
-        <!-- LOGIN FORM -->
         <div id="login-box" class="w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl transform">
             <div class="text-center mb-8">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="h-16 mx-auto mb-2">
@@ -109,14 +105,12 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
                         <select id="login-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" onchange="updateAuthUI()">
-                            <!-- Populated by JS -->
-                        </select>
+                            </select>
                     </div>
                     <div id="login-eng-branch-wrapper" class="hidden">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Engineering Branch</label>
                         <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                            <!-- Populated by JS -->
-                        </select>
+                            </select>
                     </div>
                 </div>
 
@@ -124,14 +118,8 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
                     <input type="text" id="login-id" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
                 </div>
-
-                <!-- OTP & SUBMIT BUTTON (STAGE 1) -->
-                <div id="otp-send-wrapper" class="space-y-4">
-                    <button type="button" onclick="sendOtpHandler()" id="send-otp-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SEND LOGIN OTP</button>
-                </div>
-
-                <!-- VERIFICATION FIELDS (STAGE 2) -->
-                <div id="otp-verification-wrapper" class="hidden space-y-4">
+                
+                <div id="otp-verification-wrapper" class="space-y-4">
                     
                     <div class="relative">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
@@ -139,12 +127,6 @@
                         <button type="button" onclick="togglePass('login-pass')" class="absolute top-9 right-4 text-gray-400 hover:text-gray-600 transition">👁️</button>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">OTP (Check your email)</label>
-                        <input type="text" id="login-otp-input" required maxlength="6" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="6-digit code">
-                    </div>
-
-                    <!-- Login Captcha Section -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
                         <div class="flex items-center space-x-4">
@@ -158,20 +140,17 @@
 
                     <button type="submit" id="secure-login-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
                     
-                    <button type="button" onclick="resetLoginStage()" class="w-full text-sm text-gray-500 hover:text-red-500 transition mt-2">← Change ID or Resend OTP</button>
-                </div>
+                    </div>
             </form>
             <div class="mt-6 text-center text-sm text-gray-600">
                 New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
             </div>
         </div>
 
-        <!-- SIGNUP FORM -->
         <div id="signup-box" class="hidden w-full max-w-md bg-white/95 backdrop-blur-md p-8 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transform">
             <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Create Account</h2>
             <form id="signup-form" class="space-y-4">
                 
-                <!-- Role Selection First -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">I am a...</label>
                     <select name="role" id="signup-role" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
@@ -181,34 +160,28 @@
                     </select>
                 </div>
 
-                <!-- Common Fields -->
                 <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 <input type="email" name="email" placeholder="Email Address (Must use @tulas.edu.in)" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
 
-                <!-- Student Specific Fields -->
                 <div id="student-fields" class="hidden space-y-4">
                     <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 </div>
 
-                <!-- Department & Course Selection -->
                 <div id="signup-dept-wrapper" class="hidden space-y-4">
                     <select name="department" id="signup-dept" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
                         <option value="">Select Department</option>
-                        <!-- Populated by JS -->
-                    </select>
+                        </select>
                 </div>
 
                 <div id="signup-course-wrapper" class="hidden">
                     <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                         <option value="">Select Course</option>
-                        <!-- Populated by JS -->
-                    </select>
+                        </select>
                 </div>
 
                 <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition">
                 
-                <!-- Captcha Section -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Verify you are human</label>
                     <div class="flex items-center space-x-4">
@@ -228,9 +201,7 @@
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD -->
     <div id="dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
-        <!-- SIDEBAR NAV -->
         <aside id="sidebar" class="bg-green-900 text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
             <div class="p-6 flex items-center space-x-3 border-b border-green-800">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/40x40/22c55e/ffffff?text=TL'" class="h-10 w-10 rounded-full bg-white p-1">
@@ -247,9 +218,7 @@
             </div>
         </aside>
 
-        <!-- CONTENT AREA -->
         <div class="flex-1 md:ml-72 flex flex-col min-h-screen">
-            <!-- MOBILE HEADER -->
             <header class="md:hidden bg-white p-4 flex justify-between items-center shadow-sm sticky top-0 z-20">
                 <div class="flex items-center space-x-3">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/32x32/22c55e/ffffff?text=TL'" class="h-8">
@@ -260,20 +229,16 @@
 
             <main class="p-4 md:p-8 flex-1 overflow-y-auto">
                 <div id="content-area" class="max-w-5xl mx-auto bg-white min-h-[85vh] rounded-2xl shadow-xl border border-gray-100 p-6 md:p-8">
-                    <!-- Dynamic Content Loads Here -->
-                </div>
+                    </div>
             </main>
         </div>
     </div>
 
-    <!-- CHATBOT BUTTON -->
     <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-3xl">
         🤖
     </button>
 
-    <!-- CHATBOT MODAL -->
     <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[80vh] md:h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all duration-300">
-        <!-- Chat Header -->
         <div class="p-4 bg-green-700 text-white flex justify-between items-center shadow-md">
             <h3 class="font-bold text-lg">Tula's AI Helper</h3>
             <button onclick="toggleChatbot()" class="text-white hover:text-green-200 transition">
@@ -281,15 +246,12 @@
             </button>
         </div>
         
-        <!-- Chat History Display -->
         <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-            <!-- Initial Message -->
             <div class="flex justify-start">
                 <div class="bg-gray-200 text-gray-800 p-3 rounded-xl rounded-bl-none max-w-[80%] chat-bubble">
                     Hello! I'm your Tula's AI Portal Assistant. I can help you with general queries or provide up-to-date information using Google Search. Try asking me about new admissions or institute news!
                 </div>
             </div>
-            <!-- Loading Indicator for AI Response -->
             <div id="chat-loading-indicator" class="hidden flex justify-start">
                 <div class="p-3 rounded-xl bg-gray-200 chat-bubble">
                     <div class="loader-small"></div>
@@ -297,7 +259,6 @@
             </div>
         </div>
 
-        <!-- Chat Input -->
         <form id="chat-form" class="p-4 border-t border-gray-200 bg-white">
             <div class="flex space-x-2">
                 <input type="text" id="chat-input" placeholder="Ask me anything..." required class="flex-1 p-3 border border-gray-300 rounded-xl focus:ring-green-500 focus:border-green-500 outline-none">
@@ -314,7 +275,7 @@ const API_BASE = '';
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
 let currentLoginCaptcha = ''; 
-let isOtpSent = false; 
+// Removed: let isOtpSent = false;
 const REQUIRED_DOMAIN = '@tulas.edu.in'; // <-- NEW: Enforced domain
 
 // Course Data Mapping (UNCHANGED)
@@ -348,13 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
     generateLoginCaptcha(); 
     if (currentUser) showDashboard(); else updateAuthUI();
 
-    // Login Handler: Only handles final submission after OTP is sent
+    // Login Handler: Now handles direct login with password and captcha
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
-
-        if (!isOtpSent) { 
-            return; 
-        }
 
         const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
         if (loginCaptchaInput !== currentLoginCaptcha) {
@@ -373,16 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        // Pass the credentials directly to the login handler
         await handleAuth('/login', {
             userId: document.getElementById('login-id').value.trim(),
             password: document.getElementById('login-pass').value,
             role: role === 'Department Login' ? 'HOD' : role,
             department: dept,
-            otp: document.getElementById('login-otp-input').value 
+            // Removed: otp: document.getElementById('login-otp-input').value 
         });
     };
 
-    // Signup Handler: ADDED DOMAIN CHECK HERE
+    // Signup Handler: (No change in signup form logic, only backend call)
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
@@ -442,66 +400,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === NEW OTP HANDLERS ===
-
-function setLoginFieldsDisabled(isDisabled) {
-    document.getElementById('login-role').disabled = isDisabled;
-    document.getElementById('login-dept').disabled = isDisabled;
-    document.getElementById('login-eng-branch').disabled = isDisabled;
-    document.getElementById('login-id').disabled = isDisabled;
-}
-
-function resetLoginStage() {
-    isOtpSent = false;
-    setLoginFieldsDisabled(false);
-    document.getElementById('otp-send-wrapper').classList.remove('hidden');
-    document.getElementById('otp-verification-wrapper').classList.add('hidden');
-    document.getElementById('login-otp-input').value = '';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-captcha-input').value = '';
-    showToast('Login reset. Please re-enter ID and send OTP.', false);
-}
-
-window.sendOtpHandler = async () => {
-    const userId = document.getElementById('login-id').value.trim();
-    if (!userId) {
-        showToast('Please enter your User ID first.', true);
-        return;
-    }
-    
-    // Disable inputs while sending OTP
-    setLoginFieldsDisabled(true);
-    document.getElementById('send-otp-btn').disabled = true;
-    document.getElementById('send-otp-btn').textContent = 'Sending...';
-
-    try {
-        const res = await fetch(API_BASE + '/generate-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            isOtpSent = true;
-            document.getElementById('otp-send-wrapper').classList.add('hidden');
-            document.getElementById('otp-verification-wrapper').classList.remove('hidden');
-            showToast(data.message || 'OTP sent successfully! Check your email.', false);
-        } else {
-            showToast(data.message || 'Failed to send OTP.', true);
-            setLoginFieldsDisabled(false);
-        }
-    } catch (err) {
-        showToast('Connection error during OTP request.', true);
-        setLoginFieldsDisabled(false);
-    } finally {
-        document.getElementById('send-otp-btn').disabled = false;
-        document.getElementById('send-otp-btn').textContent = 'SEND LOGIN OTP';
-    }
-};
+// === REMOVED OTP HANDLERS ===
+// Removed: setLoginFieldsDisabled()
+// Removed: resetLoginStage()
+// Removed: window.sendOtpHandler()
 
 
-// === AUTHENTICATION LOGIC (Modified to call resetLoginStage on failure) ===
+// === AUTHENTICATION LOGIC (Modified reset on failure) ===
 function initAuthDropdowns() {
     const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
     const depts = Object.keys(DEPT_DATA);
@@ -640,14 +545,13 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             showToast(data.message || 'Action failed', true);
             if (isSignup) generateCaptcha();
             else {
-                // If login fails (due to wrong OTP/Password/Captcha), reset login stage
-                resetLoginStage(); 
+                // On login failure, only refresh captcha, no stage reset
                 generateLoginCaptcha();
             }
         }
     } catch (err) {
         showToast('Connection error. Please try again.', true);
-        if (!isSignup) resetLoginStage();
+        if (!isSignup) generateLoginCaptcha(); // Refresh captcha on connection error
     }
 }
 
@@ -1086,7 +990,7 @@ function toggleAuthScreen(screen) {
     if (screen === 'signup') {
         generateCaptcha(); 
     } else if (screen === 'login') {
-        resetLoginStage(); 
+        // Removed: resetLoginStage()
         generateLoginCaptcha(); 
     }
 }
@@ -1185,12 +1089,12 @@ function addMessageToChat(text, isUser, sources = []) {
             ).join('');
             
             finalHtml = `<div class="p-3 max-w-[80%] rounded-xl shadow-sm chat-bubble bg-gray-200 text-gray-800 rounded-bl-none">
-                            ${messageContent}
-                            <div class="mt-2 pt-2 border-t border-gray-300 text-xs">
-                                <p class="font-semibold text-gray-600 mb-1">Grounding Sources:</p>
-                                ${sourcesHtml}
-                            </div>
-                         </div>`;
+                                ${messageContent}
+                                <div class="mt-2 pt-2 border-t border-gray-300 text-xs">
+                                    <p class="font-semibold text-gray-600 mb-1">Grounding Sources:</p>
+                                    ${sourcesHtml}
+                                </div>
+                             </div>`;
         } else {
             finalHtml = `<div class="p-3 max-w-[80%] rounded-xl shadow-sm chat-bubble bg-gray-200 text-gray-800 rounded-bl-none">${messageContent}</div>`;
         }

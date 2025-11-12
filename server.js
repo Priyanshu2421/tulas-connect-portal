@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-const nodemailer = require('nodemailer'); 
+// const nodemailer = require('nodemailer'); // Removed
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,24 +16,19 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 // --- CONSTANTS ---
 const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // Enforced Institutional Domain
 
-// --- IN-MEMORY OTP STORE ---
-// Stores OTPs: { userId: { otp: '123456', expires: timestamp } }
-const otpStore = {}; 
+// --- IN-MEMORY OTP STORE (Removed) ---
+// const otpStore = {}; 
 
-// --- NODEMAILER CONFIGURATION (CRUCIAL: REPLACE WITH YOUR CREDENTIALS) ---
-// **ACTION REQUIRED:** Replace these values with your actual SMTP details to fix the EDNS error.
-const transporter = nodemailer.createTransport({
-    // Line 35: REPLACE 'smtp.example.com' with your actual host (e.g., 'smtp.gmail.com')
-    host: 'smtp.example.com', 
-    port: 587,
-    secure: false, // Use true for port 465, false for 587 (TLS)
-    auth: {
-        // Line 38: REPLACE 'your_email@example.com' with your actual sending email address
-        user: 'your_email@example.com', 
-        // Line 39: REPLACE 'your_email_password' with your actual App Password or email password
-        pass: 'your_email_password'  
-    }
-});
+// --- NODEMAILER CONFIGURATION (Removed) ---
+// const transporter = nodemailer.createTransport({
+//     host: 'smtp.example.com', 
+//     port: 587,
+//     secure: false,
+//     auth: {
+//         user: 'your_email@example.com', 
+//         pass: 'your_email_password'  
+//     }
+// });
 
 // --- MIDDLEWARE ---
 app.use(cors());
@@ -81,63 +76,25 @@ const upload = multer({
 // API ROUTES
 // =========================================
 
-// --- OTP GENERATION ENDPOINT (With Domain Check) ---
-app.post('/generate-otp', async (req, res) => {
-    const { userId } = req.body;
-    const db = readDB();
-    const user = db.users[userId];
-
-    if (!user) return res.status(404).json({ success: false, message: "User ID not found." });
-    
-    // Domain Check: Server-side validation
-    if (!user.email || !user.email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
-        return res.status(400).json({ 
-            success: false, 
-            message: `OTP delivery requires a valid institutional email (${REQUIRED_EMAIL_DOMAIN}).` 
-        });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    const expirationTime = Date.now() + 5 * 60 * 1000; // 5 minutes
-
-    otpStore[userId] = { otp, expires: expirationTime };
-
-    try {
-        await transporter.sendMail({
-            from: '"Tula\'s Connect ERP" <your_email@example.com>', // sender address (use your configured user email)
-            to: user.email, // list of receivers
-            subject: "Your Tula's Connect ERP Login OTP", // Subject line
-            html: `<b>Your OTP for login is: ${otp}.</b> This code is valid for 5 minutes. Do not share it with anyone.`
-        });
-        res.json({ success: true, message: `OTP sent to ${user.email}.` });
-    } catch (error) {
-        console.error("OTP Email Error:", error);
-        // This is the error seen on the frontend:
-        res.status(500).json({ success: false, message: "Failed to send OTP email. Check server logs." }); 
-    }
-});
+// --- OTP GENERATION ENDPOINT (REMOVED) ---
+// app.post('/generate-otp', async (req, res) => { /* ... OTP logic ... */ });
 
 
-// --- AUTH (Checks OTP) ---
+// --- AUTH (Checks ONLY Password, Role, and Department) ---
 app.post('/login', (req, res) => {
-    const { userId, password, role, department, otp } = req.body; 
+    const { userId, password, role, department } = req.body; // Removed 'otp'
     const db = readDB();
     const user = db.users[userId];
     
-    // 1. OTP Check
-    const storedOtp = otpStore[userId];
-    if (!storedOtp || storedOtp.otp !== otp || storedOtp.expires < Date.now()) {
-        return res.status(401).json({ success: false, message: "Invalid or expired OTP." });
-    }
-    
-    // Clear OTP after successful check
-    delete otpStore[userId]; 
+    // 1. Password Check
+    if (!user || user.pass !== password) return res.status(401).json({ success: false, message: "Invalid User ID or Password." });
 
-    // 2. Original Login Check (password, role, department)
-    if (!user || user.pass !== password) return res.status(401).json({ success: false, message: "Invalid password." });
+    // 2. Role Check (Original logic retained)
     if (user.role !== role) {
         if (!(role === 'HOD' && user.role === 'HOD')) return res.status(403).json({ success: false, message: "Role mismatch." });
     }
+
+    // 3. HOD Department Check (Original logic retained)
     if (role === 'HOD' && user.department !== department) return res.status(403).json({ success: false, message: "Department mismatch." });
 
     const { pass, ...safeUser } = user;
