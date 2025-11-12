@@ -23,19 +23,6 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(__dirname));
 
 // --- INITIALIZATION ---
-function initialize() {
-    [PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'assignments'), path.join(UPLOADS_DIR, 'submissions'), path.join(UPLOADS_DIR, 'id-cards')].forEach(dir => {
-        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    });
-    if (!fs.existsSync(DB_PATH)) {
-        console.warn("db.json not found! Initializing database with mock data.");
-        writeDB(getInitialMockDB()); // Initialize only if missing
-    } else {
-        console.log("db.json found.");
-    }
-}
-
-// Separate function for providing the initial mock data structure
 function getInitialMockDB() {
     return {
         users: {
@@ -74,6 +61,17 @@ function getInitialMockDB() {
             }
         }
     };
+}
+function initialize() {
+    [PUBLIC_DIR, UPLOADS_DIR, path.join(UPLOADS_DIR, 'profiles'), path.join(UPLOADS_DIR, 'assignments'), path.join(UPLOADS_DIR, 'submissions'), path.join(UPLOADS_DIR, 'id-cards')].forEach(dir => {
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    });
+    if (!fs.existsSync(DB_PATH)) {
+        console.warn("db.json not found! Initializing database with mock data.");
+        writeDB(getInitialMockDB()); // Initialize only if missing
+    } else {
+        console.log("db.json found.");
+    }
 }
 initialize();
 
@@ -356,6 +354,29 @@ app.get('/profile/:userId', (req, res) => {
     const { pass, ...safeUser } = user;
     res.json({ success: true, profile: safeUser });
 });
+
+// NEW ROUTE: Fetch Users by Role and Department for Enrollment UI
+app.get('/users/by-role-and-dept', (req, res) => {
+    const { department } = req.query;
+    const db = readDB();
+    const allUsers = Object.values(db.users);
+    
+    if (!department) {
+        return res.status(400).json({ success: false, message: "Department parameter is required." });
+    }
+
+    const students = allUsers
+        .filter(u => u.role === 'Student' && u.department === department)
+        .map(({ pass, ...user }) => user); // Exclude password
+    
+    const faculty = allUsers
+        .filter(u => u.role === 'Faculty' && u.department === department)
+        .map(({ pass, ...user }) => user); // Exclude password
+
+    res.json({ success: true, students, faculty });
+});
+
+
 app.get('/users', (req, res) => {
     const db = readDB();
     const usersList = Object.values(db.users).map(({ pass, ...user }) => user);
