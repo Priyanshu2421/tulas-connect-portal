@@ -3,7 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-// const nodemailer = require('nodemailer'); // Removed
+// Nodemailer has been permanently removed for simple login/signup.
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,20 +15,6 @@ const UPLOADS_DIR = path.join(PUBLIC_DIR, 'uploads');
 
 // --- CONSTANTS ---
 const REQUIRED_EMAIL_DOMAIN = '@tulas.edu.in'; // Enforced Institutional Domain
-
-// --- IN-MEMORY OTP STORE (Removed) ---
-// const otpStore = {}; 
-
-// --- NODEMAILER CONFIGURATION (Removed) ---
-// const transporter = nodemailer.createTransport({
-//     host: 'smtp.example.com', 
-//     port: 587,
-//     secure: false,
-//     auth: {
-//         user: 'your_email@example.com', 
-//         pass: 'your_email_password'  
-//     }
-// });
 
 // --- MIDDLEWARE ---
 app.use(cors());
@@ -49,8 +35,42 @@ initialize();
 
 // --- DATABASE HELPERS ---
 const readDB = () => {
-    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf8')); }
-    catch (e) { return { users: {}, placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [], announcements: [], idCardRequests: [] }; }
+    try { 
+        // Read existing data or provide a default structure
+        let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+        
+        // Ensure new properties are initialized
+        if (!data.signupRequests) data.signupRequests = [];
+        
+        // Ensure initial Admin, HOD, and Student users exist for testing
+        if (!data.users || Object.keys(data.users).length === 0) {
+            data.users = {
+                "admin.tulas.in": {
+                    "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": ""
+                },
+                "hod.cse": {
+                    "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": ""
+                },
+                "S2024001": {
+                    "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "photoUrl": ""
+                }
+            };
+        }
+        
+        return data; 
+    }
+    catch (e) { 
+        // Return full default structure with mock users if db.json is missing or corrupted
+        return { 
+            users: {
+                "admin.tulas.in": { "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", "phone": "1234567890", "bloodGroup": "O+", "address": "Tula's Institute, Dehradun", "dob": "1990-01-01", "photoUrl": "" },
+                "hod.cse": { "id": "hod.cse", "pass": "hod123", "name": "Prof. Head of CSE", "role": "HOD", "department": "Department of Engineering", "email": "hod.cse@tulas.edu.in", "course": "Computer Science & Engineering", "phone": "9998887770", "photoUrl": "" },
+                "S2024001": { "id": "S2024001", "pass": "student123", "name": "Rajesh Kumar", "role": "Student", "department": "Department of Engineering", "email": "rajesh.kumar@tulas.edu.in", "course": "B.Tech CSE", "phone": "8887776660", "photoUrl": "" }
+            }, 
+            placements: [], attendance: {}, marks: {}, timetables: {}, assignments: {}, leaveRequests: [], announcements: [], idCardRequests: [],
+            signupRequests: [] 
+        }; 
+    }
 };
 const writeDB = (data) => { try { fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2)); } catch (e) { console.error("DB Write Error:", e); } };
 
@@ -76,50 +96,118 @@ const upload = multer({
 // API ROUTES
 // =========================================
 
-// --- OTP GENERATION ENDPOINT (REMOVED) ---
-// app.post('/generate-otp', async (req, res) => { /* ... OTP logic ... */ });
-
-
-// --- AUTH (Checks ONLY Password, Role, and Department) ---
+// --- AUTH (Simple User/Pass) ---
 app.post('/login', (req, res) => {
-    const { userId, password, role, department } = req.body; // Removed 'otp'
+    const { userId, password, role, department } = req.body;
     const db = readDB();
     const user = db.users[userId];
     
     // 1. Password Check
     if (!user || user.pass !== password) return res.status(401).json({ success: false, message: "Invalid User ID or Password." });
 
-    // 2. Role Check (Original logic retained)
+    // 2. Role Check
     if (user.role !== role) {
         if (!(role === 'HOD' && user.role === 'HOD')) return res.status(403).json({ success: false, message: "Role mismatch." });
     }
 
-    // 3. HOD Department Check (Original logic retained)
+    // 3. HOD Department Check
     if (role === 'HOD' && user.department !== department) return res.status(403).json({ success: false, message: "Department mismatch." });
 
     const { pass, ...safeUser } = user;
     res.json({ success: true, user: safeUser });
 });
 
-// --- SIGNUP (With Domain Check) ---
+// --- SIGNUP (UPDATED: Saves to signupRequests for Admin Approval) ---
 app.post('/signup', (req, res) => {
     const { userId, pass, name, role, department, email, course, phone } = req.body;
     const db = readDB();
 
-    // Domain Check: Server-side validation during signup
     if (!email || !email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
-        return res.status(400).json({ 
-            success: false, 
-            message: `Registration requires an email ending in ${REQUIRED_EMAIL_DOMAIN}.` 
-        });
+        return res.status(400).json({ success: false, message: `Registration requires an email ending in ${REQUIRED_EMAIL_DOMAIN}.` });
     }
 
-    if (db.users[userId]) return res.status(409).json({ success: false, message: "User ID exists." });
+    // Check if user ID or email is already registered or pending
+    if (db.users[userId] || db.signupRequests.some(r => r.userId === userId || r.email === email)) {
+        return res.status(409).json({ success: false, message: "User ID or Email already exists or is pending approval." });
+    }
     
-    db.users[userId] = { id: userId, pass, name, role, department, email, course: course || "", phone: phone || "", photoUrl: "" };
+    // Save to pending requests array
+    const newRequestId = Date.now();
+    db.signupRequests.push({ 
+        id: newRequestId, 
+        userId, 
+        pass, 
+        name, 
+        role, 
+        department, 
+        email, 
+        course: course || "", 
+        phone: phone || "", 
+        photoUrl: "",
+        status: 'Pending',
+        requestedOn: new Date()
+    });
     writeDB(db);
-    res.json({ success: true, message: "Account created" });
+    res.json({ success: true, message: "Registration submitted for admin verification." });
 });
+
+// =========================================
+// ADMIN/HOD SIGNUP MANAGEMENT ROUTES
+// =========================================
+
+// GET: Fetch all pending sign-up requests
+app.get('/signup-requests/pending', (req, res) => {
+    const db = readDB();
+    const pending = (db.signupRequests || []).filter(r => r.status === 'Pending');
+    res.json({ success: true, requests: pending });
+});
+
+// POST: Approve a sign-up request
+app.post('/signup-requests/:id/approve', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id);
+    const index = db.signupRequests.findIndex(r => r.id === id);
+
+    if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
+
+    const request = db.signupRequests[index];
+    
+    // 1. Move the user from signupRequests to live users
+    db.users[request.userId] = { 
+        id: request.userId, 
+        pass: request.pass, 
+        name: request.name, 
+        role: request.role, 
+        department: request.department, 
+        email: request.email, 
+        course: request.course, 
+        phone: request.phone, 
+        photoUrl: request.photoUrl 
+    };
+
+    // 2. Remove the request from the pending list
+    db.signupRequests.splice(index, 1);
+    
+    writeDB(db);
+    res.json({ success: true, message: `Account for ${request.name} approved and activated.` });
+});
+
+// POST: Reject a sign-up request
+app.post('/signup-requests/:id/reject', (req, res) => {
+    const db = readDB();
+    const id = parseInt(req.params.id);
+    const index = db.signupRequests.findIndex(r => r.id === id);
+
+    if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
+    
+    // Remove the request from the pending list
+    const rejectedUser = db.signupRequests[index].name;
+    db.signupRequests.splice(index, 1);
+    
+    writeDB(db);
+    res.json({ success: true, message: `Account request for ${rejectedUser} rejected.` });
+});
+
 
 // --- GENERAL ---
 app.get('/profile/:userId', (req, res) => {
@@ -129,7 +217,7 @@ app.get('/profile/:userId', (req, res) => {
     res.json({ success: true, profile: safeUser });
 });
 
-// --- ADMIN: USER MANAGEMENT (Rest of the routes remain the same) ---
+// --- ADMIN: USER MANAGEMENT (CRUD for LIVE users) ---
 app.get('/users', (req, res) => {
     const db = readDB();
     const usersList = Object.values(db.users).map(({ pass, ...user }) => user);
@@ -208,7 +296,7 @@ app.post('/id-cards/:id/action', (req, res) => {
     }
 });
 
-// --- EXISTING FEATURES (Unchanged) ---
+// --- EXISTING FEATURES ---
 app.get('/placements', (req, res) => {
     const db = readDB();
     let results = db.placements || [];

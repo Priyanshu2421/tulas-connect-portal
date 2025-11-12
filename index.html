@@ -140,7 +140,7 @@
 
                     <button type="submit" id="secure-login-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all transform hover:scale-[1.02] shadow-lg">SECURE LOGIN</button>
                     
-                    </div>
+                </div>
             </form>
             <div class="mt-6 text-center text-sm text-gray-600">
                 New here? <button onclick="toggleAuthScreen('signup')" class="text-green-600 font-semibold hover:underline transition">Create an Account</button>
@@ -275,8 +275,7 @@ const API_BASE = '';
 let currentUser = JSON.parse(sessionStorage.getItem('user')) || null;
 let currentCaptcha = '';
 let currentLoginCaptcha = ''; 
-// Removed: let isOtpSent = false;
-const REQUIRED_DOMAIN = '@tulas.edu.in'; // <-- NEW: Enforced domain
+const REQUIRED_DOMAIN = '@tulas.edu.in'; 
 
 // Course Data Mapping (UNCHANGED)
 const DEPT_DATA = {
@@ -336,11 +335,10 @@ document.addEventListener('DOMContentLoaded', () => {
             password: document.getElementById('login-pass').value,
             role: role === 'Department Login' ? 'HOD' : role,
             department: dept,
-            // Removed: otp: document.getElementById('login-otp-input').value 
         });
     };
 
-    // Signup Handler: (No change in signup form logic, only backend call)
+    // Signup Handler: Now submits for admin approval
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
@@ -354,17 +352,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(e.target);
         const payload = Object.fromEntries(formData);
         
-        // --- DOMAIN CHECK START ---
+        // --- DOMAIN CHECK ---
         if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
             showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
             return;
         }
-        // --- DOMAIN CHECK END ---
 
         if (payload.role === 'Faculty') {
             payload.userId = payload.email;
         }
 
+        // Call handleAuth (which now expects the server to return "pending approval")
         await handleAuth('/signup', payload, true);
     };
 
@@ -400,13 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === REMOVED OTP HANDLERS ===
-// Removed: setLoginFieldsDisabled()
-// Removed: resetLoginStage()
-// Removed: window.sendOtpHandler()
+// === AUTHENTICATION LOGIC ===
 
-
-// === AUTHENTICATION LOGIC (Modified reset on failure) ===
 function initAuthDropdowns() {
     const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
     const depts = Object.keys(DEPT_DATA);
@@ -531,7 +524,8 @@ async function handleAuth(endpoint, payload, isSignup = false) {
         
         if (data.success) {
             if (isSignup) {
-                showToast('Registration successful! Please login.', false);
+                // UPDATED MESSAGE: New accounts are pending admin approval
+                showToast(data.message || 'Registration submitted! Account pending admin approval.', false); 
                 toggleAuthScreen('login');
                 document.getElementById('signup-form').reset();
                 generateCaptcha();
@@ -555,7 +549,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
     }
 }
 
-// === DASHBOARD & NAVIGATION (UNCHANGED) ===
+// === DASHBOARD & NAVIGATION (UPDATED FOR ADMIN/HOD) ===
 function showDashboard() {
     document.getElementById('auth-wrapper').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
@@ -588,11 +582,13 @@ function renderNavigation() {
         'HOD': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, // ADDED
             { id: 'placements', label: 'Manage Placements', icon: '💼' }
         ],
         'Admin': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'admin-users', label: 'Manage Users', icon: '👥' },
+            { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, // ADDED
             { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
             { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
             { id: 'placements', label: 'All Placements', icon: '🌍' }
@@ -634,12 +630,66 @@ async function loadContent(pageId, activeBtn) {
             case 'admin-users': await loadAdminUsers(container); break;
             case 'admin-id-cards': await loadAdminIdCards(container); break;
             case 'admin-announcements': await loadAdminAnnouncements(container); break;
+            case 'admin-signup-requests': await showAdminSignupRequests(container); break; // NEW HANDLER
             default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
         }
     } catch (err) {
         container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}</div>`;
     }
 }
+
+// === NEW ADMIN APPROVAL FUNCTIONS ===
+
+async function showAdminSignupRequests(container) {
+    container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>';
+    
+    try {
+        const res = await fetch(`${API_BASE}/signup-requests/pending`);
+        const data = await res.json();
+        const requests = data.requests || [];
+        
+        container.innerHTML = `
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">Pending Sign-up Requests <span class="text-yellow-600">(${requests.length})</span></h2>
+            <div class="space-y-4">
+                ${requests.map(r => `
+                    <div class="bg-white p-6 rounded-xl border border-yellow-200 shadow-md transition-shadow hover:shadow-lg">
+                        <h3 class="font-bold text-lg text-gray-900">${r.name} (${r.userId})</h3>
+                        <p class="text-sm text-gray-600">${r.role} - ${r.department} (${r.course || 'N/A'})</p>
+                        <p class="text-xs text-gray-500 mt-2">Email: ${r.email} | Phone: ${r.phone}</p>
+                        <div class="flex space-x-3 mt-4 justify-end">
+                            <button onclick="manageSignupRequest(${r.id}, 'reject')" class="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition">Reject</button>
+                            <button onclick="manageSignupRequest(${r.id}, 'approve')" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Approve</button>
+                        </div>
+                    </div>
+                `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No pending sign-up requests.</p>'}
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error fetching requests: ${error.message}</div>`;
+    }
+}
+
+window.manageSignupRequest = async (id, action) => {
+    const endpoint = `/signup-requests/${id}/${action}`;
+    const actionMsg = action === 'approve' ? 'Approving...' : 'Rejecting...';
+    
+    showToast(actionMsg, false);
+
+    try {
+        const res = await fetch(API_BASE + endpoint, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+            showToast(data.message, false);
+            // Reload the requests list
+            await showAdminSignupRequests(document.getElementById('content-area')); 
+        } else {
+            showToast(data.message, true);
+        }
+    } catch (error) {
+        showToast('Connection error during request management.', true);
+    }
+};
 
 // === PAGE LOADERS (UNCHANGED) ===
 async function loadProfile(container) {
@@ -979,7 +1029,7 @@ async function updateIdCardStatus(id, status) {
 }
 
 
-// === HELPER FUNCTIONS (Modified toggleAuthScreen) ===
+// === HELPER FUNCTIONS (UNCHANGED) ===
 function detailItem(label, value) {
     return `<div><p class="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">${label}</p><p class="font-medium text-gray-900">${value}</p></div>`;
 }
@@ -990,7 +1040,6 @@ function toggleAuthScreen(screen) {
     if (screen === 'signup') {
         generateCaptcha(); 
     } else if (screen === 'login') {
-        // Removed: resetLoginStage()
         generateLoginCaptcha(); 
     }
 }
