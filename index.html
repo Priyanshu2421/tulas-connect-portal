@@ -659,6 +659,9 @@ async function loadContent(pageId, activeBtn) {
     container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
 
     try {
+        // --- FIX 1: Ensure currentUser exists before fetching data ---
+        if (!currentUser || !currentUser.id) throw new Error("User session invalid or expired. Please sign in."); 
+
         switch (pageId) {
             case 'profile': await loadProfile(container); break;
             case 'timetable': await loadTimetable(container); break;
@@ -679,7 +682,8 @@ async function loadContent(pageId, activeBtn) {
             default: container.innerHTML = `<div class="text-center text-gray-400 py-20">Page Under Construction</div>`;
         }
     } catch (err) {
-        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}</div>`;
+        // This general catch handles all API fetch failures and the initial session check failure.
+        container.innerHTML = `<div class="bg-red-50 text-red-600 p-6 rounded-xl">Error loading content: ${err.message}. Please sign out and log in again.</div>`;
     }
 }
 
@@ -695,7 +699,9 @@ function detailItem(label, value) {
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
-    if (!data.success) throw new Error("Failed to load profile");
+    // --- FIX 2: Explicitly check for API failure on profile load ---
+    if (!data.success) throw new Error("Profile data not found on server."); 
+    
     const p = data.profile;
 
     container.innerHTML = `
@@ -819,7 +825,7 @@ async function loadAssignmentsStudent(container) {
                         ${!isSubmitted ? `<button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition transform hover:scale-[1.01]">Submit Work</button>` : ''}
                     </div>
                 </div>`;
-            }).join('') || '<div class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</div>'}
+            }).join('') || '<p class="text-center py-12 bg-gray-50 rounded-xl text-gray-500">No assignments assigned yet.</p>'}
         </div>`;
 }
 
@@ -897,7 +903,7 @@ async function loadFacultyLeaves(container) {
                         <button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition shadow-md transform hover:scale-[1.01]">Approve Request</button>
                     </div>
                 </div>
-            `).join('') || '<div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
+            `).join('') || '<p class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">🎉 No pending leave requests!</div>'}
         </div>`;
 }
 

@@ -82,7 +82,6 @@ const readDB = () => {
     try { 
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
-        // Ensure new properties are initialized if they somehow disappear after initial setup
         if (!data.signupRequests) data.signupRequests = [];
         if (!data.batches) data.batches = {}; 
         if (!data.subjects) data.subjects = {}; 
@@ -445,13 +444,13 @@ app.get('/users', (req, res) => {
     res.json({ success: true, users: usersList });
 });
 
-// User Deletion Route (FIXED to ensure persistence)
+// User Deletion Route (FIXED for Persistence)
 app.delete('/users/:userId', (req, res) => {
     const db = readDB();
     const userIdToDelete = req.params.userId;
     
     if (db.users[userIdToDelete]) {
-        // Use the 'delete' operator to remove the property from the object (the reliable fix)
+        // Use the 'delete' operator to remove the property from the object
         delete db.users[userIdToDelete];
         
         // Also remove the user from any batch lists they might be in
