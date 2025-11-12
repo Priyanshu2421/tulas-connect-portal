@@ -621,7 +621,7 @@ function renderNavigation() {
         'HOD': [
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
-            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, 
+            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, // HOD KEEPS THIS
             { id: 'fac-leaves', label: 'Approve Leaves', icon: '✅' },
             { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
             { id: 'placements', label: 'Manage Placements', icon: '💼' }
@@ -630,7 +630,7 @@ function renderNavigation() {
             { id: 'profile', label: 'My Profile', icon: '👤' },
             { id: 'admin-users', label: 'Manage Users', icon: '👥' },
             { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }, 
-            { id: 'admin-subjects', label: 'Assign Subjects', icon: '📖' }, 
+            // REMOVED 'admin-subjects' from Admin role
             { id: 'admin-signup-requests', label: 'Sign-up Requests', icon: '✋' }, 
             { id: 'admin-id-cards', label: 'ID Card Requests', icon: '💳' },
             { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
@@ -1053,13 +1053,15 @@ async function loadAdminBatches(container) {
             </div>
             <div class="space-y-4">
                 ${batches.map(b => `
-                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md flex justify-between items-center">
-                        <div>
-                            <h3 class="font-bold text-lg text-gray-900">${b.name} (${b.id})</h3>
-                            <p class="text-sm text-green-700">${b.department} - ${b.course}, ${b.year}</p>
-                            <p class="text-xs text-gray-500 mt-1">Subjects: ${b.subjects.length}, Students: ${b.students.length}</p>
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-md">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-900">${b.name} (${b.id})</h3>
+                                <p class="text-sm text-green-700">${b.department} - ${b.course}, ${b.year}</p>
+                                <p class="text-xs text-gray-500 mt-1">Subjects: ${b.subjects.length}, Students: ${b.students.length}</p>
+                            </div>
+                            ${isAdminOrHOD ? `<button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-red-600 hover:text-red-800 transition p-2">🗑️ Delete</button>` : ''}
                         </div>
-                        ${isAdminOrHOD ? `<button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-red-600 hover:text-red-800 transition p-2">🗑️ Delete</button>` : ''}
                     </div>
                 `).join('') || '<p class="text-gray-500 text-center py-10 bg-gray-50 rounded-xl">No batches defined yet.</p>'}
             </div>
@@ -1338,6 +1340,7 @@ window.manageSignupRequest = async (id, action, newUserId = null) => {
 
 // --- 4. Modals and Handlers for Batch Management (NEW) ---
 
+// HOD Creation Modal (Re-integrated for Admin Users list)
 window.openCreateHodModal = () => showModal(`
     <h3 class="text-xl font-bold mb-4">Create New Department Head (HOD)</h3>
     <p class="text-gray-600 mb-4">Assigns credentials directly to a new HOD for immediate use.</p>
@@ -1400,7 +1403,7 @@ window.submitCreateHod = async (e) => {
     }
 };
 
-
+// Batch Creation Modal (UNCHANGED)
 window.openCreateBatchModal = () => showModal(`
     <h3 class="text-xl font-bold mb-4">Create New Batch</h3>
     <form id="create-batch-form" onsubmit="submitCreateBatch(event)" class="space-y-4">
@@ -1413,7 +1416,7 @@ window.openCreateBatchModal = () => showModal(`
     </form>
 `);
 
-// Helper to populate dependent selects for batch creation
+// Helper to populate dependent selects for batch creation (UNCHANGED)
 window.populateBatchSelects = (deptId, courseId, yearId, sectionId) => {
     const dept = document.getElementById(deptId).value;
     const courseSelect = document.getElementById(courseId);
