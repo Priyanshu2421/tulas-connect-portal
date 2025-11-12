@@ -22,7 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(UPLOADS_DIR));
 app.use(express.static(__dirname));
 
-// --- INITIALIZATION ---
+// --- INITIALIZATION & MOCK DATA ---
+
 function getInitialMockDB() {
     return {
         users: {
@@ -81,7 +82,6 @@ const readDB = () => {
     try { 
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
         
-        // Ensure new properties are initialized if they somehow disappear after initial setup
         if (!data.signupRequests) data.signupRequests = [];
         if (!data.batches) data.batches = {}; 
         if (!data.subjects) data.subjects = {}; 
@@ -263,7 +263,7 @@ app.post('/subjects', (req, res) => {
 
 
 // =========================================
-// ADMIN/HOD SIGNUP MANAGEMENT ROUTES (UNCHANGED)
+// ADMIN/HOD SIGNUP MANAGEMENT ROUTES 
 // =========================================
 
 app.get('/signup-requests/pending', (req, res) => {
@@ -272,6 +272,7 @@ app.get('/signup-requests/pending', (req, res) => {
     res.json({ success: true, requests: pending });
 });
 
+// FIX IS HERE: Approve route now accepts newUserId for faculty
 app.post('/signup-requests/:id/approve', (req, res) => {
     const db = readDB();
     const id = parseInt(req.params.id);
@@ -280,17 +281,31 @@ app.post('/signup-requests/:id/approve', (req, res) => {
     if (index === -1) return res.status(404).json({ success: false, message: "Request not found." });
 
     const request = db.signupRequests[index];
+    // Determine the final ID. If newUserId is provided (for Faculty), use it, otherwise use the registered userId (for Student).
+    const finalUserId = req.body.newUserId || request.userId; 
     
-    db.users[request.userId] = { 
+    // Check if the final ID is already taken by an active user
+    if (db.users[finalUserId] && finalUserId !== request.userId) {
+         return res.status(409).json({ success: false, message: `The ID ${finalUserId} is already in use by an active user.` });
+    }
+    
+    // 1. Move the user from signupRequests to live users
+    db.users[finalUserId] = { 
         ...request, 
+        id: finalUserId, // Set the final, verified ID
+        userId: finalUserId, // Also update the internal userId property
         batchId: null, 
     };
-    delete db.users[request.userId].id; 
-
+    // Ensure the old (potentially incorrect) key doesn't overwrite if the new ID matches the old request key
+    if (finalUserId !== request.userId && db.users[request.userId]) {
+         delete db.users[request.userId]; 
+    }
+    
+    // 2. Remove the request from the pending list
     db.signupRequests.splice(index, 1);
     
     writeDB(db);
-    res.json({ success: true, message: `Account for ${request.name} approved. Batch assignment pending.` });
+    res.json({ success: true, message: `Account for ${request.name} approved. Final ID is ${finalUserId}. Batch assignment pending.` });
 });
 
 app.post('/signup-requests/:id/reject', (req, res) => {
@@ -383,7 +398,7 @@ app.get('/users', (req, res) => {
     res.json({ success: true, users: usersList });
 });
 
-// FIX IS HERE: User Deletion Route
+// User Deletion Route (FIXED to ensure persistence)
 app.delete('/users/:userId', (req, res) => {
     const db = readDB();
     const userIdToDelete = req.params.userId;
