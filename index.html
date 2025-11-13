@@ -629,7 +629,16 @@ function showDashboard() {
     dashboard.classList.remove('hidden');
     
     document.getElementById('nav-role-badge').textContent = currentUser.role.toUpperCase();
+    
+    // 3. Render navigation links based on role
     renderNavigation();
+
+    // 4. Critical: Manually load the default content (the first item in navigation)
+    const navLinks = document.getElementById('nav-links');
+    if (navLinks && navLinks.firstChild) {
+        // Find the first navigation link element (a button) and simulate a click
+        navLinks.firstChild.click();
+    }
 }
 
 function renderNavigation() {
@@ -686,6 +695,7 @@ function renderNavigation() {
 }
 
 async function loadContent(pageId, activeBtn) {
+    // 1. Set active class immediately
     document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-800', 'text-white'));
     if (activeBtn) activeBtn.classList.add('active', 'bg-green-800', 'text-white');
     
