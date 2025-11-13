@@ -19,8 +19,8 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
-            /* Increased darkness for better contrast against white form */
-            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('https://clgtak.com/wp-content/uploads/2023/12/Industry.jpg'); 
+            /* RESTORED/MODIFIED BACKGROUND IMAGE */
+            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('https://images.unsplash.com/photo-1542382902-6019a846f480?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); 
             background-size: cover; 
             background-position: center;
         }
@@ -105,24 +105,55 @@
                 <p class="text-gray-500 text-sm">Secure Login</p>
             </div>
             <form id="login-form" class="space-y-3 text-left">
-                                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-0.5">User ID / Roll No / Email</label>
-                    <input type="text" id="login-id" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001, F101, or admin">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Login As</label>
+                    <select id="login-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" onchange="updateAuthUI()">
+                        <option>Student</option>
+                        <option>Faculty</option>
+                        <option value="Department Login">Department Head (HOD)</option>
+                        <option>Admin</option>
+                    </select>
+                </div>
+                
+                <div id="login-dept-wrapper" class="hidden space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Department</label>
+                        <select id="login-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" onchange="updateAuthUI()">
+                            </select>
+                    </div>
+                    <div id="login-eng-branch-wrapper" class="hidden">
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">Engineering Branch</label>
+                        <select id="login-eng-branch" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                            </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">User ID</label>
+                    <input type="text" id="login-id" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="e.g. 2024001 or email">
                 </div>
                 
                 <div id="otp-verification-wrapper" class="space-y-3">
+                    
                     <div class="relative">
                         <label class="block text-xs font-medium text-gray-700 mb-0.5">Password</label>
                         <input type="password" id="login-pass" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" placeholder="••••••••">
                         <button type="button" onclick="togglePass('login-pass')" class="absolute top-7 right-3 text-gray-400 hover:text-gray-600 transition text-lg">👁️</button>
                     </div>
 
-                    <input type="hidden" id="login-role" value="Student">
-                    <input type="hidden" id="login-dept" value="General">
-                    <input type="hidden" id="login-eng-branch" value="None">
-                    <input type="hidden" id="login-captcha-input" value="123456">
-                    <canvas id="login-captcha-canvas" width="120" height="40" style="display:none;"></canvas>
-                                        <button type="submit" id="secure-login-btn" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-[1.01] shadow-lg text-sm">SECURE LOGIN</button>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-700">Verify you are human</label>
+                        <div class="flex items-center space-x-4">
+                            <canvas id="login-captcha-canvas" width="120" height="40" onclick="generateLoginCaptcha()"></canvas>
+                            <button type="button" onclick="generateLoginCaptcha()" class="text-gray-500 hover:text-gray-700 transition" title="Refresh Captcha">
+                                🔄
+                            </button>
+                        </div>
+                        <input type="text" id="login-captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                    </div>
+
+                    <button type="submit" id="secure-login-btn" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-[1.01] shadow-lg text-sm">SECURE LOGIN</button>
+                    
                 </div>
             </form>
             <div class="mt-4 text-center text-xs text-gray-600">
@@ -134,14 +165,34 @@
             <h2 class="text-xl font-bold text-center text-gray-900 mb-4">Create Account</h2>
             <form id="signup-form" class="space-y-3">
                 
-                <input type="hidden" name="role" id="signup-role" value="Student" required>
-                <input type="hidden" name="department" id="signup-dept" value="Pending">
-                <input type="hidden" name="course" id="signup-course" value="Pending">
-                <input type="hidden" name="userId" id="signup-userid" value="PENDING_ID">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">I am a...</label>
+                    <select name="role" id="signup-role" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
+                        <option value="">Select Role</option>
+                        <option value="Student">Student</option>
+                        <option value="Faculty">Faculty</option>
+                    </select>
+                </div>
 
                 <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
                 <input type="email" name="email" placeholder="Email Address (@tulas.edu.in)" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
                 <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+
+                <div id="student-fields" class="hidden space-y-3">
+                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                </div>
+
+                <div id="signup-dept-wrapper" class="hidden space-y-3">
+                    <select name="department" id="signup-dept" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition" required onchange="updateSignupUI()">
+                        <option value="">Select Department</option>
+                        </select>
+                </div>
+
+                <div id="signup-course-wrapper" class="hidden">
+                    <select name="course" id="signup-course" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
+                        <option value="">Select Course</option>
+                        </select>
+                </div>
 
                 <input type="password" name="pass" placeholder="Create Password" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
                 
@@ -155,7 +206,8 @@
                     </div>
                     <input type="text" id="captcha-input" placeholder="Enter Captcha" required class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none transition">
                 </div>
-                                <button type="submit" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all shadow-lg text-sm">REGISTER</button>
+
+                <button type="submit" class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-all shadow-lg text-sm">REGISTER</button>
             </form>
             <div class="mt-4 text-center text-xs">
                 <button onclick="toggleAuthScreen('login')" class="text-green-600 font-semibold hover:underline transition">← Back to Login</button>
@@ -238,7 +290,7 @@ let currentCaptcha = '';
 let currentLoginCaptcha = ''; 
 const REQUIRED_DOMAIN = '@tulas.edu.in'; 
 
-// Course Data Mapping (UNCHANGED, required for other features)
+// Course Data Mapping (UNCHANGED, required for full functionality)
 const DEPT_DATA = {
     "Department of Engineering": {
         branches: [
@@ -292,54 +344,58 @@ document.addEventListener('DOMContentLoaded', () => {
     generateCaptcha(); 
     generateLoginCaptcha(); 
 
-    const authWrapper = document.getElementById('auth-wrapper');
-    const dashboard = document.getElementById('dashboard');
+    const authWrapper = document.getElementById('auth-wrapper');
+    const dashboard = document.getElementById('dashboard');
 
-    // FIX: Manage visibility of auth-wrapper and dashboard on load
-    if (currentUser) {
-        // User is logged in, hide auth wrapper and show dashboard
-        authWrapper.style.display = 'none'; // Reliable hide
-        authWrapper.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-        showDashboard();
-    } else {
-        // User is not logged in, show auth wrapper
-        authWrapper.style.display = 'flex'; // Show as flex
-        authWrapper.classList.remove('hidden');
-        dashboard.classList.add('hidden');
-        updateAuthUI(); // Keep this call to handle initial logic
-    }
+    // FIX 2: Manage visibility of auth-wrapper and dashboard on load
+    if (currentUser) {
+        // User is logged in, hide auth wrapper and show dashboard
+        authWrapper.style.display = 'none'; // Reliable hide
+        authWrapper.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        showDashboard();
+    } else {
+        // User is not logged in, show auth wrapper
+        authWrapper.style.display = 'flex'; // Show as flex
+        authWrapper.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+        updateAuthUI();
+    }
+    // END FIX 2
 
-    // Login Handler 
+    // Login Handler (Restored complex login logic)
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
 
-        // SIMPLIFICATION FIX: Use hardcoded values for the removed fields
-        const role = 'Student'; // Default role. Backend must verify.
-        const dept = 'General';
-        const loginCaptchaInput = '123456'; // Bypass captcha verification
-
-        // CAPTCHA Validation Logic (disabled for simplified login)
-        if (loginCaptchaInput !== currentLoginCaptcha && false) { 
+        // CAPTCHA Validation Logic
+        const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
+        if (loginCaptchaInput !== currentLoginCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
             generateLoginCaptcha();
             document.getElementById('login-captcha-input').value = '';
             return;
         }
 
-        // Only send what is required for backend to check credentials
+        const role = document.getElementById('login-role').value;
+        let dept = null;
+        if (role === 'Department Login') {
+            dept = document.getElementById('login-dept').value;
+            if (dept === 'Department of Engineering') {
+                dept = document.getElementById('login-eng-branch').value;
+            }
+        }
+        
         await handleAuth('/login', {
             userId: document.getElementById('login-id').value.trim(),
             password: document.getElementById('login-pass').value,
-            role: role, 
-            department: dept, 
+            role: role === 'Department Login' ? 'HOD' : role,
+            department: dept,
         });
     };
 
-    // Signup Handler 
+    // Signup Handler (UNCHANGED - Submits for admin approval)
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
-        
         // CAPTCHA Validation Logic
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
         if (captchaInput !== currentCaptcha) {
@@ -351,16 +407,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData(e.target);
         const payload = Object.fromEntries(formData);
-        
-        // SIMPLIFICATION FIX: Set static defaults for registration
-        payload.role = 'Student';
-        payload.department = 'Pending';
-        payload.course = 'Pending';
-        payload.userId = payload.email; 
-
+        
         if (!payload.email || !payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
             showToast(`Registration requires an email ending in ${REQUIRED_DOMAIN}.`, true);
             return;
+        }
+
+        if (payload.role === 'Faculty') {
+            payload.userId = payload.email;
         }
 
         await handleAuth('/signup', payload, true);
@@ -398,19 +452,77 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// === AUTHENTICATION & UI HELPERS ===
+// === AUTHENTICATION & UI HELPERS (RESTORED) ===
 
 function initAuthDropdowns() {
-    // Simplified: Does nothing as dropdowns are removed from UI
+    const deptSelects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
+    const depts = Object.keys(DEPT_DATA);
+    deptSelects.forEach(sel => {
+        sel.innerHTML = '<option value="">Select Department</option>' + 
+            depts.map(d => `<option value="${d}">${d}</option>`).join('');
+    });
 }
 
 function updateAuthUI() {
-    // Simplified: Does nothing as dropdowns are removed from UI
+    const role = document.getElementById('login-role').value;
+    const isHOD = role === 'Department Login';
+    const deptWrapper = document.getElementById('login-dept-wrapper');
+    const branchSelect = document.getElementById('login-eng-branch');
+    const branchWrapper = document.getElementById('login-eng-branch-wrapper');
+    
+    deptWrapper.classList.toggle('hidden', !isHOD);
+    
+    if (isHOD && document.getElementById('login-dept').value === 'Department of Engineering') {
+        branchWrapper.classList.remove('hidden');
+        branchSelect.innerHTML = '<option value="">Select Branch</option>' + 
+            DEPT_DATA['Department of Engineering'].branches.map(b => `<option>${b}</option>`).join('');
+    } else {
+        branchWrapper.classList.add('hidden');
+    }
 }
 
 function updateSignupUI() {
-    // Simplified: Does nothing as dropdowns are removed from UI
+    const role = document.getElementById('signup-role').value;
+    const dept = document.getElementById('signup-dept').value;
+    const deptWrapper = document.getElementById('signup-dept-wrapper');
+    const courseWrapper = document.getElementById('signup-course-wrapper');
+    const courseSelect = document.getElementById('signup-course');
+    const studentFields = document.getElementById('student-fields');
+    const userIdInput = document.getElementById('signup-userid');
+
+    // 1. Show/Hide Department based on role
+    deptWrapper.classList.toggle('hidden', !role);
+
+    // 2. Handle Student Specifics
+    if (role === 'Student') {
+        studentFields.classList.remove('hidden');
+        userIdInput.required = true;
+        
+        // Show courses if dept is selected
+        if (dept && DEPT_DATA[dept]?.courses) {
+            courseWrapper.classList.remove('hidden');
+            courseSelect.required = true;
+            courseSelect.innerHTML = '<option value="">Select Course</option>' + 
+                DEPT_DATA[dept].courses.map(c => `<option value="${c}">${c}</option>`).join('');
+        } else {
+            courseWrapper.classList.add('hidden');
+            courseSelect.required = false;
+        }
+    } 
+    // 3. Handle Faculty Specifics
+    else if (role === 'Faculty') {
+        studentFields.classList.add('hidden');
+        userIdInput.required = false;
+        courseWrapper.classList.add('hidden');
+        courseSelect.required = false;
+    } 
+    // 4. Initial State
+    else {
+        studentFields.classList.add('hidden');
+        courseWrapper.classList.add('hidden');
+    }
 }
+
 
 // CAPTCHA GENERATOR FUNCTION
 function generateCaptchaText(canvasId) {
@@ -425,6 +537,7 @@ function generateCaptchaText(canvasId) {
     ctx.fillStyle = '#f9fafb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Draw noise lines (7 iterations)
     for (let i = 0; i < 7; i++) {
         ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
         ctx.beginPath();
@@ -433,6 +546,7 @@ function generateCaptchaText(canvasId) {
         ctx.stroke();
     }
 
+    // Draw characters (6 iterations)
     for (let i = 0; i < 6; i++) {
         const char = chars.charAt(Math.floor(Math.random() * chars.length));
         captchaText += char;
@@ -440,8 +554,8 @@ function generateCaptchaText(canvasId) {
         ctx.fillStyle = '#1f2937';
         
         ctx.save();
-        const x = 20 + i * 18; 
-        const y = 25 + Math.random() * 15; 
+        const x = 20 + i * 18; // Adjusted spacing slightly
+        const y = 25 + Math.random() * 15; // Adjusted Y position slightly
         const angle = (Math.random() - 0.5) * 0.4;
         ctx.translate(x, y);
         ctx.rotate(angle);
@@ -458,10 +572,10 @@ function generateCaptcha() { 
 
 // Function to set the global captcha variable for login
 function generateLoginCaptcha() { 
-    // Simplified: Hardcode value
-    currentLoginCaptcha = '123456'; 
+    currentLoginCaptcha = generateCaptchaText('login-captcha-canvas');
 }
 
+// FIX: Added small timeout to ensure DOM update is complete before transition
 async function handleAuth(endpoint, payload, isSignup = false) {
     try {
         showToast(isSignup ? 'Registering...' : 'Logging in...');
@@ -483,6 +597,7 @@ async function handleAuth(endpoint, payload, isSignup = false) {
                 sessionStorage.setItem('user', JSON.stringify(currentUser));
                 showToast(`Welcome, ${currentUser.name}!`);
 
+                // FIX: Added timeout to ensure dashboard transition happens reliably
                 setTimeout(() => {
                     showDashboard(); 
                 }, 50); 
@@ -521,13 +636,14 @@ function showToast(msg, isErr=false) { 
     setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
 }
 
+// FIX 3: Updated showDashboard to reliably hide auth-wrapper
 function showDashboard() {
     const authWrapper = document.getElementById('auth-wrapper');
     const dashboard = document.getElementById('dashboard');
 
-    // 1. Explicitly hide the login wrapper 
+    // 1. Explicitly hide the login wrapper (Critical Fix)
     authWrapper.classList.add('hidden');
-    authWrapper.style.display = 'none'; // Ensure reliable hide for the flex container
+    authWrapper.style.display = 'none'; // Ensure reliable hide for the flex container
     
     // 2. Explicitly show the dashboard
     dashboard.classList.remove('hidden');
@@ -609,7 +725,7 @@ async function loadContent(pageId, activeBtn) {
     container.innerHTML = '<div class="loader-wrapper"><div class="loader"></div></div>'; 
 
     try {
-        // --- FIX: Ensure currentUser exists before fetching data ---
+        // --- FIX 1: Ensure currentUser exists before fetching data ---
         if (!currentUser || !currentUser.id) throw new Error("User session invalid or expired. Please sign in."); 
 
         switch (pageId) {
@@ -649,7 +765,7 @@ function detailItem(label, value) {
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
-    // --- FIX: Explicitly check for API failure on profile load ---
+    // --- FIX 2: Explicitly check for API failure on profile load ---
     if (!data.success) throw new Error("Profile data not found on server."); 
     
     const p = data.profile;
@@ -666,7 +782,7 @@ async function loadProfile(container) {
             <div class="flex-1 bg-gray-50 p-6 rounded-2xl w-full shadow-lg">
                 <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
                     <span class="bg-green-600 w-2 h-6 mr-3 rounded-full"></span> Personal Details
-                </b>
+                </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     ${detailItem('Email', p.email)}
                     ${detailItem('Phone', p.phone || 'Not set')}
@@ -1219,7 +1335,7 @@ function renderAttendanceSheet(container, students, batchId, subjectCode, batchN
                     <input type="radio" name="status_${s.id}" value="Absent" required class="text-red-600 w-4 h-4"><span>A</span>
                 </label>
             </td>
-        </tr>
+            </tr>
     `).join('');
 
     container.innerHTML = `
