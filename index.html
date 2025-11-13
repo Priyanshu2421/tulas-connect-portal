@@ -349,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
 
+        // CAPTCHA Validation Logic
         const loginCaptchaInput = document.getElementById('login-captcha-input').value.toUpperCase();
         if (loginCaptchaInput !== currentLoginCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
@@ -377,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Signup Handler (UNCHANGED - Submits for admin approval)
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
+        // CAPTCHA Validation Logic
         const captchaInput = document.getElementById('captcha-input').value.toUpperCase();
         if (captchaInput !== currentCaptcha) {
             showToast('Incorrect Captcha. Please try again.', true);
@@ -503,9 +505,10 @@ function updateSignupUI() {
     }
 }
 
-function generateCaptcha(canvasId = 'captcha-canvas', setState) {
+// CAPTCHA GENERATOR FUNCTION (REPLACED FOR RELIABILITY)
+function generateCaptchaText(canvasId) {
     const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
+    if (!canvas) return '';
 
     const ctx = canvas.getContext('2d');
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -515,6 +518,7 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
     ctx.fillStyle = '#f9fafb';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // Draw noise lines (7 iterations)
     for (let i = 0; i < 7; i++) {
         ctx.strokeStyle = `rgba(${Math.random()*255},${Math.random()*255},${Math.random()*255},0.5)`;
         ctx.beginPath();
@@ -523,6 +527,7 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
         ctx.stroke();
     }
 
+    // Draw characters (6 iterations)
     for (let i = 0; i < 6; i++) {
         const char = chars.charAt(Math.floor(Math.random() * chars.length));
         captchaText += char;
@@ -530,20 +535,26 @@ function generateCaptcha(canvasId = 'captcha-canvas', setState) {
         ctx.fillStyle = '#1f2937';
         
         ctx.save();
-        const x = 20 + i * 20;
-        const y = 30 + Math.random() * 10;
+        const x = 20 + i * 18; // Adjusted spacing slightly
+        const y = 25 + Math.random() * 15; // Adjusted Y position slightly
         const angle = (Math.random() - 0.5) * 0.4;
         ctx.translate(x, y);
         ctx.rotate(angle);
         ctx.fillText(char, 0, 0);
         ctx.restore();
     }
-    
-    if (canvasId === 'captcha-canvas') currentCaptcha = captchaText;
-    else if (canvasId === 'login-captcha-canvas') currentLoginCaptcha = captchaText;
+    return captchaText;
 }
 
-function generateLoginCaptcha() { generateCaptcha('login-captcha-canvas'); }
+// Function to set the global captcha variable for signup
+function generateCaptcha() { 
+    currentCaptcha = generateCaptchaText('captcha-canvas');
+}
+
+// Function to set the global captcha variable for login
+function generateLoginCaptcha() { 
+    currentLoginCaptcha = generateCaptchaText('login-captcha-canvas');
+}
 
 async function handleAuth(endpoint, payload, isSignup = false) {
     try {
