@@ -556,6 +556,7 @@ function generateLoginCaptcha() {
     currentLoginCaptcha = generateCaptchaText('login-captcha-canvas');
 }
 
+// FIX: Added small timeout to ensure DOM update is complete before transition
 async function handleAuth(endpoint, payload, isSignup = false) {
     try {
         showToast(isSignup ? 'Registering...' : 'Logging in...');
@@ -575,8 +576,12 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             } else {
                 currentUser = data.user;
                 sessionStorage.setItem('user', JSON.stringify(currentUser));
-                showDashboard();
                 showToast(`Welcome, ${currentUser.name}!`);
+
+                // FIX: Added timeout to ensure dashboard transition happens reliably
+                setTimeout(() => {
+                    showDashboard(); 
+                }, 50); 
             }
         } else {
             showToast(data.message || 'Action failed', true);
@@ -612,10 +617,17 @@ function showToast(msg, isErr=false) {
     setTimeout(()=>t.classList.add('translate-y-full', 'opacity-0'), 3000); 
 }
 
-// === DASHBOARD & NAVIGATION (UPDATED) ===
+// FIX: Made Dashboard transition explicit and resilient
 function showDashboard() {
-    document.getElementById('auth-wrapper').classList.add('hidden');
-    document.getElementById('dashboard').classList.remove('hidden');
+    const authWrapper = document.getElementById('auth-wrapper');
+    const dashboard = document.getElementById('dashboard');
+
+    // 1. Explicitly hide the login wrapper
+    authWrapper.classList.add('hidden');
+    
+    // 2. Explicitly show the dashboard
+    dashboard.classList.remove('hidden');
+    
     document.getElementById('nav-role-badge').textContent = currentUser.role.toUpperCase();
     renderNavigation();
 }
