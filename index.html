@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Reinforcing centering and fixing spacing */
+        /* Absolute centering and layout fixes */
         #auth-wrapper {
             display: none;
             position: fixed;
@@ -42,6 +42,9 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .nav-link.active { background-color: #16a34a !important; color: white !important; }
+        
+        /* content-area container height fix */
+        #content-area { min-height: 80vh; }
     </style>
 </head>
 <body class="bg-gray-50 font-['Inter']">
@@ -59,7 +62,6 @@
 
     <!-- AUTHENTICATION WRAPPER -->
     <div id="auth-wrapper">
-        <!-- LOGIN SECTION -->
         <div id="login-box" class="auth-card">
             <div class="text-center mb-8">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="mx-auto mb-4 h-16">
@@ -77,7 +79,6 @@
                         <option>Admin</option>
                     </select>
                 </div>
-                
                 <div id="login-dept-wrapper" class="hidden space-y-4">
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Department</label>
@@ -88,18 +89,15 @@
                         <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold"></select>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">User ID / ID Card No</label>
                     <input type="text" id="login-id" required placeholder="Enter ID" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
                 </div>
-                
                 <div class="relative">
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Security Password</label>
                     <input type="password" id="login-pass" required placeholder="••••••••" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
                     <button type="button" onclick="togglePass('login-pass')" class="absolute right-3 top-8 text-gray-400 hover:text-green-600">👁️</button>
                 </div>
-
                 <div class="space-y-2">
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Verification Code</label>
                     <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
@@ -108,10 +106,8 @@
                         <input type="text" id="login-captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-center font-bold">
                     </div>
                 </div>
-
                 <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-xs">SECURE LOGIN</button>
             </form>
-
             <div class="mt-8 text-center border-t pt-6">
                 <p class="text-xs text-gray-500 font-bold">New student? <button onclick="toggleAuthScreen('signup')" class="text-green-700 font-black hover:underline uppercase">Create Account</button></p>
             </div>
@@ -132,29 +128,23 @@
                         <option value="Faculty">Faculty</option>
                     </select>
                 </div>
-
                 <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                 <input type="email" name="email" placeholder="Institutional Email (@tulas.edu.in)" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                 <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
-
                 <div id="student-fields" class="hidden">
                     <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border rounded-xl mt-3 font-semibold">
                 </div>
-
                 <div id="signup-dept-wrapper" class="hidden mt-3">
                     <select name="department" id="signup-dept" required onchange="updateSignupUI()" class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                         <option value="">Select Department</option>
                     </select>
                 </div>
-
                 <div id="signup-course-wrapper" class="hidden mt-3">
                     <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                         <option value="">Select Course</option>
                     </select>
                 </div>
-
                 <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border rounded-xl mt-3 font-semibold">
-                
                 <div class="space-y-2 mt-3">
                     <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Human Verification</label>
                     <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
@@ -163,7 +153,6 @@
                         <input type="text" id="captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-center font-bold">
                     </div>
                 </div>
-
                 <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-xs mt-4">REGISTER ACCOUNT</button>
             </form>
             <div class="mt-6 text-center">
@@ -199,30 +188,10 @@
                 </div>
                 <button onclick="toggleSidebar()" class="p-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition">☰</button>
             </header>
-
             <main class="p-4 md:p-8 flex-1 overflow-y-auto">
-                <div id="content-area" class="max-w-6xl mx-auto min-h-[85vh] p-6 md:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 animate-fadeIn">
-                </div>
+                <div id="content-area" class="max-w-6xl mx-auto min-h-[85vh] p-6 md:p-10 bg-white rounded-3xl shadow-xl border border-gray-100 animate-fadeIn"></div>
             </main>
         </div>
-    </div>
-
-    <!-- AI Helper -->
-    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-2xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-2xl shadow-green-900/20">
-        🤖
-    </button>
-    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[60vh] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all border border-gray-100">
-        <div class="p-4 bg-green-800 text-white flex justify-between items-center">
-            <h3 class="font-black uppercase text-xs tracking-widest">AI Portal Assistant</h3>
-            <button onclick="toggleChatbot()" class="text-2xl hover:text-red-300">&times;</button>
-        </div>
-        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50"></div>
-        <form id="chat-form" class="p-3 border-t bg-white">
-            <div class="flex space-x-2">
-                <input type="text" id="chat-input" placeholder="How can I help you today?" class="flex-1 p-3 border rounded-xl outline-none focus:ring-1 focus:ring-green-500 font-medium text-sm">
-                <button type="submit" class="bg-green-600 text-white px-5 rounded-xl hover:bg-green-700 transition font-black uppercase text-[10px]">Send</button>
-            </div>
-        </form>
     </div>
 
 <script>
@@ -258,25 +227,18 @@ document.addEventListener('DOMContentLoaded', () => {
     generateCaptcha(); 
     generateLoginCaptcha(); 
 
-    const authWrapper = document.getElementById('auth-wrapper');
-    const dashboard = document.getElementById('dashboard');
-
     if (currentUser) {
-        authWrapper.style.display = 'none';
-        dashboard.classList.remove('hidden');
         showDashboard();
     } else {
-        authWrapper.style.display = 'flex'; 
+        document.getElementById('auth-wrapper').style.display = 'flex';
         updateAuthUI();
     }
 
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
-        const captchaInput = document.getElementById('login-captcha-input');
-        if (captchaInput.value.toUpperCase() !== currentLoginCaptcha) {
-            showToast('Incorrect Captcha Code', true);
+        if (document.getElementById('login-captcha-input').value.toUpperCase() !== currentLoginCaptcha) {
+            showToast('Incorrect Captcha', true);
             generateLoginCaptcha();
-            captchaInput.value = '';
             return;
         }
         const role = document.getElementById('login-role').value;
@@ -295,39 +257,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('signup-form').onsubmit = async (e) => {
         e.preventDefault();
-        const captchaInput = document.getElementById('captcha-input');
-        if (captchaInput.value.toUpperCase() !== currentCaptcha) {
-            showToast('Captcha Verification Failed', true);
+        if (document.getElementById('captcha-input').value.toUpperCase() !== currentCaptcha) {
+            showToast('Captcha Failed', true);
             generateCaptcha();
             return;
         }
-        const formData = new FormData(e.target);
-        const payload = Object.fromEntries(formData);
+        const payload = Object.fromEntries(new FormData(e.target));
         if (!payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
-            showToast(`Use Institutional Email ${REQUIRED_DOMAIN}`, true);
+            showToast(`Use Email ${REQUIRED_DOMAIN}`, true);
             return;
         }
         await handleAuth('/signup', payload, true);
     };
-
-    document.getElementById('chat-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const input = document.getElementById('chat-input');
-        if(!input.value.trim()) return;
-        addMessageToChat(input.value.trim(), true);
-        input.value = '';
-        setTimeout(() => addMessageToChat("I'm here to help with your Tula's Portal navigation.", false), 800);
-    };
 });
 
-// =========================================
-// === DASHBOARD ROUTING ===
-// =========================================
+async function handleAuth(endpoint, payload, isSignup = false) {
+    try {
+        const res = await fetch(API_BASE + endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (isSignup) {
+                showToast('Registration Success! Pending Approval');
+                toggleAuthScreen('login');
+            } else {
+                currentUser = data.user;
+                sessionStorage.setItem('user', JSON.stringify(currentUser));
+                showDashboard();
+            }
+        } else {
+            showToast(data.message || 'Error', true);
+            isSignup ? generateCaptcha() : generateLoginCaptcha();
+        }
+    } catch (err) {
+        showToast('Connection Error', true);
+    }
+}
+
+function showDashboard() {
+    const auth = document.getElementById('auth-wrapper');
+    const dash = document.getElementById('dashboard');
+    if(auth) auth.style.display = 'none';
+    if(dash) dash.classList.remove('hidden');
+    if(currentUser) {
+        document.getElementById('nav-role-badge').textContent = (currentUser.role || 'User').toUpperCase();
+        renderNavigation();
+    }
+}
+
+function renderNavigation() {
+    const nav = document.getElementById('nav-links');
+    nav.innerHTML = '';
+    const MENU = {
+        'Student': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'timetable', label: 'Timetable', icon: '📅' },
+            { id: 'attendance', label: 'Attendance', icon: '📊' },
+            { id: 'assignments', label: 'Assignments', icon: '📁' },
+            { id: 'marks', label: 'Exam Results', icon: '📝' },
+            { id: 'leaves', label: 'Leave Apply', icon: '📨' }
+        ],
+        'Faculty': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'fac-attendance', label: 'Attendance', icon: '✅' },
+            { id: 'fac-assignments', label: 'Assignments', icon: '📚' },
+            { id: 'fac-leaves', label: 'Student Leaves', icon: '📫' }
+        ],
+        'HOD': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-batches', label: 'Batches', icon: '👥' },
+            { id: 'admin-signup-requests', label: 'Approvals', icon: '✋' },
+            { id: 'fac-leaves', label: 'Leaves', icon: '✅' }
+        ],
+        'Admin': [
+            { id: 'profile', label: 'My Profile', icon: '👤' },
+            { id: 'admin-users', label: 'Users', icon: '👥' },
+            { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
+            { id: 'admin-signup-requests', label: 'Approvals', icon: '✋' },
+            { id: 'admin-batches', label: 'Batches', icon: '👥' }
+        ]
+    };
+    (MENU[currentUser.role] || []).forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'nav-link w-full flex items-center space-x-3 px-6 py-3 transition-all duration-200 hover:bg-white/10 rounded-lg';
+        btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="font-bold text-[10px] uppercase tracking-widest">${item.label}</span>`;
+        btn.onclick = () => loadContent(item.id, btn);
+        nav.appendChild(btn);
+    });
+    if (nav.firstChild) nav.firstChild.click();
+}
 
 async function loadContent(pageId, activeBtn) {
     document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
     if (activeBtn) activeBtn.classList.add('active');
-    
     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
     const container = document.getElementById('content-area');
     container.innerHTML = '<div class="flex items-center justify-center py-40"><div class="loader"></div></div>';
@@ -347,38 +372,37 @@ async function loadContent(pageId, activeBtn) {
             case 'admin-announcements': await loadAdminAnnouncements(container); break;
             case 'admin-signup-requests': await showAdminSignupRequests(container); break;
             case 'admin-batches': await loadAdminBatches(container); break;
-            default: container.innerHTML = `<p class="text-center text-gray-400 py-20 uppercase tracking-widest font-black">Under Construction</p>`;
+            default: container.innerHTML = `<p class="text-center text-gray-400 py-20 uppercase tracking-widest font-black">Feature Loading...</p>`;
         }
     } catch (err) {
-        console.error(err);
-        container.innerHTML = `<div class="p-10 text-center"><div class="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 inline-block"><p class="font-black uppercase text-xs tracking-widest">⚠️ Data Retrieval Failed</p><p class="text-sm mt-2 font-medium">${err.message}</p></div></div>`;
+        container.innerHTML = `<div class="p-10 text-center text-red-500 font-bold uppercase text-xs">⚠️ Data Retrieval Failed: ${err.message}</div>`;
     }
 }
 
 // =========================================
-// === FEATURE FUNCTIONS ===
+// === FEATURE FUNCTIONS (RESTORED) ===
 // =========================================
 
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
-    if (!data.success) throw new Error("Database profile match failed");
+    if (!data.success) throw new Error("Sync Failed");
     const p = data.profile;
     container.innerHTML = `
         <div class="flex flex-col md:flex-row gap-12 animate-fadeIn">
             <div class="w-full md:w-1/3 text-center p-10 border rounded-[2rem] bg-gray-50/50">
                 <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-36 h-36 mx-auto rounded-full object-cover border-4 border-green-100 shadow-xl mb-6">
-                <h2 class="text-3xl font-black text-gray-900">${p.name}</h2>
+                <h2 class="text-3xl font-black text-gray-900 tracking-tight">${p.name}</h2>
                 <p class="text-green-600 font-black uppercase text-[10px] tracking-[0.2em] mt-2">${p.role}</p>
-                <div class="mt-8 pt-8 border-t border-gray-200 font-mono text-gray-400 text-xs font-bold tracking-tighter">UID: ${p.id}</div>
+                <div class="mt-8 pt-8 border-t border-gray-200 font-mono text-gray-400 text-xs font-bold uppercase tracking-tighter">UID: ${p.id}</div>
             </div>
             <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12 p-2">
                 ${detailItem('Official Email', p.email)}
-                ${detailItem('Phone Contact', p.phone || 'Not Registered')}
+                ${detailItem('Phone Contact', p.phone || 'N/A')}
                 ${detailItem('Department', p.department)}
-                ${p.course ? detailItem('Course / Group', p.course) : ''}
-                ${detailItem('Identity Status', 'Verified Institutional Account')}
-                ${detailItem('Address', p.address || 'Campus Resident')}
+                ${p.course ? detailItem('Course Group', p.course) : ''}
+                ${detailItem('DOB', p.dob || 'Not set')}
+                ${detailItem('Blood Group', p.bloodGroup || 'Not set')}
             </div>
         </div>`;
 }
@@ -391,147 +415,89 @@ async function loadTimetable(container) {
     const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course || '')}`);
     const data = await res.json();
     const tt = data.timetable || {};
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Academic Schedule</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        ${Object.entries(tt).map(([day, slots]) => `
-            <div class="bg-white border rounded-3xl shadow-sm overflow-hidden border-gray-100">
-                <div class="bg-[#064e3b] text-white p-4 font-black text-[10px] text-center uppercase tracking-widest">${day}</div>
-                <div class="p-6 space-y-4">
-                    ${slots.map(s => `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100"><p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">${s.time}</p><p class="font-black text-gray-800 tracking-tight">${s.subject}</p></div>`).join('') || '<p class="text-center text-gray-300 py-6 text-xs font-bold uppercase italic">Holiday / Break</p>'}
-                </div>
-            </div>`).join('')}
-    </div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Academic Schedule</h2><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">${Object.entries(tt).map(([day, slots]) => `<div class="bg-white border rounded-3xl shadow-sm overflow-hidden"><div class="bg-[#064e3b] text-white p-4 font-black text-[10px] text-center uppercase tracking-widest">${day}</div><div class="p-6 space-y-4">${slots.map(s => `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100"><p class="text-[9px] font-black text-green-600 uppercase mb-1">${s.time}</p><p class="font-black text-gray-800 tracking-tight">${s.subject}</p></div>`).join('') || '<p class="text-center text-gray-300 py-6 text-xs font-bold uppercase italic">Holiday / Break</p>'}</div></div>`).join('')}</div>`;
 }
 
 async function loadAttendance(container) {
     const res = await fetch(`${API_BASE}/attendance/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Attendance Record</h2>
-    <div class="border rounded-[2rem] overflow-hidden shadow-sm">
-        <table class="w-full text-left">
-            <tr class="bg-gray-50/80 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest">Course Subject</th><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest">Metric</th><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest text-center">Score</th></tr>
-            ${Object.entries(data.attendance || {}).map(([sub, stats]) => {
-                const pct = (stats.present / stats.total * 100) || 0;
-                return `<tr class="border-b"><td class="p-6 font-black text-gray-700 tracking-tight">${sub}</td><td class="p-6 font-mono font-bold text-gray-500">${stats.present} / ${stats.total}</td><td class="p-6 text-center"><span class="px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${pct < 75 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">${pct.toFixed(1)}%</span></td></tr>`;
-            }).join('') || '<tr><td colspan="3" class="p-24 text-center font-black text-gray-300 uppercase tracking-[0.2em]">Zero Records Found</td></tr>'}
-        </table>
-    </div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Attendance</h2><div class="border rounded-[2rem] overflow-hidden shadow-sm"><table class="w-full text-left"><tr class="bg-gray-50 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400">Subject</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Sessions</th><th class="p-6 text-[10px] font-black uppercase text-gray-400 text-center">Metric</th></tr>${Object.entries(data.attendance || {}).map(([sub, stats]) => {const pct = (stats.present / stats.total * 100) || 0; return `<tr class="border-b hover:bg-gray-50 transition-colors"><td class="p-6 font-black text-gray-700 tracking-tight">${sub}</td><td class="p-6 font-mono font-bold text-gray-500">${stats.present} / ${stats.total}</td><td class="p-6 text-center"><span class="px-5 py-1.5 rounded-full text-[10px] font-black uppercase ${pct < 75 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">${pct.toFixed(1)}% Ratio</span></td></tr>`;}).join('') || '<tr><td colspan="3" class="p-24 text-center font-black text-gray-300 uppercase tracking-[0.2em]">Zero Records Found</td></tr>'}</table></div>`;
 }
 
 async function loadMarks(container) {
     const res = await fetch(`${API_BASE}/marks/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Examination Board</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        ${(data.marks || []).map(m => `
-            <div class="p-8 border rounded-[2rem] flex justify-between items-center shadow-sm">
-                <div><p class="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">${m.exam}</p><p class="text-xl font-black text-gray-900 tracking-tight">${m.subject}</p></div>
-                <div class="text-3xl font-black text-green-700">${m.marks}<span class="text-gray-200 text-xl font-bold">/${m.total}</span></div>
-            </div>`).join('') || '<p class="col-span-2 text-center py-32 text-gray-300 font-black uppercase tracking-[0.2em]">Awaiting Results</p>'}
-    </div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Examinations</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-8">${(data.marks || []).map(m => `<div class="p-8 border rounded-[2rem] flex justify-between items-center shadow-sm"><div><p class="text-[9px] text-gray-400 uppercase font-black mb-1">${m.exam}</p><p class="text-xl font-black text-gray-900 tracking-tight">${m.subject}</p></div><div class="text-3xl font-black text-green-700">${m.marks}<span class="text-gray-200 text-xl font-bold">/${m.total}</span></div></div>`).join('') || '<p class="col-span-2 text-center py-32 text-gray-300 font-black uppercase tracking-[0.2em]">Awaiting Results</p>'}</div>`;
 }
 
 async function loadAssignmentsStudent(container) {
     const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course || '')}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Pending Assignments</h2>
-    <div class="space-y-8">
-        ${(data.assignments || []).map(a => `
-            <div class="p-10 border rounded-[2.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-white shadow-sm">
-                <div class="flex-1"><p class="text-[10px] text-blue-600 font-black uppercase tracking-[0.15em] mb-2">Deadline: ${new Date(a.dueDate).toLocaleDateString()}</p><h3 class="text-2xl font-black tracking-tight text-gray-900">${a.title}</h3><p class="text-gray-500 font-medium mt-2 text-sm">${a.description}</p></div>
-                <button onclick="openSubmitModal(${a.id})" class="bg-[#064e3b] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-900/20">Upload Response</button>
-            </div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-[0.2em]">Workflow Completed</p>'}
-    </div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">Assignments</h2><div class="space-y-8">${(data.assignments || []).map(a => `<div class="p-10 border rounded-[2.5rem] flex flex-col md:flex-row justify-between items-center gap-8 bg-white shadow-sm"><div class="flex-1"><p class="text-[10px] text-blue-600 font-black uppercase tracking-widest mb-2">Due: ${new Date(a.dueDate).toLocaleDateString()}</p><h3 class="text-2xl font-black tracking-tight text-gray-900">${a.title}</h3><p class="text-gray-500 font-medium mt-2 text-sm">${a.description}</p></div><button onclick="openSubmitModal(${a.id})" class="bg-[#064e3b] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase shadow-xl">Upload Work</button></div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-widest">Inbox Empty</p>'}</div>`;
 }
 
 async function loadLeavesCommon(container) {
     const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Leave Requests</h2><button onclick="openLeaveModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight">+ APPLY LEAVE</button></div>
-    <div class="space-y-4">
-        ${(data.leaves || []).map(l => `<div class="p-6 border rounded-2xl flex justify-between items-center bg-white shadow-sm"><div><p class="font-bold text-lg">${l.type}</p><p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</p></div><span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">${l.status}</span></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold">No Applications Found</p>'}
-    </div>`;
+    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Leaves</h2><button onclick="openLeaveModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight uppercase">+ Apply</button></div><div class="space-y-4">${(data.leaves || []).map(l => `<div class="p-6 border rounded-2xl flex justify-between items-center bg-white shadow-sm"><div><p class="font-bold text-lg text-gray-800">${l.type}</p><p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</p></div><span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">${l.status}</span></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold">No History</p>'}</div>`;
 }
 
-// =========================================
-// === FACULTY FUNCTIONS ===
-// =========================================
-
 async function loadFacultyAttendance(container) {
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase tracking-tight">Class Attendance</h2>
-        <div class="bg-gray-50 p-8 rounded-3xl border border-dashed border-gray-300 mb-8 text-center">
-            <select id="class-select" onchange="previewAttendanceSheet(this.value)" class="w-full p-4 border rounded-2xl bg-white shadow-sm focus:ring-2 focus:ring-green-500 outline-none transition font-bold text-gray-700">
-                <option value="">Select Subject/Batch Group...</option>
-            </select>
-        </div><div id="attendance-preview-area"></div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Mark Attendance</h2><div class="bg-gray-50 p-8 rounded-3xl border border-dashed mb-8 text-center"><select id="class-select" onchange="previewAttendanceSheet(this.value)" class="w-full p-4 border rounded-2xl bg-white shadow-sm font-bold text-gray-700"><option value="">Select Subject Group...</option></select></div><div id="attendance-preview-area"></div>`;
     const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${currentUser.id}`);
     const data = await res.json();
     const select = document.getElementById('class-select');
     if(!data.assignedSubjects) return;
-    data.assignedSubjects.forEach(sub => sub.batchIds.forEach(bid => {
-        const opt = document.createElement('option'); opt.value = `${sub.code},${bid}`; opt.textContent = `${sub.name} - Batch ${bid}`; select.appendChild(opt);
-    }));
+    data.assignedSubjects.forEach(sub => sub.batchIds.forEach(bid => {const opt = document.createElement('option'); opt.value = `${sub.code},${bid}`; opt.textContent = `${sub.name} - Batch ${bid}`; select.appendChild(opt);}));
 }
 
 async function loadFacultyAssignments(container) {
     const res = await fetch(`${API_BASE}/assignments?facultyId=${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Faculty Assignments</h2><button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight uppercase">+ CREATE NEW</button></div>
-    <div class="grid grid-cols-1 gap-6">
-        ${(data.assignments || []).map(a => `<div class="p-6 border rounded-2xl bg-white flex justify-between items-center shadow-sm"><div><h4 class="font-bold text-lg">${a.title}</h4><p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">${a.course} • Submissions: ${a.submissions.length}</p></div><button class="text-green-600 font-black text-xs uppercase hover:underline">Auditing View</button></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest italic">No Data to Display</p>'}
-    </div>`;
+    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Manage Assignments</h2><button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm uppercase shadow-lg">+ Create</button></div><div class="space-y-4">${(data.assignments || []).map(a => `<div class="p-6 border rounded-2xl bg-white flex justify-between items-center shadow-sm"><div><h4 class="font-black text-lg text-gray-800 uppercase tracking-tight">${a.title}</h4><p class="text-[9px] text-gray-400 font-black uppercase tracking-widest">${a.course} • Submissions: ${a.submissions.length}</p></div><button class="text-green-600 font-black text-xs uppercase hover:underline">Auditing View</button></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-black uppercase">No active tasks</p>'}</div>`;
 }
 
 async function loadFacultyLeaves(container) {
     const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">Verification Queue</h2><div class="space-y-8">${(data.leaves || []).map(l => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm"><div class="flex justify-between items-start mb-6"><div><h4 class="font-black text-xl text-gray-900 tracking-tight">${l.userId}</h4><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${l.type}</p></div><span class="text-[10px] font-black text-green-700 bg-green-50 px-4 py-1.5 rounded-full uppercase">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</span></div><p class="text-gray-600 italic bg-gray-50/50 p-6 rounded-2xl mb-8 border border-gray-100 font-medium">"${l.reason}"</p><div class="flex justify-end space-x-4"><button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-8 py-3 border border-red-100 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-2xl">Deny</button><button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-8 py-3 bg-[#064e3b] text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl hover:bg-green-900 transition">Grant Access</button></div></div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-widest italic">Queue Clear</p>'}</div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">Verification Queue</h2><div class="space-y-8">${(data.leaves || []).map(l => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm"><div class="flex justify-between mb-6"><div><h4 class="font-black text-xl text-gray-900 tracking-tight">${l.userId}</h4><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${l.type}</p></div><span class="text-[10px] font-black text-green-700 bg-green-50 px-4 py-1.5 rounded-full uppercase">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</span></div><p class="text-gray-600 italic bg-gray-50/50 p-6 rounded-2xl mb-8 border border-gray-100 font-medium">"${l.reason}"</p><div class="flex justify-end space-x-4"><button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-8 py-3 border border-red-100 text-red-500 font-black text-[10px] uppercase rounded-2xl">Reject</button><button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-8 py-3 bg-[#064e3b] text-white font-black text-[10px] uppercase rounded-2xl shadow-xl">Approve</button></div></div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-widest italic">Inbox Clear</p>'}</div>`;
 }
-
-// =========================================
-// === ADMIN FUNCTIONS ===
-// =========================================
 
 async function loadAdminUsers(container) {
     const res = await fetch(`${API_BASE}/users`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">User Registry</h2><div class="border rounded-[2.5rem] overflow-hidden shadow-sm bg-white"><table class="w-full text-left"><tr class="bg-gray-50 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400">User Identity</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Class</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Dept</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Action</th></tr>${(data.users || []).map(u => `<tr class="border-b transition-colors hover:bg-gray-50"><td class="p-6"><p class="font-black text-gray-900 tracking-tight">${u.name}</p><p class="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-tighter">${u.id}</p></td><td class="p-6"><span class="bg-blue-50 text-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase">${u.role}</span></td><td class="p-6 text-[10px] font-black text-gray-500 uppercase tracking-tighter">${u.department || 'GLOBAL'}</td><td class="p-6"><button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600">🗑️</button></td></tr>`).join('')}</table></div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">User Registry</h2><div class="border rounded-[2.5rem] overflow-hidden shadow-sm bg-white"><table class="w-full text-left"><tr class="bg-gray-50 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400">User Identity</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Class</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Dept</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Action</th></tr>${(data.users || []).map(u => `<tr class="border-b transition-colors hover:bg-gray-50"><td class="p-6"><p class="font-black text-gray-900 tracking-tight">${u.name}</p><p class="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-tighter">${u.id}</p></td><td class="p-6"><span class="bg-blue-50 text-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase">${u.role}</span></td><td class="p-6 text-[10px] font-black text-gray-500 uppercase tracking-tighter">${u.department || 'GLOBAL'}</td><td class="p-6"><button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600">🗑️</button></td></tr>`).join('')}</table></div>`;
 }
 
 async function loadAdminAnnouncements(container) {
     const res = await fetch(`${API_BASE}/announcements`);
     const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-10"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Portal Broadcasts</h2><button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-xl uppercase tracking-widest">+ BROADCAST NEW</button></div><div class="space-y-8 animate-fadeIn">${(data.announcements || []).map(a => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm border-gray-100"><div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] underline decoration-green-200 underline-offset-4">${new Date(a.date).toLocaleDateString()}</span><span class="bg-gray-100 text-gray-500 text-[9px] font-black px-3 py-1 rounded uppercase tracking-widest">${a.target} Scope</span></div><h3 class="text-2xl font-black text-gray-900 mb-4 tracking-tighter">${a.title}</h3><p class="text-gray-500 leading-relaxed font-medium text-sm">${a.body}</p></div>`).join('') || '<p class="text-center py-40 text-gray-300 font-black uppercase tracking-widest italic">Broadcast History Empty</p>'}</div>`;
+    container.innerHTML = `<div class="flex justify-between items-center mb-10"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Portal Broadcasts</h2><button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-xl uppercase tracking-widest">+ Broadcast</button></div><div class="space-y-8 animate-fadeIn">${(data.announcements || []).map(a => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm border-gray-100"><div class="flex justify-between items-center mb-6"><span class="text-[10px] font-black text-green-600 uppercase tracking-widest">${new Date(a.date).toLocaleDateString()}</span><span class="bg-gray-100 text-gray-500 text-[9px] font-black px-3 py-1 rounded uppercase tracking-widest">Scope: ${a.target}</span></div><h3 class="text-2xl font-black text-gray-900 mb-4 tracking-tighter">${a.title}</h3><p class="text-gray-500 leading-relaxed font-medium text-sm">${a.body}</p></div>`).join('') || '<p class="text-center py-40 text-gray-300 font-black uppercase tracking-widest italic">Broadcast History Empty</p>'}</div>`;
 }
 
 async function showAdminSignupRequests(container) {
     const res = await fetch(`${API_BASE}/signup-requests/pending`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">Pending Verifications</h2><div class="grid grid-cols-1 gap-8 animate-fadeIn">${(data.requests || []).map(r => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm flex flex-col md:flex-row justify-between items-center gap-10"><div><h4 class="font-black text-2xl text-gray-900 tracking-tighter mb-2 underline decoration-green-100">${r.name}</h4><p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">${r.role} • ${r.department}</p><p class="text-[10px] text-gray-300 font-mono mt-2 tracking-tighter">${r.email}</p></div><div class="flex space-x-4 w-full md:w-auto"><button onclick="manageSignupRequest(${r.id}, 'reject')" class="flex-1 px-10 py-4 border border-red-50 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-2xl bg-red-50/20">Refuse</button><button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="flex-1 px-10 py-4 bg-[#064e3b] text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl shadow-green-900/10">Authorize</button></div></div>`).join('') || '<p class="text-center py-40 text-gray-300 font-black uppercase tracking-[0.3em]">Identity Vault Clear</p>'}</div>`;
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Identity Verification</h2><div class="grid grid-cols-1 gap-8 animate-fadeIn">${(data.requests || []).map(r => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm flex flex-col md:flex-row justify-between items-center gap-10"><div><h4 class="font-black text-2xl text-gray-900 tracking-tighter mb-2 underline decoration-green-100">${r.name}</h4><p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">${r.role} • ${r.department}</p><p class="text-[10px] text-gray-300 font-mono mt-2 tracking-tighter">${r.email}</p></div><div class="flex space-x-4 w-full md:w-auto"><button onclick="manageSignupRequest(${r.id}, 'reject')" class="flex-1 px-10 py-4 border border-red-50 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-2xl bg-red-50/20">Refuse</button><button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="flex-1 px-10 py-4 bg-[#064e3b] text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl shadow-green-900/10">Authorize</button></div></div>`).join('') || '<p class="text-center py-40 text-gray-300 font-black uppercase tracking-[0.3em]">Identity Vault Clear</p>'}</div>`;
 }
 
 async function loadAdminBatches(container) {
-    let url = `${API_BASE}/batches`;
-    if(currentUser.role === 'HOD') url += `?department=${encodeURIComponent(currentUser.department)}&adminId=${currentUser.id}`;
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/batches`);
     const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-10"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Academic Batches</h2><div class="flex space-x-4"><button onclick="openEnrollBatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-md uppercase tracking-widest">Enroll Portal</button><button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-lg uppercase tracking-widest">+ NEW BATCH</button></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fadeIn">${(data.batches || []).map(b => `<div class="p-10 border rounded-[2.5rem] bg-white group shadow-sm hover:border-green-200 transition-all border-gray-100"><div class="flex justify-between mb-6"><div><h3 class="font-black text-2xl text-gray-900 tracking-tighter uppercase mb-1">${b.id}</h3><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest underline underline-offset-4 decoration-green-100">${b.department}</p></div><button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all text-sm">🗑️</button></div><div class="pt-6 border-t border-gray-50 flex justify-between text-[9px] font-black text-gray-400 tracking-[0.1em] uppercase"><span>${b.students.length} ENROLLED</span><span>${b.subjects.length} COURSES</span></div></div>`).join('') || '<p class="col-span-2 text-center py-40 text-gray-300 font-black italic uppercase tracking-[0.2em]">Batch Directory Empty</p>'}</div>`;
+    container.innerHTML = `<div class="flex justify-between items-center mb-10"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Academic Batches</h2><div class="flex space-x-4"><button onclick="openEnrollBatchModal()" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-md uppercase tracking-widest">Enroll</button><button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] shadow-lg uppercase tracking-widest">+ New</button></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fadeIn">${(data.batches || []).map(b => `<div class="p-10 border rounded-[2.5rem] bg-white group shadow-sm hover:border-green-200 transition-all border-gray-100"><div class="flex justify-between mb-6"><div><h3 class="font-black text-2xl text-gray-900 tracking-tighter uppercase mb-1">${b.id}</h3><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest underline underline-offset-4 decoration-green-100">${b.department}</p></div><button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all text-sm">🗑️</button></div><div class="pt-6 border-t border-gray-50 flex justify-between text-[9px] font-black text-gray-400 tracking-[0.1em] uppercase"><span>${b.students.length} ENROLLED</span><span>${b.subjects.length} COURSES</span></div></div>`).join('') || '<p class="col-span-2 text-center py-40 text-gray-300 font-black italic uppercase tracking-[0.2em]">Batch Directory Empty</p>'}</div>`;
 }
 
 // =========================================
-// === UTILITIES ===
+// === UI UTILITIES ===
 // =========================================
 
 function generateCaptchaText(id) {
     const canvas = document.getElementById(id); if(!canvas) return '';
     const ctx = canvas.getContext('2d');
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let text = '';
-    ctx.clearRect(0,0,120,40);
-    ctx.font = 'bold 22px monospace';
+    let text = ''; ctx.clearRect(0,0,120,40); ctx.font = 'bold 22px monospace';
     for(let i=0; i<5; i++) {
-        const c = chars.charAt(Math.floor(Math.random()*chars.length));
-        text += c;
+        const c = chars.charAt(Math.floor(Math.random()*chars.length)); text += c;
         ctx.fillStyle = `rgb(${Math.random()*150},${Math.random()*150},${Math.random()*150})`;
         ctx.save(); ctx.translate(15+(i*20), 25+(Math.random()*5)); ctx.rotate((Math.random()-0.5)*0.3);
         ctx.fillText(c, 0, 0); ctx.restore();
@@ -543,10 +509,7 @@ function generateLoginCaptcha() { currentLoginCaptcha = generateCaptchaText('log
 
 function initAuthDropdowns() {
     const selects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
-    const depts = Object.keys(DEPT_DATA);
-    selects.forEach(s => {
-        if(s) s.innerHTML = '<option value="">Select Department</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
-    });
+    selects.forEach(s => {if(s) s.innerHTML = '<option value="">Select Department</option>' + Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('');});
 }
 
 function updateAuthUI() {
@@ -600,61 +563,25 @@ function addMessageToChat(text, isUser) {
     const msg = document.createElement('div');
     msg.className = isUser ? 'flex justify-end' : 'flex justify-start';
     msg.innerHTML = `<div class="${isUser?'bg-[#064e3b] text-white rounded-br-none':'bg-white text-gray-800 rounded-bl-none'} p-4 rounded-3xl max-w-[85%] text-xs font-bold shadow-sm border border-gray-100 leading-relaxed animate-slideIn">${text}</div>`;
-    history.appendChild(msg);
-    history.scrollTop = history.scrollHeight;
+    history.appendChild(msg); history.scrollTop = history.scrollHeight;
 }
 
 // RESTORED HANDLERS FOR ADMIN/FACULTY ACTIONS
 window.openLeaveModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase text-green-900">Request Leave</h3><form onsubmit="event.preventDefault(); submitLeave(this)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl font-bold"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl font-bold"><input type="date" name="toDate" required class="p-3 border rounded-xl font-bold"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32 font-medium"></textarea><button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase shadow-lg">SUBMIT APPLICATION</button></form>`);
-async function submitLeave(form) {
-    const fd = Object.fromEntries(new FormData(form));
-    const res = await fetch(`${API_BASE}/leaves`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId:currentUser.id, department:currentUser.department, ...fd}) });
-    const data = await res.json();
-    showToast(data.message || 'Submitted'); closeModal(); loadContent('leaves');
-}
-
+async function submitLeave(form) {const fd = Object.fromEntries(new FormData(form)); const res = await fetch(`${API_BASE}/leaves`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId:currentUser.id, department:currentUser.department, ...fd}) }); const data = await res.json(); showToast(data.message || 'Submitted'); closeModal(); loadContent('leaves');}
 window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-black mb-6 uppercase text-blue-900">Upload Assignment</h3><form onsubmit="event.preventDefault(); submitWork(this, ${id})" class="space-y-4"><input type="file" name="submissionFile" required class="w-full p-4 border border-dashed rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg uppercase">UPLOAD & SUBMIT</button></form>`);
-async function submitWork(form, id) {
-    const fd = new FormData(form); fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
-    await fetch(`${API_BASE}/assignments/${id}/submit`, { method: 'POST', body: fd });
-    showToast('Work Submitted Successfully'); closeModal(); loadContent('assignments');
-}
-
-window.manageSignupRequest = async (id, action) => {
-    const res = await fetch(`${API_BASE}/signup-requests/${id}/${action}`, { method: 'POST' });
-    const data = await res.json(); showToast(data.message); loadContent('admin-signup-requests');
-};
-
-window.handleApprovalFlow = (id, role, currentId, email) => {
-    if(role === 'Student') { manageSignupRequest(id, 'approve'); return; }
-    showModal(`<h3 class="text-xl font-black mb-4 uppercase">Assign Official ID</h3><form onsubmit="event.preventDefault(); submitApprovalWithId('${id}', this.newId.value)" class="space-y-4"><input type="text" name="newId" value="${role==='Faculty'?'F':'HOD'}" required class="w-full p-3 border rounded-xl font-bold"><button class="w-full bg-green-600 text-white py-3 rounded-xl font-black">CONFIRM & AUTHORIZE</button></form>`);
-};
-
-async function submitApprovalWithId(id, newId) {
-    await fetch(`${API_BASE}/signup-requests/${id}/approve`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({newUserId: newId}) });
-    showToast('Credentials Authorized'); closeModal(); loadContent('admin-signup-requests');
-}
-
-window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase">New Portal Broadcast</h3><form onsubmit="event.preventDefault(); submitAnnouncement(this)" class="space-y-4"><input name="title" placeholder="Announcement Heading" required class="w-full p-3 border rounded-xl font-bold"><textarea name="body" placeholder="Main Message Body..." required class="w-full p-3 border rounded-xl h-40"></textarea><select name="target" class="w-full p-3 border rounded-xl font-bold"><option value="All">Global Broadcast</option><option value="Student">Students Only</option><option value="Faculty">Faculty Only</option></select><button class="w-full bg-green-600 text-white py-4 rounded-xl font-black shadow-lg">PUBLISH BROADCAST</button></form>`);
-async function submitAnnouncement(form) {
-    const fd = Object.fromEntries(new FormData(form));
-    await fetch(`${API_BASE}/announcements`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(fd) });
-    showToast('Broadcast Published'); closeModal(); loadContent('admin-announcements');
-}
-
-window.openCreateBatchModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase">Setup New Batch</h3><form onsubmit="event.preventDefault(); submitCreateBatch(this)" class="space-y-4"><input name="batchId" placeholder="Batch ID (e.g., CSE-2025-A)" required class="w-full p-3 border rounded-xl font-bold"><select name="department" class="w-full p-3 border rounded-xl font-bold">${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`)}</select><div class="grid grid-cols-2 gap-4"><input name="course" placeholder="B.Tech CSE" required class="p-3 border rounded-xl"><input name="year" placeholder="1st Year" required class="p-3 border rounded-xl"></div><button class="w-full bg-green-600 text-white py-4 rounded-xl font-black shadow-lg">CREATE ACADEMIC BATCH</button></form>`);
-async function submitCreateBatch(form) {
-    const fd = Object.fromEntries(new FormData(form)); fd.adminId = currentUser.id;
-    await fetch(`${API_BASE}/batches`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(fd) });
-    showToast('Academic Batch Established'); closeModal(); loadContent('admin-batches');
-}
-
+async function submitWork(form, id) {const fd = new FormData(form); fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name); await fetch(`${API_BASE}/assignments/${id}/submit`, { method: 'POST', body: fd }); showToast('Work Submitted Successfully'); closeModal(); loadContent('assignments');}
+window.manageSignupRequest = async (id, action) => {const res = await fetch(`${API_BASE}/signup-requests/${id}/${action}`, { method: 'POST' }); const data = await res.json(); showToast(data.message); loadContent('admin-signup-requests');};
+window.handleApprovalFlow = (id, role, currentId, email) => {if(role === 'Student') { manageSignupRequest(id, 'approve'); return; } showModal(`<h3 class="text-xl font-black mb-4 uppercase">Assign Official ID</h3><form onsubmit="event.preventDefault(); submitApprovalWithId('${id}', this.newId.value)" class="space-y-4"><input type="text" name="newId" value="${role==='Faculty'?'F':'HOD'}" required class="w-full p-3 border rounded-xl font-bold"><button class="w-full bg-green-600 text-white py-3 rounded-xl font-black">CONFIRM & AUTHORIZE</button></form>`);};
+async function submitApprovalWithId(id, newId) {await fetch(`${API_BASE}/signup-requests/${id}/approve`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({newUserId: newId}) }); showToast('Authorized'); closeModal(); loadContent('admin-signup-requests');}
+window.openCreateAnnouncementModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase tracking-tight">Broadcasting System</h3><form onsubmit="event.preventDefault(); submitAnnouncement(this)" class="space-y-4"><input name="title" placeholder="Announcement Heading" required class="w-full p-3 border rounded-xl font-bold"><textarea name="body" placeholder="Message content..." required class="w-full p-3 border rounded-xl h-40"></textarea><select name="target" class="w-full p-3 border rounded-xl font-bold"><option value="All">Global</option><option value="Student">Students Only</option><option value="Faculty">Faculty Only</option></select><button class="w-full bg-green-600 text-white py-4 rounded-xl font-black shadow-lg">PUBLISH BROADCAST</button></form>`);
+async function submitAnnouncement(form) {const fd = Object.fromEntries(new FormData(form)); await fetch(`${API_BASE}/announcements`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(fd) }); showToast('Broadcast Published'); closeModal(); loadContent('admin-announcements');}
+window.openCreateBatchModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase">Setup Batch</h3><form onsubmit="event.preventDefault(); submitCreateBatch(this)" class="space-y-4"><input name="batchId" placeholder="Batch ID (e.g., CSE-Y1-A)" required class="w-full p-3 border rounded-xl font-bold"><select name="department" class="w-full p-3 border rounded-xl font-bold">${Object.keys(DEPT_DATA).map(d=>`<option>${d}</option>`)}</select><div class="grid grid-cols-2 gap-4"><input name="course" placeholder="B.Tech CSE" required class="p-3 border rounded-xl"><input name="year" placeholder="1st Year" required class="p-3 border rounded-xl"></div><button class="w-full bg-green-600 text-white py-4 rounded-xl font-black shadow-lg">CREATE BATCH</button></form>`);
+async function submitCreateBatch(form) {const fd = Object.fromEntries(new FormData(form)); fd.adminId = currentUser.id; await fetch(`${API_BASE}/batches`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(fd) }); showToast('Batch Established'); closeModal(); loadContent('admin-batches');}
 async function updateLeaveStatus(id, status) { await fetch(`${API_BASE}/leaves/${id}/action`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status}) }); showToast(`Decision: ${status}`); loadContent('fac-leaves'); }
-async function deleteUser(id) { if(!confirm('Archive this user?')) return; await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' }); showToast('User Archival Success'); loadContent('admin-users'); }
-async function deleteBatch(bid, aid) { if(!confirm('Dissolve this batch?')) return; await fetch(`${API_BASE}/batches/${bid}?deleterId=${aid}`, { method: 'DELETE' }); showToast('Batch Dissolved'); loadContent('admin-batches'); }
-
+async function deleteUser(id) { if(!confirm('Archive user?')) return; await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' }); showToast('Archival Success'); loadContent('admin-users'); }
+async function deleteBatch(bid, aid) { if(!confirm('Dissolve batch?')) return; await fetch(`${API_BASE}/batches/${bid}?deleterId=${aid}`, { method: 'DELETE' }); showToast('Batch Dissolved'); loadContent('admin-batches'); }
 function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
-
 </script>
 </body>
 </html>
