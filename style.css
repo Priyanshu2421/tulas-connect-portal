@@ -1,44 +1,246 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* --- GOOGLE FONTS IMPORT --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+    --primary: #16a34a;
+    --primary-dark: #15803d;
+    --primary-light: #dcfce7;
+    --accent: #f59e0b;
+    --bg-main: #f3f4f6;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --glass: rgba(255, 255, 255, 0.95);
+    --sidebar-bg: #064e3b;
+}
+
+/* --- RESET & BASE --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
     font-family: 'Inter', sans-serif;
-    scroll-behavior: smooth;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    overflow-x: hidden;
+    line-height: 1.5;
 }
 
-/* Style for the active navigation link */
-.nav-link.active {
-    background-color: #15803d; /* A darker green */
-    color: #ffffff;
-    font-weight: 600;
-} 
+/* --- LOGIN & AUTH SCREEN --- */
+#auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    /* REDESIGNED BACKGROUND */
+    background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), 
+                url('https://tulas.edu.in/_next/static/media/BannerImage2.0ea55ef8.webp');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
 
-/* Ensure smooth transitions */
+/* Fix for the huge spacing issue */
+.auth-card, #login-box, #signup-box {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 100%;
+    max-width: 420px;
+    border-radius: 1.5rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    padding: 2.5rem 2rem !important; /* Forces tighter spacing */
+    margin: auto;
+}
+
+#signup-box {
+    max-width: 480px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-header img {
+    height: 64px;
+    width: auto;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
+.auth-header h1 {
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: -0.025em;
+    color: var(--text-main);
+}
+
+/* Form Elements Styling */
+.input-group {
+    margin-bottom: 1.25rem;
+}
+
+label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+select, input[type="text"], input[type="password"], input[type="email"], input[type="tel"], input[type="date"], textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--text-main);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+select:focus, input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px var(--primary-light);
+}
+
+.btn-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    font-weight: 700;
+    padding: 0.875rem;
+    border: none;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.4);
+}
+
+/* Captcha Styling Fix */
+canvas {
+    border-radius: 0.5rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+}
+
+/* --- DASHBOARD LAYOUT --- */
+#sidebar {
+    background-color: var(--sidebar-bg);
+    box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+}
+
 .nav-link {
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    margin: 0.25rem 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #a7f3d0;
+    transition: all 0.2s;
 }
- 
+
 .nav-link:hover {
-    background-color: #16a34a;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
 }
 
-/* Custom styles for notification toast */
-#notification-toast.show {
-    transform: translateY(0);
-    opacity: 1;
+.nav-link.active {
+    background-color: var(--primary) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* Spinner for loading states */
+/* --- CONTENT COMPONENTS --- */
+#content-area {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid #f3f4f6;
+}
+
 .loader {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #16a34a;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary);
     border-radius: 50%;
     width: 40px;
     height: 40px;
     animation: spin 1s linear infinite;
-    margin: 20px auto;
+    margin: 50px auto;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    background-color: #f9fafb;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Toast/Notifications */
+#toast {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    border-left: 5px solid rgba(0,0,0,0.1);
+}
+
+/* Modal Styling */
+#modal > div {
+    border-radius: 1.5rem;
+    overflow: hidden;
+    animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    #auth-wrapper {
+        padding: 1rem;
+    }
+    
+    .auth-card {
+        padding: 2rem 1.5rem !important;
+    }
+    
+    #sidebar {
+        width: 280px;
+    }
 }
