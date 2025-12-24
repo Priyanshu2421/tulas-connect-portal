@@ -1,25 +1,36 @@
 {
-  "users": {
-    "admin.tulas.in": {
-      "id": "admin.tulas.in",
-      "pass": "admin123",
-      "name": "Institute Administrator",
-      "role": "Admin",
-      "department": "Administration",
-      "email": "admin@tulas.edu.in",
-      "phone": "1234567890",
-      "bloodGroup": "O+",
-      "address": "Tula's Institute, Dehradun",
-      "dob": "1990-01-01",
-      "photoUrl": ""
+  "users": {},
+  "courses": {
+    "BTECH-CSE": {
+      "name": "Bachelor of Technology (CSE)",
+      "batches": {
+        "2024": ["A", "B", "C"],
+        "2023": ["A", "B"]
+      }
     }
   },
-  "placements": [],
-  "attendance": {},
-  "marks": {},
-  "timetables": {},
-  "assignments": {},
-  "leaveRequests": [],
-  "announcements": [],
-  "idCardRequests": []
+  "subjects": [
+    { "code": "CS101", "name": "Data Structures", "dept": "Department of Engineering" },
+    { "code": "MA101", "name": "Mathematics I", "dept": "Department of Engineering" }
+  ],
+  "allotments": [
+    {
+      "id": "alt_1",
+      "facultyId": "F101",
+      "subjectCode": "CS101",
+      "course": "BTECH-CSE",
+      "batch": "2024",
+      "section": "A"
+    }
+  ],
+  "mentorshipGroups": [
+    {
+      "id": "ment_1",
+      "mentorId": "F101",
+      "mentees": ["S2024001", "S2024002"],
+      "title": "CSE-2024-G1"
+    }
+  ],
+  "signupRequests": [],
+  "announcements": []
 }
