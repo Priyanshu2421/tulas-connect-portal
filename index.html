@@ -7,36 +7,70 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Reinforcing centering and fixing spacing */
+        #auth-wrapper {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('https://tulas.edu.in/_next/static/media/BannerImage2.0ea55ef8.webp');
+            background-size: cover;
+            background-position: center;
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        .auth-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem !important;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #16a34a;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .nav-link.active { background-color: #16a34a !important; color: white !important; }
+    </style>
 </head>
 <body class="bg-gray-50 font-['Inter']">
 
     <!-- Notification Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-full opacity-0 transition-all duration-500 z-50 px-6 py-3 rounded-lg shadow-2xl font-medium text-white"></div>
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-full opacity-0 transition-all duration-500 z-[10000] px-6 py-3 rounded-lg shadow-2xl font-bold text-white uppercase text-xs tracking-widest"></div>
 
     <!-- Generic Modal -->
-    <div id="modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative">
+    <div id="modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto relative animate-fadeIn">
              <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition text-2xl">&times;</button>
-             <div id="modal-content" class="p-6"></div>
+             <div id="modal-content" class="p-8"></div>
         </div>
     </div>
 
     <!-- AUTHENTICATION WRAPPER -->
-    <div id="auth-wrapper" class="fixed inset-0 w-full h-full flex items-center justify-center p-4 z-50" style="display: none;">
-        
+    <div id="auth-wrapper">
         <!-- LOGIN SECTION -->
-        <div id="login-box" class="auth-card transition-all duration-300 relative z-10 w-full max-w-md">
-            <div class="auth-header text-center mb-8">
+        <div id="login-box" class="auth-card">
+            <div class="text-center mb-8">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" onerror="this.src='https://placehold.co/64x64/22c55e/ffffff?text=TL'" alt="Logo" class="mx-auto mb-4 h-16">
                 <h1 class="text-gray-900 font-black text-2xl tracking-tight uppercase">Tula's Connect</h1>
-                <p class="text-green-600 text-sm font-semibold italic mt-1 uppercase tracking-tighter">"Connecting Communities, Empowering Futures"</p>
-                <p class="text-gray-400 text-[10px] uppercase tracking-widest mt-1 font-bold">Enterprise Resource Portal</p>
+                <p class="text-green-600 text-[11px] font-bold italic mt-1 uppercase tracking-tighter">"Connecting Communities, Empowering Futures"</p>
             </div>
 
             <form id="login-form" class="space-y-4">
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Access Level</label>
-                    <select id="login-role" onchange="updateAuthUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Access Level</label>
+                    <select id="login-role" onchange="updateAuthUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
                         <option>Student</option>
                         <option>Faculty</option>
                         <option value="Department Login">Department Head (HOD)</option>
@@ -45,95 +79,95 @@
                 </div>
                 
                 <div id="login-dept-wrapper" class="hidden space-y-4">
-                    <div class="input-group">
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Department</label>
-                        <select id="login-dept" onchange="updateAuthUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"></select>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Department</label>
+                        <select id="login-dept" onchange="updateAuthUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold"></select>
                     </div>
-                    <div id="login-eng-branch-wrapper" class="hidden input-group">
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Engineering Branch</label>
-                        <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none"></select>
+                    <div id="login-eng-branch-wrapper" class="hidden">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Engineering Branch</label>
+                        <select id="login-eng-branch" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold"></select>
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">User ID / Roll No</label>
-                    <input type="text" id="login-id" required placeholder="Enter your ID" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">User ID / ID Card No</label>
+                    <input type="text" id="login-id" required placeholder="Enter ID" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
                 </div>
                 
-                <div class="input-group relative">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Password</label>
-                    <input type="password" id="login-pass" required placeholder="••••••••" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
-                    <button type="button" onclick="togglePass('login-pass')" class="absolute right-3 top-8 text-gray-400 hover:text-green-600 transition">👁️</button>
+                <div class="relative">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Security Password</label>
+                    <input type="password" id="login-pass" required placeholder="••••••••" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
+                    <button type="button" onclick="togglePass('login-pass')" class="absolute right-3 top-8 text-gray-400 hover:text-green-600">👁️</button>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Verification</label>
-                    <div class="flex items-center space-x-3 bg-white/50 p-2 rounded-lg border border-gray-200">
-                        <canvas id="login-captcha-canvas" width="120" height="40" onclick="generateLoginCaptcha()" class="rounded border shadow-sm cursor-pointer"></canvas>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Verification Code</label>
+                    <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
+                        <canvas id="login-captcha-canvas" width="120" height="40" onclick="generateLoginCaptcha()" class="rounded border cursor-pointer"></canvas>
                         <button type="button" onclick="generateLoginCaptcha()" class="text-gray-400 hover:text-green-600 transition p-2">🔄</button>
-                        <input type="text" id="login-captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                        <input type="text" id="login-captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-center font-bold">
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg mt-4">SECURE LOGIN</button>
+                <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-xs">SECURE LOGIN</button>
             </form>
 
             <div class="mt-8 text-center border-t pt-6">
-                <p class="text-sm text-gray-600">New student? <button onclick="toggleAuthScreen('signup')" class="text-green-700 font-bold hover:underline">Create Account</button></p>
+                <p class="text-xs text-gray-500 font-bold">New student? <button onclick="toggleAuthScreen('signup')" class="text-green-700 font-black hover:underline uppercase">Create Account</button></p>
             </div>
         </div>
 
         <!-- SIGNUP SECTION -->
-        <div id="signup-box" class="hidden auth-card transition-all duration-300 relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div class="auth-header text-center mb-6">
+        <div id="signup-box" class="hidden auth-card max-h-[90vh] overflow-y-auto">
+            <div class="text-center mb-6">
                 <h2 class="text-2xl font-black text-gray-900 tracking-tight uppercase">Registration</h2>
-                <p class="text-green-600 text-xs font-semibold italic mt-1 uppercase tracking-tighter">"Connecting Communities, Empowering Futures"</p>
+                <p class="text-green-600 text-[10px] font-bold italic mt-1 uppercase tracking-tighter">"Connecting Communities, Empowering Futures"</p>
             </div>
-            <form id="signup-form" class="space-y-3">
-                <div class="input-group">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Role Selection</label>
-                    <select name="role" id="signup-role" required onchange="updateSignupUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none">
+            <form id="signup-form" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">I am a...</label>
+                    <select name="role" id="signup-role" required onchange="updateSignupUI()" class="w-full p-3 bg-gray-50 border rounded-xl focus:ring-2 focus:ring-green-500 outline-none font-semibold">
                         <option value="">Select Role</option>
                         <option value="Student">Student</option>
                         <option value="Faculty">Faculty</option>
                     </select>
                 </div>
 
-                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border rounded-xl">
-                <input type="email" name="email" placeholder="Email (@tulas.edu.in)" required class="w-full p-3 bg-gray-50 border rounded-xl">
-                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border rounded-xl">
+                <input type="text" name="name" placeholder="Full Legal Name" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
+                <input type="email" name="email" placeholder="Institutional Email (@tulas.edu.in)" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
+                <input type="tel" name="phone" placeholder="Phone Number" required class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
 
                 <div id="student-fields" class="hidden">
-                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border rounded-xl mt-3">
+                    <input type="text" name="userId" id="signup-userid" placeholder="University Roll No." class="w-full p-3 bg-gray-50 border rounded-xl mt-3 font-semibold">
                 </div>
 
                 <div id="signup-dept-wrapper" class="hidden mt-3">
-                    <select name="department" id="signup-dept" required onchange="updateSignupUI()" class="w-full p-3 bg-gray-50 border rounded-xl">
+                    <select name="department" id="signup-dept" required onchange="updateSignupUI()" class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                         <option value="">Select Department</option>
                     </select>
                 </div>
 
                 <div id="signup-course-wrapper" class="hidden mt-3">
-                    <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border rounded-xl">
+                    <select name="course" id="signup-course" class="w-full p-3 bg-gray-50 border rounded-xl font-semibold">
                         <option value="">Select Course</option>
                     </select>
                 </div>
 
-                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border rounded-xl mt-3">
+                <input type="password" name="pass" placeholder="Create Password" required class="w-full p-3 bg-gray-50 border rounded-xl mt-3 font-semibold">
                 
                 <div class="space-y-2 mt-3">
-                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Human Check</label>
-                    <div class="flex items-center space-x-3 bg-white/50 p-2 rounded-lg border border-gray-200">
-                        <canvas id="captcha-canvas" width="120" height="40" onclick="generateCaptcha()" class="rounded border shadow-sm cursor-pointer"></canvas>
-                        <button type="button" onclick="generateCaptcha()" class="text-gray-400 hover:text-green-600 p-2">🔄</button>
-                        <input type="text" id="captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Human Verification</label>
+                    <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
+                        <canvas id="captcha-canvas" width="120" height="40" onclick="generateCaptcha()" class="rounded border cursor-pointer"></canvas>
+                        <button type="button" onclick="generateCaptcha()" class="text-gray-400 hover:text-green-600 transition p-2">🔄</button>
+                        <input type="text" id="captcha-input" placeholder="Code" required class="w-24 p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-center font-bold">
                     </div>
                 </div>
 
-                <button type="submit" class="btn-primary w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition mt-4 shadow-lg">REGISTER ACCOUNT</button>
+                <button type="submit" class="w-full py-4 bg-green-600 text-white rounded-xl font-black shadow-lg hover:bg-green-700 transition uppercase tracking-widest text-xs mt-4">REGISTER ACCOUNT</button>
             </form>
-            <div class="mt-6 text-center text-xs">
-                <button onclick="toggleAuthScreen('login')" class="text-green-700 font-bold hover:underline">← Back to Login</button>
+            <div class="mt-6 text-center">
+                <button onclick="toggleAuthScreen('login')" class="text-green-700 font-black hover:underline uppercase text-xs">← Back to Login</button>
             </div>
         </div>
     </div>
@@ -141,19 +175,19 @@
     <!-- DASHBOARD VIEW -->
     <div id="dashboard" class="hidden min-h-screen flex flex-col md:flex-row">
         <!-- Sidebar -->
-        <aside id="sidebar" class="text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col">
+        <aside id="sidebar" class="text-gray-100 w-72 fixed h-full transform -translate-x-full md:translate-x-0 transition-transform duration-300 z-30 flex flex-col bg-[#064e3b]">
             <div class="p-6 flex items-center space-x-3 border-b border-white/10">
                 <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSv_4ADbeFBqg9mRZQYTRGpzcdXlZN0IFw_0A&s" class="h-10 w-10 rounded-full bg-white p-1">
                 <div>
                     <h1 class="font-black text-lg leading-tight uppercase tracking-tight">Tula's</h1>
-                    <p class="text-[9px] text-green-400 font-medium uppercase tracking-tight leading-none mt-0.5">Empowering Futures</p>
-                    <p id="nav-role-badge" class="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Portal</p>
+                    <p class="text-[8px] text-green-400 font-bold uppercase tracking-widest leading-none mt-0.5">Connecting Communities</p>
+                    <p id="nav-role-badge" class="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1 tracking-tighter">Portal</p>
                 </div>
             </div>
             <nav id="nav-links" class="flex-1 overflow-y-auto py-6 space-y-1"></nav>
             <div class="p-4 border-t border-white/10">
                 <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:bg-red-500/20 rounded-xl transition">
-                    <span>🚪</span><span class="font-bold">Sign Out</span>
+                    <span>🚪</span><span class="font-black uppercase text-xs tracking-widest">Sign Out</span>
                 </button>
             </div>
         </aside>
@@ -169,7 +203,7 @@
             </header>
 
             <main class="p-4 md:p-8 flex-1 overflow-y-auto">
-                <div id="content-area" class="max-w-6xl mx-auto min-h-[85vh] p-6 md:p-10 bg-white rounded-2xl shadow-xl border border-gray-100 animate-fadeIn">
+                <div id="content-area" class="max-w-6xl mx-auto min-h-[85vh] p-6 md:p-10 bg-white rounded-3xl shadow-xl border border-gray-100">
                     <!-- Dynamic Content Loads Here -->
                 </div>
             </main>
@@ -177,21 +211,21 @@
     </div>
 
     <!-- AI Helper Button -->
-    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-2xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-2xl">
+    <button id="chatbot-open-btn" onclick="toggleChatbot()" class="fixed bottom-5 left-5 w-14 h-14 bg-green-600 rounded-full shadow-2xl hover:bg-green-700 transition transform hover:scale-110 z-40 flex items-center justify-center text-2xl shadow-green-900/20">
         🤖
     </button>
 
     <!-- AI Modal -->
-    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[60vh] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all">
+    <div id="chatbot-modal" class="hidden fixed bottom-5 left-5 w-full max-w-sm h-[60vh] bg-white rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transform transition-all border border-gray-100">
         <div class="p-4 bg-green-800 text-white flex justify-between items-center">
-            <h3 class="font-bold">Tula's AI Assistant</h3>
-            <button onclick="toggleChatbot()" class="text-2xl">&times;</button>
+            <h3 class="font-black uppercase text-xs tracking-widest">AI Portal Assistant</h3>
+            <button onclick="toggleChatbot()" class="text-2xl hover:text-red-300">&times;</button>
         </div>
-        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50"></div>
+        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50"></div>
         <form id="chat-form" class="p-3 border-t bg-white">
             <div class="flex space-x-2">
-                <input type="text" id="chat-input" placeholder="Ask me anything..." class="flex-1 p-2 border rounded-xl outline-none focus:ring-1 focus:ring-green-500">
-                <button type="submit" class="bg-green-600 text-white px-4 rounded-xl hover:bg-green-700 transition">Send</button>
+                <input type="text" id="chat-input" placeholder="How can I help you today?" class="flex-1 p-3 border rounded-xl outline-none focus:ring-1 focus:ring-green-500 font-medium text-sm">
+                <button type="submit" class="bg-green-600 text-white px-5 rounded-xl hover:bg-green-700 transition font-black uppercase text-[10px]">Send</button>
             </div>
         </form>
     </div>
@@ -244,8 +278,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-form').onsubmit = async (e) => {
         e.preventDefault();
         const captchaInput = document.getElementById('login-captcha-input');
+        
         if (captchaInput.value.toUpperCase() !== currentLoginCaptcha) {
-            showToast('Incorrect Captcha', true);
+            showToast('Incorrect Captcha Code', true);
             generateLoginCaptcha();
             captchaInput.value = '';
             return;
@@ -265,6 +300,32 @@ document.addEventListener('DOMContentLoaded', () => {
             department: dept,
         });
     };
+
+    document.getElementById('signup-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const captchaInput = document.getElementById('captcha-input');
+        if (captchaInput.value.toUpperCase() !== currentCaptcha) {
+            showToast('Captcha Verification Failed', true);
+            generateCaptcha();
+            return;
+        }
+        const formData = new FormData(e.target);
+        const payload = Object.fromEntries(formData);
+        if (!payload.email.toLowerCase().endsWith(REQUIRED_DOMAIN)) {
+            showToast(`Use Institutional Email ${REQUIRED_DOMAIN}`, true);
+            return;
+        }
+        await handleAuth('/signup', payload, true);
+    };
+
+    document.getElementById('chat-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if(!input.value.trim()) return;
+        addMessageToChat(input.value.trim(), true);
+        input.value = '';
+        setTimeout(() => addMessageToChat("I'm here to help with your Tula's Portal navigation. What else can I do for you?", false), 800);
+    };
 });
 
 // =========================================
@@ -279,9 +340,10 @@ async function handleAuth(endpoint, payload, isSignup = false) {
             body: JSON.stringify(payload)
         });
         const data = await res.json();
+        
         if (data.success) {
             if (isSignup) {
-                showToast('Registration submitted for approval.');
+                showToast('Registration Success: Pending Admin Approval');
                 toggleAuthScreen('login');
             } else {
                 currentUser = data.user;
@@ -289,11 +351,12 @@ async function handleAuth(endpoint, payload, isSignup = false) {
                 showDashboard();
             }
         } else {
-            showToast(data.message || 'Error', true);
+            showToast(data.message || 'Verification Error', true);
             isSignup ? generateCaptcha() : generateLoginCaptcha();
         }
     } catch (err) {
-        showToast('Connection Error', true);
+        showToast('Connection Refused. Is server running?', true);
+        isSignup ? generateCaptcha() : generateLoginCaptcha();
     }
 }
 
@@ -333,13 +396,13 @@ function renderNavigation() {
             { id: 'admin-users', label: 'Manage Users', icon: '👥' },
             { id: 'admin-announcements', label: 'Announcements', icon: '📢' },
             { id: 'admin-signup-requests', label: 'Approvals', icon: '✋' },
-            { id: 'admin-batches', label: 'Batches', icon: '👥' }
+            { id: 'admin-batches', label: 'Manage Batches', icon: '👥' }
         ]
     };
     (MENU[currentUser.role] || []).forEach(item => {
         const btn = document.createElement('button');
-        btn.className = 'nav-link w-full flex items-center space-x-3 px-6 py-3 transition-all duration-200 hover:bg-white/10 rounded-lg';
-        btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="font-bold text-sm uppercase tracking-tight">${item.label}</span>`;
+        btn.className = 'nav-link w-full flex items-center space-x-3 px-6 py-4 transition-all duration-200 hover:bg-white/10 rounded-lg group';
+        btn.innerHTML = `<span class="text-xl group-hover:scale-110 transition-transform">${item.icon}</span><span class="font-black text-[10px] uppercase tracking-widest">${item.label}</span>`;
         btn.onclick = () => loadContent(item.id, btn);
         nav.appendChild(btn);
     });
@@ -347,12 +410,12 @@ function renderNavigation() {
 }
 
 async function loadContent(pageId, activeBtn) {
-    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active', 'bg-green-600', 'text-white'));
-    if (activeBtn) activeBtn.classList.add('active', 'bg-green-600', 'text-white');
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+    if (activeBtn) activeBtn.classList.add('active');
     
     if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
     const container = document.getElementById('content-area');
-    container.innerHTML = '<div class="loader mx-auto my-20"></div>';
+    container.innerHTML = '<div class="flex items-center justify-center py-40"><div class="loader"></div></div>';
 
     try {
         switch (pageId) {
@@ -372,52 +435,54 @@ async function loadContent(pageId, activeBtn) {
             default: container.innerHTML = `<p class="text-center text-gray-400 py-20 uppercase tracking-widest font-black">Under Construction</p>`;
         }
     } catch (err) {
-        container.innerHTML = `<div class="p-10 text-center"><p class="text-red-500 font-bold">⚠️ Error loading content. Please try again.</p></div>`;
+        console.error(err);
+        container.innerHTML = `<div class="p-10 text-center"><div class="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 inline-block"><p class="font-black uppercase text-xs tracking-widest">⚠️ Data Retrieval Failed</p><p class="text-sm mt-2 font-medium">${err.message}</p></div></div>`;
     }
 }
 
 // =========================================
-// === DATA FETCHING HELPERS ===
+// === RECOVERY FUNCTIONS (DATA RETRIEVAL) ===
 // =========================================
 
 async function loadProfile(container) {
     const res = await fetch(`${API_BASE}/profile/${currentUser.id}`);
     const data = await res.json();
+    if (!data.success) throw new Error("Database profile match failed");
     const p = data.profile;
     container.innerHTML = `
-        <div class="flex flex-col md:flex-row gap-10">
-            <div class="w-full md:w-1/3 text-center p-8 border rounded-3xl">
-                <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-32 h-32 mx-auto rounded-full object-cover border-4 border-green-50 shadow-md mb-4">
-                <h2 class="text-2xl font-black">${p.name}</h2>
-                <p class="text-green-600 font-bold uppercase text-xs tracking-widest mt-1">${p.role}</p>
-                <div class="mt-6 pt-6 border-t font-mono text-gray-500 text-sm">${p.id}</div>
+        <div class="flex flex-col md:flex-row gap-12 animate-fadeIn">
+            <div class="w-full md:w-1/3 text-center p-10 border rounded-[2rem] bg-gray-50/50">
+                <img src="${p.photoUrl ? API_BASE+p.photoUrl : 'https://placehold.co/150?text='+p.name[0]}" class="w-36 h-36 mx-auto rounded-full object-cover border-4 border-green-100 shadow-xl mb-6">
+                <h2 class="text-3xl font-black text-gray-900">${p.name}</h2>
+                <p class="text-green-600 font-black uppercase text-[10px] tracking-[0.2em] mt-2">${p.role}</p>
+                <div class="mt-8 pt-8 border-t border-gray-200 font-mono text-gray-400 text-xs font-bold tracking-tighter">UID: ${p.id}</div>
             </div>
-            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 p-4">
-                ${detailItem('Email', p.email)}
-                ${detailItem('Phone', p.phone || 'N/A')}
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12 p-2">
+                ${detailItem('Official Email', p.email)}
+                ${detailItem('Phone Contact', p.phone || 'Not Registered')}
                 ${detailItem('Department', p.department)}
-                ${p.course ? detailItem('Course', p.course) : ''}
-                ${detailItem('Blood Group', p.bloodGroup || 'N/A')}
-                ${detailItem('DOB', p.dob || 'N/A')}
+                ${p.course ? detailItem('Course / Group', p.course) : ''}
+                ${detailItem('Identity Status', 'Verified Institutional Account')}
+                ${detailItem('Address', p.address || 'Campus Resident')}
             </div>
         </div>`;
 }
 
 function detailItem(label, value) {
-    return `<div><p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mb-1">${label}</p><p class="font-bold text-gray-800">${value}</p></div>`;
+    return `<div><p class="text-[9px] text-gray-400 uppercase font-black tracking-[0.15em] mb-1.5">${label}</p><p class="font-bold text-gray-800 text-lg tracking-tight">${value}</p></div>`;
 }
 
 async function loadTimetable(container) {
     const res = await fetch(`${API_BASE}/timetable?course=${encodeURIComponent(currentUser.course || '')}`);
     const data = await res.json();
     const tt = data.timetable || {};
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Class Schedule</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Academic Schedule</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         ${Object.entries(tt).map(([day, slots]) => `
-            <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div class="bg-green-600 text-white p-3 font-black text-xs text-center uppercase">${day}</div>
-                <div class="p-4 space-y-3">
-                    ${slots.map(s => `<div class="p-2 bg-gray-50 rounded-lg border border-gray-100"><p class="text-[9px] font-black text-green-600 uppercase">${s.time}</p><p class="font-bold text-gray-800">${s.subject}</p></div>`).join('') || '<p class="text-center text-gray-300 py-4">No Classes</p>'}
+            <div class="bg-white border rounded-3xl shadow-sm overflow-hidden border-gray-100">
+                <div class="bg-[#064e3b] text-white p-4 font-black text-[10px] text-center uppercase tracking-widest">${day}</div>
+                <div class="p-6 space-y-4">
+                    ${slots.map(s => `<div class="p-4 bg-gray-50 rounded-2xl border border-gray-100"><p class="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">${s.time}</p><p class="font-black text-gray-800 tracking-tight">${s.subject}</p></div>`).join('') || '<p class="text-center text-gray-300 py-6 text-xs font-bold uppercase italic">Holiday / Break</p>'}
                 </div>
             </div>`).join('')}
     </div>`;
@@ -426,14 +491,15 @@ async function loadTimetable(container) {
 async function loadAttendance(container) {
     const res = await fetch(`${API_BASE}/attendance/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Attendance</h2>
-    <div class="overflow-x-auto border rounded-3xl">
+    if (!data.success) throw new Error("Attendance sync failed");
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Attendance Audit</h2>
+    <div class="border rounded-[2rem] overflow-hidden shadow-sm">
         <table class="w-full text-left">
-            <tr class="bg-gray-50 border-b"><th class="p-5 text-xs font-black uppercase text-gray-400">Subject</th><th class="p-5 text-xs font-black uppercase text-gray-400">Attendance</th><th class="p-5 text-xs font-black uppercase text-gray-400 text-center">Status</th></tr>
+            <tr class="bg-gray-50/80 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest">Course Subject</th><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest">Metric</th><th class="p-6 text-[10px] font-black uppercase text-gray-400 tracking-widest text-center">Score</th></tr>
             ${Object.entries(data.attendance || {}).map(([sub, stats]) => {
                 const pct = (stats.present / stats.total * 100) || 0;
-                return `<tr class="border-b"><td class="p-5 font-bold">${sub}</td><td class="p-5 font-mono">${stats.present}/${stats.total}</td><td class="p-5 text-center"><span class="px-4 py-1 rounded-full text-[10px] font-black uppercase ${pct < 75 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">${pct.toFixed(1)}%</span></td></tr>`;
-            }).join('') || '<tr><td colspan="3" class="p-10 text-center font-bold text-gray-300 uppercase">No Records</td></tr>'}
+                return `<tr class="border-b transition-colors hover:bg-green-50/30"><td class="p-6 font-black text-gray-700 tracking-tight">${sub}</td><td class="p-6 font-mono font-bold text-gray-500">${stats.present} / ${stats.total} Sessions</td><td class="p-6 text-center"><span class="px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter ${pct < 75 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}">${pct.toFixed(1)}% Ratio</span></td></tr>`;
+            }).join('') || '<tr><td colspan="3" class="p-24 text-center font-black text-gray-300 uppercase tracking-[0.2em]">Zero Records Found</td></tr>'}
         </table>
     </div>`;
 }
@@ -441,95 +507,27 @@ async function loadAttendance(container) {
 async function loadMarks(container) {
     const res = await fetch(`${API_BASE}/marks/${currentUser.id}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Result Board</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Examination Board</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         ${(data.marks || []).map(m => `
-            <div class="p-6 border rounded-3xl flex justify-between items-center shadow-sm">
-                <div><p class="text-[10px] text-gray-400 uppercase font-black mb-1">${m.exam}</p><p class="text-lg font-bold">${m.subject}</p></div>
-                <div class="text-2xl font-black text-green-700">${m.marks}<span class="text-gray-200">/${m.total}</span></div>
-            </div>`).join('') || '<p class="col-span-2 text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No results declared</p>'}
+            <div class="p-8 border rounded-[2rem] flex justify-between items-center shadow-sm hover:shadow-md transition-shadow">
+                <div><p class="text-[9px] text-gray-400 uppercase font-black tracking-widest mb-1">${m.exam}</p><p class="text-xl font-black text-gray-900 tracking-tight">${m.subject}</p></div>
+                <div class="text-3xl font-black text-green-700">${m.marks}<span class="text-gray-200 text-xl font-bold">/${m.total}</span></div>
+            </div>`).join('') || '<p class="col-span-2 text-center py-32 text-gray-300 font-black uppercase tracking-[0.2em]">Awaiting Declarations</p>'}
     </div>`;
 }
 
 async function loadAssignmentsStudent(container) {
     const res = await fetch(`${API_BASE}/assignments?course=${encodeURIComponent(currentUser.course || '')}`);
     const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Assignments</h2>
-    <div class="space-y-6">
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase tracking-tight">Pending Tasks</h2>
+    <div class="space-y-8">
         ${(data.assignments || []).map(a => `
-            <div class="p-8 border rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div><p class="text-[10px] text-blue-500 font-black uppercase mb-1">Due: ${new Date(a.dueDate).toLocaleDateString()}</p><h3 class="text-xl font-bold">${a.title}</h3><p class="text-gray-500 text-sm mt-1">${a.description}</p></div>
-                <button onclick="openSubmitModal(${a.id})" class="bg-green-600 text-white px-6 py-3 rounded-2xl font-black text-sm uppercase shadow-md">Upload Work</button>
-            </div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No assignments pending</p>'}
+            <div class="p-10 border rounded-[2.5rem] flex flex-col md:flex-row justify-between items-start md:items-center gap-8 bg-white hover:border-green-100 transition-colors">
+                <div class="flex-1"><p class="text-[10px] text-blue-600 font-black uppercase tracking-[0.15em] mb-2">Deadline: ${new Date(a.dueDate).toLocaleDateString()}</p><h3 class="text-2xl font-black tracking-tight text-gray-900">${a.title}</h3><p class="text-gray-500 font-medium mt-2 text-sm">${a.description}</p></div>
+                <button onclick="openSubmitModal(${a.id})" class="bg-[#064e3b] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-green-900/20 hover:scale-105 transition-transform">Upload Response</button>
+            </div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-[0.2em]">Workflow Completed</p>'}
     </div>`;
-}
-
-async function loadLeavesCommon(container) {
-    const res = await fetch(`${API_BASE}/leaves/${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Leave Tracker</h2><button onclick="openLeaveModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight">+ APPLY LEAVE</button></div>
-    <div class="space-y-4">
-        ${(data.leaves || []).map(l => `<div class="p-6 border rounded-2xl flex justify-between items-center"><div><p class="font-bold text-lg">${l.type}</p><p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</p></div><span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${l.status==='Approved'?'bg-green-100 text-green-700':l.status==='Rejected'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}">${l.status}</span></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold">No Applications</p>'}
-    </div>`;
-}
-
-// =========================================
-// === FACULTY & ADMIN HELPERS ===
-// =========================================
-
-async function loadFacultyAttendance(container) {
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase">Mark Attendance</h2>
-        <div class="bg-gray-50 p-8 rounded-3xl border border-dashed border-gray-300 mb-8 text-center">
-            <select id="class-select" onchange="previewAttendanceSheet(this.value)" class="w-full p-4 border rounded-2xl bg-white shadow-sm focus:ring-2 focus:ring-green-500 outline-none transition font-bold text-gray-700">
-                <option value="">Select Assigned Subject/Batch...</option>
-            </select>
-        </div><div id="attendance-preview-area"></div>`;
-    const res = await fetch(`${API_BASE}/faculty/attendance/data?facultyId=${currentUser.id}`);
-    const data = await res.json();
-    const select = document.getElementById('class-select');
-    if(!data.assignedSubjects) return;
-    data.assignedSubjects.forEach(sub => sub.batchIds.forEach(bid => {
-        const opt = document.createElement('option'); opt.value = `${sub.code},${bid}`; opt.textContent = `${sub.name} - Batch ${bid}`; select.appendChild(opt);
-    }));
-}
-
-async function loadFacultyAssignments(container) {
-    const res = await fetch(`${API_BASE}/assignments?facultyId=${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Manage Assignments</h2><button onclick="openCreateAssignModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg">+ POST NEW</button></div>
-    <div class="grid grid-cols-1 gap-6">
-        ${(data.assignments || []).map(a => `<div class="p-6 border rounded-2xl flex justify-between items-center"><div><h4 class="font-bold text-lg">${a.title}</h4><p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">${a.course} • Submissions: ${a.submissions.length}</p></div><button class="text-green-600 font-black text-xs uppercase hover:underline">View All</button></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest">No active assignments</p>'}
-    </div>`;
-}
-
-async function loadFacultyLeaves(container) {
-    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUser.id}`);
-    const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase tracking-tight">Pending Approvals</h2><div class="space-y-6">${(data.leaves || []).map(l => `<div class="p-8 border rounded-3xl bg-white"><div class="flex justify-between mb-4"><div><h4 class="font-black text-lg">${l.userId}</h4><p class="text-xs font-bold text-gray-400 uppercase tracking-widest">${l.type}</p></div><span class="text-xs font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg">${new Date(l.fromDate).toLocaleDateString()} to ${new Date(l.toDate).toLocaleDateString()}</span></div><p class="text-gray-600 italic bg-gray-50 p-4 rounded-xl mb-6">"${l.reason}"</p><div class="flex justify-end space-x-3"><button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-6 py-2 border border-red-100 text-red-500 font-black text-xs rounded-xl hover:bg-red-50 transition">REJECT</button><button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-6 py-2 bg-green-600 text-white font-black text-xs rounded-xl hover:bg-green-700 shadow-md transition">APPROVE</button></div></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase">All caught up</p>'}</div>`;
-}
-
-async function loadAdminUsers(container) {
-    const res = await fetch(`${API_BASE}/users`);
-    const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase tracking-tight">User Directory</h2><div class="border rounded-3xl overflow-hidden"><table class="w-full text-left"><tr class="bg-gray-50 border-b"><th class="p-5 text-[10px] font-black uppercase text-gray-400">Name / ID</th><th class="p-5 text-[10px] font-black uppercase text-gray-400">Role</th><th class="p-5 text-[10px] font-black uppercase text-gray-400">Department</th><th class="p-5 text-[10px] font-black uppercase text-gray-400">Actions</th></tr>${(data.users || []).map(u => `<tr class="border-b"><td class="p-5"><p class="font-bold">${u.name}</p><p class="text-xs font-mono text-gray-400">${u.id}</p></td><td class="p-5"><span class="bg-blue-50 text-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase">${u.role}</span></td><td class="p-5 text-xs font-bold text-gray-500">${u.department || 'All'}</td><td class="p-5"><button onclick="deleteUser('${u.id}')" class="text-red-400 hover:text-red-600">🗑️</button></td></tr>`).join('')}</table></div>`;
-}
-
-async function loadAdminAnnouncements(container) {
-    const res = await fetch(`${API_BASE}/announcements`);
-    const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase">Portal Broadcast</h2><button onclick="openCreateAnnouncementModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight">+ NEW POST</button></div><div class="space-y-6">${(data.announcements || []).map(a => `<div class="p-8 border rounded-3xl shadow-sm"><div class="flex justify-between items-center mb-4"><span class="text-[10px] font-black text-green-600 uppercase tracking-widest">${new Date(a.date).toLocaleDateString()}</span><span class="bg-gray-100 text-gray-500 text-[9px] font-black px-2 py-0.5 rounded uppercase">Target: ${a.target}</span></div><h3 class="text-xl font-black text-gray-900 mb-2">${a.title}</h3><p class="text-gray-600 leading-relaxed">${a.body}</p></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest italic">No Broadcasts</p>'}</div>`;
-}
-
-async function showAdminSignupRequests(container) {
-    const res = await fetch(`${API_BASE}/signup-requests/pending`);
-    const data = await res.json();
-    container.innerHTML = `<h2 class="text-2xl font-black mb-8 text-green-900 uppercase tracking-tight">Verification Requests</h2><div class="grid grid-cols-1 gap-6">${(data.requests || []).map(r => `<div class="p-8 border rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6"><div><h4 class="font-black text-xl text-gray-900 mb-1 tracking-tight">${r.name}</h4><p class="text-xs font-bold text-gray-400 uppercase tracking-widest">${r.role} • ${r.department}</p></div><div class="flex space-x-3 w-full md:w-auto"><button onclick="manageSignupRequest(${r.id}, 'reject')" class="flex-1 px-6 py-3 border text-red-500 font-black text-xs rounded-2xl uppercase">Reject</button><button onclick="handleApprovalFlow('${r.id}', '${r.role}', '${r.userId}', '${r.email}')" class="flex-1 px-6 py-3 bg-green-600 text-white font-black text-xs rounded-2xl shadow-md uppercase">Approve</button></div></div>`).join('') || '<p class="text-center py-20 text-gray-300 font-bold uppercase tracking-widest italic">Verification Queue Empty</p>'}</div>`;
-}
-
-async function loadAdminBatches(container) {
-    const res = await fetch(`${API_BASE}/batches`);
-    const data = await res.json();
-    container.innerHTML = `<div class="flex justify-between items-center mb-8"><h2 class="text-2xl font-black text-green-900 uppercase tracking-tight">Academic Batches</h2><div class="flex space-x-3"><button onclick="openEnrollBatchModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-md tracking-tight uppercase">Enroll Users</button><button onclick="openCreateBatchModal()" class="bg-green-600 text-white px-5 py-2.5 rounded-2xl font-black text-sm shadow-lg tracking-tight uppercase">+ NEW BATCH</button></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-6">${(data.batches || []).map(b => `<div class="p-8 border rounded-3xl group shadow-sm"><div class="flex justify-between mb-4"><div><h3 class="font-black text-xl text-gray-900 uppercase tracking-tight">${b.id}</h3><p class="text-xs font-bold text-gray-400 uppercase tracking-widest">${b.department}</p></div><button onclick="deleteBatch('${b.id}', '${currentUser.id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">🗑️</button></div><div class="pt-4 border-t border-gray-50 flex justify-between text-[10px] font-black text-gray-400 uppercase"><span>${b.students.length} STUDENTS</span><span>${b.subjects.length} SUBJECTS</span></div></div>`).join('') || '<p class="col-span-2 text-center py-20 text-gray-300 font-bold italic uppercase tracking-widest">No Batches Created</p>'}</div>`;
 }
 
 // =========================================
@@ -557,8 +555,9 @@ function generateLoginCaptcha() { currentLoginCaptcha = generateCaptchaText('log
 
 function initAuthDropdowns() {
     const selects = [document.getElementById('login-dept'), document.getElementById('signup-dept')];
+    const depts = Object.keys(DEPT_DATA);
     selects.forEach(s => {
-        if(s) s.innerHTML = '<option value="">Select Department</option>' + Object.keys(DEPT_DATA).map(d => `<option value="${d}">${d}</option>`).join('');
+        if(s) s.innerHTML = '<option value="">Select Department</option>' + depts.map(d => `<option value="${d}">${d}</option>`).join('');
     });
 }
 
@@ -566,7 +565,8 @@ function updateAuthUI() {
     const role = document.getElementById('login-role').value;
     const isHOD = role === 'Department Login';
     document.getElementById('login-dept-wrapper').classList.toggle('hidden', !isHOD);
-    if(isHOD && document.getElementById('login-dept').value === 'Department of Engineering') {
+    const deptSelect = document.getElementById('login-dept');
+    if(isHOD && deptSelect.value === 'Department of Engineering') {
         document.getElementById('login-eng-branch-wrapper').classList.remove('hidden');
         document.getElementById('login-eng-branch').innerHTML = DEPT_DATA['Department of Engineering'].branches.map(b => `<option>${b}</option>`).join('');
     } else {
@@ -579,11 +579,13 @@ function updateSignupUI() {
     const dept = document.getElementById('signup-dept').value;
     document.getElementById('signup-dept-wrapper').classList.toggle('hidden', !role);
     document.getElementById('student-fields').classList.toggle('hidden', role !== 'Student');
+    const courseWrapper = document.getElementById('signup-course-wrapper');
+    const courseSelect = document.getElementById('signup-course');
     if (role === 'Student' && dept) {
-        document.getElementById('signup-course-wrapper').classList.remove('hidden');
-        document.getElementById('signup-course').innerHTML = (DEPT_DATA[dept]?.courses || []).map(c => `<option value="${c}">${c}</option>`).join('');
+        courseWrapper.classList.remove('hidden');
+        courseSelect.innerHTML = (DEPT_DATA[dept]?.courses || []).map(c => `<option value="${c}">${c}</option>`).join('');
     } else {
-        document.getElementById('signup-course-wrapper').classList.add('hidden');
+        courseWrapper.classList.add('hidden');
     }
 }
 
@@ -596,79 +598,40 @@ function toggleAuthScreen(s) {
 function showToast(m, e=false) {
     const t = document.getElementById('toast');
     t.textContent = m;
-    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all z-50 px-6 py-3 rounded-2xl shadow-2xl text-white font-bold text-xs uppercase tracking-widest ${e?'bg-red-600':'bg-green-600'}`;
+    t.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all z-[10001] px-6 py-3 rounded-xl shadow-2xl font-black text-[10px] uppercase tracking-widest ${e?'bg-red-600':'bg-green-600'}`;
     setTimeout(() => t.classList.add('translate-y-full', 'opacity-0'), 3500);
 }
 
+function logout() { sessionStorage.clear(); location.reload(); }
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 function toggleChatbot() { document.getElementById('chatbot-modal').classList.toggle('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 function togglePass(id) { const i = document.getElementById(id); i.type = i.type === 'password' ? 'text' : 'password'; }
-function logout() { sessionStorage.clear(); location.reload(); }
-
 function addMessageToChat(text, isUser) {
     const history = document.getElementById('chat-history');
     const msg = document.createElement('div');
     msg.className = isUser ? 'flex justify-end' : 'flex justify-start';
-    msg.innerHTML = `<div class="${isUser?'bg-green-600 text-white rounded-br-none':'bg-gray-200 text-gray-800 rounded-bl-none'} p-3 rounded-2xl max-w-[80%] text-xs font-bold shadow-sm">${text}</div>`;
+    msg.innerHTML = `<div class="${isUser?'bg-[#064e3b] text-white rounded-br-none':'bg-white text-gray-800 rounded-bl-none'} p-4 rounded-3xl max-w-[85%] text-xs font-bold shadow-sm border border-gray-100 leading-relaxed animate-slideIn">${text}</div>`;
     history.appendChild(msg);
     history.scrollTop = history.scrollHeight;
 }
 
-window.openLeaveModal = () => showModal(`<h3 class="text-xl font-black mb-6 uppercase text-green-900">Request Leave</h3><form onsubmit="event.preventDefault(); submitLeave(this)" class="space-y-4"><select name="type" class="w-full p-3 border rounded-xl font-bold"><option>Sick Leave</option><option>Casual Leave</option><option>Emergency</option></select><div class="grid grid-cols-2 gap-4"><input type="date" name="fromDate" required class="p-3 border rounded-xl font-bold"><input type="date" name="toDate" required class="p-3 border rounded-xl font-bold"></div><textarea name="reason" placeholder="Reason for leave..." required class="w-full p-3 border rounded-xl h-32 font-medium"></textarea><button type="submit" class="w-full bg-green-600 text-white py-4 rounded-xl font-black uppercase shadow-lg">SUBMIT APPLICATION</button></form>`);
-async function submitLeave(form) {
-    const fd = Object.fromEntries(new FormData(form));
-    const res = await fetch(`${API_BASE}/leaves`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({userId:currentUser.id, department:currentUser.department, ...fd}) });
+// RESTORED ADMIN/FACULTY ACTION HELPERS
+async function loadFacultyLeaves(container) {
+    const res = await fetch(`${API_BASE}/leaves/pending/${encodeURIComponent(currentUser.department)}?currentUserId=${currentUser.id}`);
     const data = await res.json();
-    showToast(data.message || 'Submitted'); closeModal(); loadContent('leaves');
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">Approval Requests</h2><div class="space-y-8">${(data.leaves || []).map(l => `<div class="p-10 border rounded-[2.5rem] bg-white shadow-sm"><div class="flex justify-between items-start mb-6"><div><h4 class="font-black text-xl text-gray-900 tracking-tight">${l.userId}</h4><p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${l.type} Application</p></div><span class="text-[10px] font-black text-green-700 bg-green-50 px-4 py-1.5 rounded-full uppercase">${new Date(l.fromDate).toLocaleDateString()} - ${new Date(l.toDate).toLocaleDateString()}</span></div><p class="text-gray-600 italic bg-gray-50/50 p-6 rounded-2xl mb-8 border border-gray-100 font-medium">"${l.reason}"</p><div class="flex justify-end space-x-4"><button onclick="updateLeaveStatus(${l.id}, 'Rejected')" class="px-8 py-3 border border-red-100 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-red-50 transition">Reject</button><button onclick="updateLeaveStatus(${l.id}, 'Approved')" class="px-8 py-3 bg-[#064e3b] text-white font-black text-[10px] uppercase tracking-widest rounded-2xl shadow-xl hover:bg-green-900 transition">Approve</button></div></div>`).join('') || '<p class="text-center py-32 text-gray-300 font-black uppercase tracking-widest">Inbox Empty</p>'}</div>`;
 }
 
-window.openSubmitModal = (id) => showModal(`<h3 class="text-xl font-black mb-6 uppercase text-blue-900">Upload Assignment</h3><form onsubmit="event.preventDefault(); submitWork(this, ${id})" class="space-y-4"><input type="file" name="submissionFile" required class="w-full p-4 border border-dashed rounded-xl bg-gray-50"><button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg uppercase">UPLOAD & SUBMIT</button></form>`);
-async function submitWork(form, id) {
-    const fd = new FormData(form); fd.append('studentId', currentUser.id); fd.append('studentName', currentUser.name);
-    await fetch(`${API_BASE}/assignments/${id}/submit`, { method: 'POST', body: fd });
-    showToast('Work Submitted Successfully'); closeModal(); loadContent('assignments');
-}
-
-window.manageSignupRequest = async (id, action) => {
-    const res = await fetch(`${API_BASE}/signup-requests/${id}/${action}`, { method: 'POST' });
-    const data = await res.json(); showToast(data.message); loadContent('admin-signup-requests');
-};
-
-window.handleApprovalFlow = (id, role, currentId, email) => {
-    if(role === 'Student') { manageSignupRequest(id, 'approve'); return; }
-    showModal(`<h3 class="text-xl font-black mb-4 uppercase">Assign Official ID</h3><form onsubmit="event.preventDefault(); submitApprovalWithId('${id}', this.newId.value)" class="space-y-4"><input type="text" name="newId" value="${role==='Faculty'?'F':'HOD'}" required class="w-full p-3 border rounded-xl font-bold"><button class="w-full bg-green-600 text-white py-3 rounded-xl font-black">CONFIRM & APPROVE</button></form>`);
-};
-
-async function submitApprovalWithId(id, newId) {
-    await fetch(`${API_BASE}/signup-requests/${id}/approve`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({newUserId: newId}) });
-    showToast('User Approved'); closeModal(); loadContent('admin-signup-requests');
-}
-
-async function updateLeaveStatus(id, status) {
-    await fetch(`${API_BASE}/leaves/${id}/action`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status}) });
-    showToast(`Leave ${status}`); loadContent('fac-leaves');
-}
-
-async function deleteUser(id) {
-    if(!confirm('Delete this user?')) return;
-    await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' });
-    showToast('User Removed'); loadContent('admin-users');
-}
-
-async function submitAttendanceSheet(e, bid, sub) {
-    e.preventDefault(); showToast('Submitting Attendance...');
-    const fd = new FormData(e.target);
-    for (const [key, status] of fd.entries()) {
-        if (key.startsWith('status_')) {
-            const sid = key.split('_')[1];
-            await fetch(`${API_BASE}/attendance/mark`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ facultyId: currentUser.id, batchId: bid, subjectCode: sub, studentId: sid, status }) });
-        }
-    }
-    showToast('Attendance Recorded'); loadContent('fac-attendance');
+async function loadAdminUsers(container) {
+    const res = await fetch(`${API_BASE}/users`);
+    const data = await res.json();
+    container.innerHTML = `<h2 class="text-2xl font-black mb-10 text-green-900 uppercase">User Directory</h2><div class="border rounded-[2.5rem] overflow-hidden shadow-sm"><table class="w-full text-left"><tr class="bg-gray-50 border-b"><th class="p-6 text-[10px] font-black uppercase text-gray-400">Identity</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Class</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Department</th><th class="p-6 text-[10px] font-black uppercase text-gray-400">Actions</th></tr>${(data.users || []).map(u => `<tr class="border-b transition-colors hover:bg-gray-50"><td class="p-6"><p class="font-black text-gray-900 tracking-tight">${u.name}</p><p class="text-[10px] font-mono font-bold text-gray-400 uppercase">${u.id}</p></td><td class="p-6"><span class="bg-blue-50 text-blue-600 text-[9px] font-black px-3 py-1 rounded-full uppercase">${u.role}</span></td><td class="p-6 text-[10px] font-black text-gray-500 uppercase">${u.department || 'GLOBAL'}</td><td class="p-6"><button onclick="deleteUser('${u.id}')" class="text-red-300 hover:text-red-600 transition-colors">🗑️</button></td></tr>`).join('')}</table></div>`;
 }
 
 function showModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal').classList.remove('hidden'); }
+async function updateLeaveStatus(id, status) { await fetch(`${API_BASE}/leaves/${id}/action`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status}) }); showToast(`Decision: ${status}`); loadContent('fac-leaves'); }
+async function deleteUser(id) { if(!confirm('Archive this user?')) return; await fetch(`${API_BASE}/users/${id}`, { method: 'DELETE' }); showToast('User Archival Success'); loadContent('admin-users'); }
 
 </script>
 </body>
