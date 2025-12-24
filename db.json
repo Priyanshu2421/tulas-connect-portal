@@ -1,6 +1,48 @@
 {
-  "users": {},
+  "users": {
+    "admin.tulas.in": {
+      "id": "admin.tulas.in",
+      "pass": "admin123",
+      "name": "Institute Administrator",
+      "role": "Admin",
+      "dept": "Administration",
+      "email": "admin@tulas.edu.in"
+    },
+    "hod.ca": {
+      "id": "hod.ca",
+      "pass": "hodca123",
+      "name": "Prof. Verma (HOD CA)",
+      "role": "HOD",
+      "dept": "Department of Computer Applications",
+      "email": "hod.ca@tulas.edu.in"
+    },
+    "F101": {
+      "id": "F101",
+      "pass": "faculty123",
+      "name": "Dr. Amit Verma",
+      "role": "Faculty",
+      "dept": "Department of Computer Applications",
+      "email": "amit@tulas.edu.in"
+    },
+    "S2024001": {
+      "id": "S2024001",
+      "pass": "student123",
+      "name": "Rahul Kapoor",
+      "role": "Student",
+      "dept": "Department of Computer Applications",
+      "sectionId": "SEC-CA-2024-A",
+      "email": "rahul@tulas.edu.in"
+    }
+  },
   "courses": {
+    "BCA": {
+      "name": "Bachelor of Computer Applications",
+      "dept": "Department of Computer Applications",
+      "batches": {
+        "2024": ["A", "B"],
+        "2023": ["A"]
+      }
+    },
     "BTECH-CSE": {
       "name": "Bachelor of Technology (CSE)",
       "batches": {
@@ -10,6 +52,7 @@
     }
   },
   "subjects": [
+    { "code": "CA101", "name": "Python Programming", "courseId": "BCA", "dept": "Department of Computer Applications" },
     { "code": "CS101", "name": "Data Structures", "dept": "Department of Engineering" },
     { "code": "MA101", "name": "Mathematics I", "dept": "Department of Engineering" }
   ],
@@ -17,20 +60,25 @@
     {
       "id": "alt_1",
       "facultyId": "F101",
-      "subjectCode": "CS101",
-      "course": "BTECH-CSE",
-      "batch": "2024",
-      "section": "A"
+      "subjectId": "CA101",
+      "sectionId": "SEC-CA-2024-A"
     }
   ],
   "mentorshipGroups": [
     {
       "id": "ment_1",
       "mentorId": "F101",
-      "mentees": ["S2024001", "S2024002"],
-      "title": "CSE-2024-G1"
+      "studentIds": ["S2024001"],
+      "title": "CA-2024-G1"
     }
   ],
   "signupRequests": [],
-  "announcements": []
+  "announcements": [],
+  "sections": [
+    {
+      "id": "SEC-CA-2024-A",
+      "courseId": "BCA",
+      "batchYear": "2024"
+    }
+  ]
 }
