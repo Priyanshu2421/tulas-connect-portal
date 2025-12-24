@@ -42,19 +42,15 @@
         "2024": ["A", "B"],
         "2023": ["A"]
       }
-    },
-    "BTECH-CSE": {
-      "name": "Bachelor of Technology (CSE)",
-      "batches": {
-        "2024": ["A", "B", "C"],
-        "2023": ["A", "B"]
-      }
     }
   },
   "subjects": [
-    { "code": "CA101", "name": "Python Programming", "courseId": "BCA", "dept": "Department of Computer Applications" },
-    { "code": "CS101", "name": "Data Structures", "dept": "Department of Engineering" },
-    { "code": "MA101", "name": "Mathematics I", "dept": "Department of Engineering" }
+    {
+      "code": "CA101",
+      "name": "Python Programming",
+      "courseId": "BCA",
+      "dept": "Department of Computer Applications"
+    }
   ],
   "allotments": [
     {
