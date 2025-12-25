@@ -29,7 +29,7 @@ function getInitialMockDB() {
         users: {
             "admin.tulas.in": { 
                 "id": "admin.tulas.in", "pass": "admin123", "name": "Institute Administrator", 
-                "role": "Admin", "department": "Administration", "email": "admin@tulas.edu.in", 
+                "role": "Admin", "dept": "Administration", "email": "admin@tulas.edu.in", 
                 "phone": "1234567890", "photoUrl": "" 
             }
         }, 
@@ -43,8 +43,8 @@ function getInitialMockDB() {
             }
         },
         subjects: [
-            { "code": "CS101", "name": "Data Structures", "department": "Department of Engineering" },
-            { "code": "MA101", "name": "Mathematics I", "department": "Department of Engineering" }
+            { "code": "CS101", "name": "Data Structures", "dept": "Department of Engineering" },
+            { "code": "MA101", "name": "Mathematics I", "dept": "Department of Engineering" }
         ],
         allotments: [],
         mentorshipGroups: [],
@@ -82,7 +82,6 @@ initialize();
 const readDB = () => {
     try { 
         let data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-        // Ensure all keys exist to prevent crashes
         const defaults = getInitialMockDB();
         Object.keys(defaults).forEach(key => {
             if (!data[key]) data[key] = defaults[key];
@@ -108,7 +107,12 @@ function isAuthorized(req, role, department) {
     const userId = req.body.hodId || req.body.adminId || req.query.currentUserId || req.body.userId;
     const user = db.users[userId];
     if (user && user.role === 'Admin') return true; 
-    if (user && user.role === 'HOD' && (!department || user.department === department)) return true;
+    
+    // Check both dept and department keys
+    const userDept = (user?.dept || user?.department || "").trim().toLowerCase();
+    const targetDept = (department || "").trim().toLowerCase();
+    
+    if (user && user.role === 'HOD' && (!department || userDept === targetDept)) return true;
     return false;
 }
 
@@ -140,13 +144,26 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
+    // Role mapping: "Department Login" from frontend matches "HOD" in db
     const expectedRole = role === 'Department Login' ? 'HOD' : role;
     if (user.role !== expectedRole) {
-        return res.status(403).json({ success: false, message: "Incorrect Access Level selected" });
+        return res.status(403).json({ success: false, message: `Access Level mismatch. System role: ${user.role}` });
     }
 
-    if (expectedRole === 'HOD' && user.department !== department) {
-        return res.status(403).json({ success: false, message: "Department mismatch" });
+    // --- DEPARTMENT MISMATCH FIX ---
+    if (expectedRole === 'HOD' || expectedRole === 'Faculty') {
+        const submittedDept = (department || "").trim().toLowerCase();
+        const userDept = (user.dept || user.department || "").trim().toLowerCase();
+        
+        // Server-side logs to debug matching
+        console.log(`Login Attempt: ID=${userId} | Sub=${submittedDept} | DB=${userDept}`);
+
+        if (userDept !== submittedDept) {
+            return res.status(403).json({ 
+                success: false, 
+                message: `Department mismatch. Registered in: ${user.dept || user.department}` 
+            });
+        }
     }
 
     const { pass, ...safeUser } = user;
@@ -167,7 +184,7 @@ app.post('/signup', (req, res) => {
 
     db.signupRequests.push({
         id: Date.now(),
-        userId, pass, name, role, department, email, course, phone,
+        userId, pass, name, role, dept: department, email, course, phone,
         status: 'Pending',
         requestedOn: new Date()
     });
@@ -180,29 +197,33 @@ app.post('/signup', (req, res) => {
 // 2. ACADEMIC & ALLOTMENT MANAGEMENT (HOD)
 // =========================================
 
-// Get data mapping for HOD to populate allotment forms
 app.get('/api/hod/data-map', (req, res) => {
     const db = readDB();
     const dept = req.query.dept;
+    const normalizedDept = (dept || "").trim().toLowerCase();
     const users = Object.values(db.users);
     
     res.json({
         success: true,
-        faculty: users.filter(u => (u.role === 'Faculty' || u.role === 'HOD') && u.department === dept),
-        unassignedStudents: users.filter(u => u.role === 'Student' && u.department === dept && !u.mentorId),
-        subjects: db.subjects.filter(s => s.department === dept),
+        faculty: users.filter(u => {
+            const uDept = (u.dept || u.department || "").trim().toLowerCase();
+            return (u.role === 'Faculty' || u.role === 'HOD') && uDept === normalizedDept;
+        }),
+        unassignedStudents: users.filter(u => {
+            const uDept = (u.dept || u.department || "").trim().toLowerCase();
+            return u.role === 'Student' && uDept === normalizedDept && !u.mentorId;
+        }),
+        subjects: db.subjects.filter(s => (s.dept || s.department || "").trim().toLowerCase() === normalizedDept),
         courses: db.courses || {}
     });
 });
 
-// Allot a subject to a faculty member for a specific section
 app.post('/api/allotments', (req, res) => {
     const db = readDB();
     const { facultyId, subjectCode, course, batch, section, hodId } = req.body;
 
     if (!isAuthorized(req, 'HOD')) return res.status(403).json({ success: false, message: "Unauthorized" });
 
-    // Prevent duplicate allotment for the same section/subject
     const existing = db.allotments.find(a => 
         a.subjectCode === subjectCode && a.course === course && 
         a.batch === batch && a.section === section
@@ -232,7 +253,6 @@ app.post('/api/mentorship', (req, res) => {
     const groupId = `ment_${Date.now()}`;
     db.mentorshipGroups.push({ id: groupId, mentorId, mentees, title });
 
-    // Link students to mentor in their profiles
     mentees.forEach(sid => {
         if (db.users[sid]) db.users[sid].mentorId = mentorId;
     });
@@ -253,7 +273,6 @@ app.get('/api/dashboard/summary/:userId', (req, res) => {
     let summary = {};
 
     if (user.role === 'Student') {
-        // Find teachers assigned to my specific section
         summary.teachers = db.allotments
             .filter(a => a.course === user.courseId && a.batch === user.batchYear && a.section === user.section)
             .map(a => ({
@@ -264,17 +283,25 @@ app.get('/api/dashboard/summary/:userId', (req, res) => {
     }
 
     if (user.role === 'Faculty') {
-        // Find classes I teach
         summary.classes = db.allotments.filter(a => a.facultyId === user.id);
-        // Find my mentees
         const group = db.mentorshipGroups.find(g => g.mentorId === user.id);
         summary.mentees = group ? group.mentees.map(sid => ({ id: sid, name: db.users[sid]?.name })) : [];
     }
 
     if (user.role === 'HOD') {
-        summary.totalFaculty = Object.values(db.users).filter(u => u.role === 'Faculty' && u.department === user.department).length;
-        summary.totalStudents = Object.values(db.users).filter(u => u.role === 'Student' && u.department === user.department).length;
-        summary.pendingLeaves = db.leaveRequests.filter(l => l.status === 'Pending' && l.department === user.department).length;
+        const hDept = (user.dept || user.department || "").trim().toLowerCase();
+        summary.totalFaculty = Object.values(db.users).filter(u => {
+            const uDept = (u.dept || u.department || "").trim().toLowerCase();
+            return u.role === 'Faculty' && uDept === hDept;
+        }).length;
+        summary.totalStudents = Object.values(db.users).filter(u => {
+            const uDept = (u.dept || u.department || "").trim().toLowerCase();
+            return u.role === 'Student' && uDept === hDept;
+        }).length;
+        summary.pendingLeaves = db.leaveRequests.filter(l => {
+            const lDept = (l.dept || l.department || "").trim().toLowerCase();
+            return l.status === 'Pending' && lDept === hDept;
+        }).length;
     }
 
     res.json({ success: true, summary });
@@ -369,7 +396,6 @@ app.get('/leaves/:id', (req, res) => {
 app.post('/leaves', (req, res) => {
     const db = readDB();
     const user = db.users[req.body.userId];
-    // Rule: Students apply to Mentor, Others apply to HOD
     const target = (user?.role === 'Student' && user.mentorId) ? user.mentorId : 'HOD';
     
     db.leaveRequests.push({
@@ -413,9 +439,13 @@ app.post('/attendance/mark', (req, res) => {
 
 app.get('/announcements', (req, res) => {
     const { role, department } = req.query;
+    const normalizedDept = (department || "").trim().toLowerCase();
     let list = readDB().announcements;
     if (role && role !== 'Admin') {
-        list = list.filter(a => a.target === 'All' || a.target === role || a.department === department);
+        list = list.filter(a => {
+            const aDept = (a.dept || a.department || "").trim().toLowerCase();
+            return a.target === 'All' || a.target === role || aDept === normalizedDept;
+        });
     }
     res.json({ success: true, announcements: list.reverse() });
 });
@@ -434,7 +464,6 @@ app.post('/announcements', (req, res) => {
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.get('*', (req, res) => {
-    // Avoid serving index.html for missing API or Upload calls
     if (req.originalUrl.startsWith('/api') || req.originalUrl.startsWith('/uploads')) {
         return res.status(404).json({ success: false, message: "Resource not found" });
     }
