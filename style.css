@@ -26,15 +26,19 @@ body {
     color: var(--text-main);
     overflow-x: hidden;
     line-height: 1.5;
+    min-height: 100vh;
 }
 
 /* --- LOGIN & AUTH SCREEN --- */
 #auth-wrapper {
     min-height: 100vh;
+    width: 100%;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
+    justify-content: center; /* Centers if content is small */
+    padding: 2.5rem 1.5rem;
+    overflow-y: auto; /* Enables scrolling on the wrapper itself if needed */
     /* REDESIGNED BACKGROUND */
     background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), 
                 url('https://tulas.edu.in/_next/static/media/BannerImage2.0ea55ef8.webp');
@@ -43,7 +47,7 @@ body {
     background-attachment: fixed;
 }
 
-/* Fix for the huge spacing issue */
+/* Centering with margin: auto allows the box to be accessible even if it overflows the viewport */
 .auth-card, #login-box, #signup-box {
     background: var(--glass);
     backdrop-filter: blur(12px);
@@ -52,8 +56,8 @@ body {
     max-width: 420px;
     border-radius: 1.5rem;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    padding: 2.5rem 2rem !important; /* Forces tighter spacing */
-    margin: auto;
+    padding: 2.5rem 2rem !important;
+    margin: auto 0; /* Key fix: allows centering while maintaining scrollability */
 }
 
 #signup-box {
@@ -233,10 +237,12 @@ tr:last-child td {
 /* Mobile Adjustments */
 @media (max-width: 768px) {
     #auth-wrapper {
-        padding: 1rem;
+        padding: 2rem 1rem;
+        display: block; /* Stack naturally on very small screens */
     }
     
     .auth-card {
+        margin: 2rem auto !important;
         padding: 2rem 1.5rem !important;
     }
     
